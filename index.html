@@ -731,6 +731,22 @@ function applyHeight(color, nf) {
   ];
 }
 
+function isFiltered(i) {
+  const bc = state.boroCode[i];
+  const nf = state.numFloors[i] || 1;
+  const yb = state.yearBuilt[i];
+  const ly = state.landmarkYear[i];
+  const dy = state.demoYear[i];
+  const cls = state.bldgClass[i];
+  if (!state.filters.boroughs.has(bc)) return true;
+  if (!state.filters.eras.has(getEra(yb))) return true;
+  if (!state.filters.heights.has(getHt(nf))) return true;
+  if (state.filters.highlightLandmarks && ly === 0) return true;
+  if (state.filters.highlightDemolished && dy === 0) return true;
+  if (state.filters.highlightVacant && cls.charAt(0) !== 'V') return true;
+  return false;
+}
+
 function getColor(i, yr) {
   const yb = state.yearBuilt[i];
   const bc = state.boroCode[i];
@@ -741,12 +757,7 @@ function getColor(i, yr) {
   const cls = state.bldgClass[i];
 
   // Filter check
-  if (!state.filters.boroughs.has(bc)) return [0,0,0,0];
-  if (!state.filters.eras.has(getEra(yb))) return [0,0,0,0];
-  if (!state.filters.heights.has(getHt(nf))) return [0,0,0,0];
-  if (state.filters.highlightLandmarks && ly === 0) return [0,0,0,0];
-  if (state.filters.highlightDemolished && dy === 0) return [0,0,0,0];
-  if (state.filters.highlightVacant && cls.charAt(0) !== 'V') return [0,0,0,0];
+  if (isFiltered(i)) return [0,0,0,0];
   if (state.filters.highlightVacant && cls.charAt(0) === 'V') return [221, 228, 76, 210]; // chartreuse
 
   // Not yet built or unknown year
@@ -814,6 +825,7 @@ function updateLayers() {
     getPosition: i => [state.positions[i*2], state.positions[i*2+1]],
     getFillColor: i => getColor(i, yr),
     getRadius: i => {
+      if (isFiltered(i)) return 0;
       // Scale radius by lot area for visual weight (sqrt for area->radius)
       const la = state.lotArea[i];
       if (la > 0) return Math.max(4, Math.min(40, Math.sqrt(la) * 0.3));
