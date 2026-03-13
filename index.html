@@ -1047,7 +1047,11 @@ async function init() {
   }
 
   document.getElementById('loading-status').textContent = 'Creating overlay...';
-  state.deckgl = new deck.MapboxOverlay({ interleaved: true, layers: [] });
+  state.deckgl = new deck.MapboxOverlay({
+    interleaved: true,
+    layers: [],
+    getCursor: ({isDragging, isHovering}) => isDragging ? 'grabbing' : isHovering ? 'pointer' : 'default',
+  });
   state.map.addControl(state.deckgl);
   state.map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'bottom-right');
 
