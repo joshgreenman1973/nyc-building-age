@@ -298,6 +298,15 @@
   <div class="source">Source: NYC MapPLUTO tax lot data, Dept. of City Planning</div>
 </div>
 
+<!-- SECTION: TOTAL STORIES BY DECADE -->
+<div class="section" id="stories-section">
+  <div class="chart-title">Measured in stories, the 2000s were the biggest building decade since the 1960s</div>
+  <div class="chart-subtitle">Total stories of new construction per decade — a measure of how much city was actually built, not just how many buildings went up</div>
+  <div class="bar-chart" id="stories-chart"></div>
+  <div class="bar-axis" id="stories-axis"></div>
+  <div class="source">Source: NYC MapPLUTO (YearBuilt × NumFloors). A 50-story tower counts 50×; a two-story home counts 2×.</div>
+</div>
+
 <!-- CALLOUT: 1920s -->
 <div class="callout section" id="callout-1920">
   <div class="callout-number"><span class="counter" data-target="176201" data-duration="2000">0</span></div>
@@ -569,6 +578,35 @@ decades.forEach((d,i) => {
 });
 
 // ============================================================
+// TOTAL STORIES BAR CHART
+// ============================================================
+const storiesData = [
+  {l:'1850',v:6368},{l:'1860',v:5567},{l:'1870',v:9352},{l:'1880',v:17847},
+  {l:'1890',v:69992},{l:'1900',v:119420},{l:'1910',v:168033},{l:'1920',v:411643},
+  {l:'1930',v:301535},{l:'1940',v:118506},{l:'1950',v:140714},{l:'1960',v:141986},
+  {l:'1970',v:75956},{l:'1980',v:70994},{l:'1990',v:70642},{l:'2000',v:123935},
+  {l:'2010',v:64328},{l:'2020',v:30715},
+];
+const maxS = Math.max(...storiesData.map(d=>d.v));
+const sch = document.getElementById('stories-chart');
+const sax = document.getElementById('stories-axis');
+storiesData.forEach((d,i) => {
+  const col = document.createElement('div'); col.className = 'bar-col';
+  const bar = document.createElement('div'); bar.className = 'bar';
+  bar.dataset.h = (d.v / maxS * 100);
+  // Highlight 1920s peak in orange, 2000s comeback in cerulean
+  bar.style.background = d.l==='1920' ? 'var(--orange)' : d.l==='2000' ? 'var(--cerulean)' : 'var(--cloud)';
+  if (['1900','1920','1930','1960','2000'].includes(d.l)) {
+    const lbl = document.createElement('div'); lbl.className = 'bar-label';
+    lbl.textContent = (d.v/1000).toFixed(0)+'k'; bar.appendChild(lbl);
+  }
+  col.appendChild(bar); sch.appendChild(col);
+  const al = document.createElement('div'); al.className = 'bar-axis-label';
+  al.textContent = (i%2===0||d.l==='1920'||d.l==='2000') ? d.l.slice(2)+'s' : '';
+  sax.appendChild(al);
+});
+
+// ============================================================
 // INTERSECTION OBSERVER
 // ============================================================
 const animated = new Set();
@@ -606,7 +644,7 @@ function animateSection(section) {
     animateCounter(el, parseInt(el.dataset.target), parseInt(el.dataset.duration)||2000, el.dataset.suffix||'');
   });
 
-  if (section.id === 'decade-section') {
+  if (section.id === 'decade-section' || section.id === 'stories-section') {
     setTimeout(() => section.querySelectorAll('.bar').forEach(b => { b.style.height = b.dataset.h + '%'; }), 200);
   }
   if (section.id === 'height-section' || section.id === 'type-section') {
