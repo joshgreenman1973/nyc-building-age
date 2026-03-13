@@ -1,0 +1,4 @@
+data/processed/buildings.fgb
+data/raw/
+__pycache__/
+.DS_Store
