@@ -856,6 +856,53 @@ async function init() {
   console.log('NYC Building Age app initialized');
 }
 
+function updateLegend() {
+  const legend = document.getElementById('legend');
+  const mode = state.colorMode;
+  let html = '';
+
+  if (mode === 'age') {
+    html = `<div class="legend-title">Building Age</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:#FF781E"></div> Recently built</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:#B05030"></div> 50 years</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:#703C60"></div> 100 years</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:#553C82"></div> 200+ years</div>`;
+  } else if (mode === 'height') {
+    html = `<div class="legend-title">Building Height</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(200,200,180)"></div> 1-2 floors</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(230,150,100)"></div> 10 floors</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(245,100,50)"></div> 25 floors</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(255,60,20)"></div> 50+ floors</div>`;
+  } else if (mode === 'class') {
+    html = `<div class="legend-title">Building Type</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(120,180,80)"></div> One-Family Home</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(60,140,180)"></div> Walk-Up Apt</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(100,100,200)"></div> Elevator Apt</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(80,130,200)"></div> Office</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(80,120,80)"></div> Retail</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(200,150,60)"></div> Warehouse</div>`;
+  } else if (mode === 'borough') {
+    html = `<div class="legend-title">Borough</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(255,144,32)"></div> Manhattan</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(102,187,255)"></div> Brooklyn</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(136,221,102)"></div> Queens</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(221,119,204)"></div> Bronx</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(255,204,68)"></div> Staten Island</div>`;
+  }
+
+  // Common items across all modes
+  html += `<div class="legend-item"><div class="legend-swatch" style="background:#2D8C4E"></div> Park</div>
+    <div class="legend-item"><div class="legend-swatch outline"></div> Landmark</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#FF3C3C"></div> Demolished (DOB filings)</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#00DDFF"></div> Rebuilt</div>`;
+
+  if (mode !== 'height') {
+    html += `<div class="legend-item" style="margin-top:6px; font-size:10px; color:#888; line-height:1.3">Brighter = taller building<br>Lighter = shorter building</div>`;
+  }
+
+  legend.innerHTML = html;
+}
+
 function setupControls() {
   document.getElementById('play-btn').addEventListener('click', togglePlay);
 
@@ -896,6 +943,7 @@ function setupControls() {
       document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       state.colorMode = btn.dataset.mode;
+      updateLegend();
       updateLayers();
     });
   });
