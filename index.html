@@ -29,12 +29,50 @@
     pointer-events: none; z-index: 10;
   }
   #title-bar h1 {
-    font-size: 20px; font-weight: 600; letter-spacing: 0.5px;
+    font-size: 28px; font-weight: 700; letter-spacing: 1.5px;
     color: #fff; margin: 0;
+  }
+  #title-bar h1 .dingbat {
+    font-size: 18px; letter-spacing: 0; opacity: 0.45;
+    vertical-align: 1px; margin: 0 2px;
   }
   #title-bar .subtitle {
     font-size: 12px; color: #999; margin-top: 2px;
   }
+  /* Info button + overlay */
+  #info-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    pointer-events: auto; cursor: pointer;
+    width: 22px; height: 22px; line-height: 22px; text-align: center;
+    border-radius: 50%; border: 1px solid rgba(255,255,255,0.3);
+    background: rgba(255,255,255,0.08); color: #ccc;
+    font-size: 13px; font-style: italic; font-family: Georgia, serif;
+    vertical-align: middle; margin-left: 8px;
+    transition: background 0.2s, color 0.2s;
+  }
+  #info-btn:hover { background: rgba(255,255,255,0.18); color: #fff; }
+  #info-overlay {
+    display: none; position: absolute; top: 60px; left: 24px;
+    width: 380px; max-height: 70vh; overflow-y: auto;
+    background: rgba(10,10,10,0.94); backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;
+    padding: 20px 22px; z-index: 25; pointer-events: auto;
+    font-size: 13px; line-height: 1.55; color: #bbb;
+    opacity: 0; transition: opacity 0.8s ease;
+  }
+  #info-overlay.show { display: block; opacity: 1; }
+  #info-overlay.fade-out { opacity: 0; }
+  #info-overlay h2 { font-size: 15px; color: #fff; margin: 0 0 10px; font-weight: 600; }
+  #info-overlay p { margin: 0 0 10px; }
+  #info-overlay p:last-child { margin-bottom: 0; }
+  #info-overlay .caveat-label { color: #FF9020; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+  #info-close {
+    position: absolute; top: 10px; right: 14px; cursor: pointer;
+    color: #666; font-size: 18px; line-height: 1; pointer-events: auto;
+    transition: color 0.2s;
+  }
+  #info-close:hover { color: #fff; }
+
   #infographic-top-link {
     display: inline-block; margin-top: 10px; pointer-events: auto;
     font-size: 13px; font-weight: 600; color: #000;
@@ -74,11 +112,25 @@
   }
   #year-label-max { text-align: right; }
 
+  #scrubber-wrap {
+    flex: 1; position: relative;
+  }
+  #scrubber-marker {
+    position: absolute; left: 76.7%; top: -8px; bottom: -8px;
+    width: 1px; background: rgba(255,160,40,0.4);
+    pointer-events: none; z-index: 1;
+  }
+  #scrubber-marker-label {
+    position: absolute; left: 76.7%; top: -18px;
+    transform: translateX(-50%);
+    font-size: 9px; color: rgba(255,160,40,0.6); white-space: nowrap;
+    pointer-events: none;
+  }
   #scrubber {
-    flex: 1; height: 6px;
+    width: 100%; height: 6px;
     -webkit-appearance: none; appearance: none;
     background: #222; border-radius: 3px; cursor: pointer;
-    outline: none;
+    outline: none; position: relative; z-index: 2;
   }
   #scrubber::-webkit-slider-thumb {
     -webkit-appearance: none; appearance: none;
@@ -269,7 +321,8 @@
 
     /* Shrink title bar */
     #title-bar { padding: 10px 14px; }
-    #title-bar h1 { font-size: 16px; }
+    #title-bar h1 { font-size: 18px; letter-spacing: 1px; }
+    #title-bar h1 .dingbat { font-size: 12px; }
     #title-bar .subtitle { font-size: 10px; }
     #infographic-top-link { font-size: 11px; padding: 4px 10px; margin-top: 6px; }
 
@@ -321,6 +374,7 @@
     #legend.mobile-show {
       display: block; bottom: auto; top: 100px; left: 10px; right: auto;
     }
+    #info-overlay { left: 10px; right: 10px; width: auto; max-width: none; }
   }
   @media (min-width: 601px) {
     #mobile-toggles { display: none; }
@@ -334,9 +388,19 @@
 </div>
 
 <div id="title-bar">
-  <h1>Every Building</h1>
+  <h1><span class="dingbat">&#9699;&#9646;&#9647;</span> Every Building <span class="dingbat">&#9647;&#9646;&#9698;</span><span id="info-btn" title="About this map">i</span></h1>
   <div class="subtitle">Every structure in New York City — from the 1600s to today</div>
   <a id="infographic-top-link" href="infographic.html" target="_blank">By the Numbers &#8599;</a>
+</div>
+
+<div id="info-overlay">
+  <span id="info-close">&times;</span>
+  <h2>About this map</h2>
+  <p>This map shows <strong>857,000 buildings</strong> across all five boroughs of New York City. Press play to watch them appear in the year they were built, aging from bright amber to cool blue-gray over time.</p>
+  <p>Use the filters on the right to show or hide buildings by borough, construction era, or height. The color mode buttons at the bottom switch between different ways of seeing the city.</p>
+  <p class="caveat-label">A note on accuracy</p>
+  <p><strong>Construction dates before roughly 1950 are unreliable.</strong> The city's building records (MapPLUTO YearBuilt) were not designed as a historical archive — they come from DOB permit filings, which only go back so far. Much of New York was built in the 1800s, but you'll see surprisingly few buildings tagged before 1900. That's a gap in the data, not in history.</p>
+  <p>Dates after ~1950 are more trustworthy but still imperfect. About 39,000 lots have no recorded year at all. Demolition tracking only begins around 2000. Floor counts are self-reported. Landmark designations cover individual buildings only, not historic districts.</p>
 </div>
 
 <div id="year-display">2026</div>
@@ -414,7 +478,11 @@
 <div id="controls">
   <div id="timeline-row">
     <span id="year-label-min">1700</span>
-    <input type="range" id="scrubber" min="1700" max="2026" value="2026" step="1">
+    <div id="scrubber-wrap">
+      <span id="scrubber-marker-label">&#9664; dates approximate</span>
+      <span id="scrubber-marker"></span>
+      <input type="range" id="scrubber" min="1700" max="2026" value="2026" step="1">
+    </div>
     <span id="year-label-max">2026</span>
   </div>
   <div id="playback-row">
@@ -1097,6 +1165,41 @@ function setupControls() {
     state.filters.highlightVacant = e.target.checked;
     if (e.target.checked) { document.getElementById('hl-landmarks').checked = false; state.filters.highlightLandmarks = false; document.getElementById('hl-demolished').checked = false; state.filters.highlightDemolished = false; }
     _filterVersion++; updateLayers(); updateStats();
+  });
+
+  // Info overlay — auto-show on load, fade after 5s
+  const infoOverlay = document.getElementById('info-overlay');
+  let infoAutoFadeTimer = null;
+  function showInfo() {
+    infoOverlay.classList.remove('fade-out');
+    infoOverlay.classList.add('show');
+  }
+  function hideInfo() {
+    infoOverlay.classList.add('fade-out');
+    setTimeout(() => { infoOverlay.classList.remove('show', 'fade-out'); }, 800);
+  }
+  // Auto-show on load
+  setTimeout(() => {
+    showInfo();
+    infoAutoFadeTimer = setTimeout(hideInfo, 5000);
+  }, 600);
+  // Hover keeps it open
+  infoOverlay.addEventListener('mouseenter', () => {
+    if (infoAutoFadeTimer) { clearTimeout(infoAutoFadeTimer); infoAutoFadeTimer = null; }
+  });
+  infoOverlay.addEventListener('mouseleave', () => {
+    if (infoOverlay.classList.contains('show')) {
+      infoAutoFadeTimer = setTimeout(hideInfo, 2000);
+    }
+  });
+  document.getElementById('info-btn').addEventListener('click', () => {
+    if (infoAutoFadeTimer) { clearTimeout(infoAutoFadeTimer); infoAutoFadeTimer = null; }
+    if (infoOverlay.classList.contains('show')) hideInfo();
+    else showInfo();
+  });
+  document.getElementById('info-close').addEventListener('click', () => {
+    if (infoAutoFadeTimer) { clearTimeout(infoAutoFadeTimer); infoAutoFadeTimer = null; }
+    hideInfo();
   });
 
   // Mobile toggle buttons for legend/filters
