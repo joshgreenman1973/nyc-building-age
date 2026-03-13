@@ -860,7 +860,8 @@ function animate(timestamp) {
   if (!state.playing) return;
   if (state.lastFrameTime === null) state.lastFrameTime = timestamp;
 
-  const delta = (timestamp - state.lastFrameTime) / 1000;
+  const rawDelta = (timestamp - state.lastFrameTime) / 1000;
+  const delta = Math.min(rawDelta, 0.1); // cap at 100ms to prevent jumps
   state.lastFrameTime = timestamp;
   state.currentYear += state.speed * delta;
 
@@ -886,6 +887,12 @@ function togglePlay() {
   if (state.playing) {
     if (state.currentYear >= MAX_YEAR) state.currentYear = MIN_YEAR;
     state.lastFrameTime = null;
+    // Immediately render the reset state so map clears before animation starts
+    const yearInt = Math.floor(state.currentYear);
+    document.getElementById('year-display').textContent = yearInt;
+    document.getElementById('scrubber').value = yearInt;
+    updateLayers();
+    updateStats();
     requestAnimationFrame(animate);
   }
   updatePlayButton();
