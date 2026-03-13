@@ -825,7 +825,8 @@ function updateLayers() {
     pickable: true,
     onHover: onHover,
     updateTriggers: {
-      getFillColor: [yr, state.colorMode, _filterVersion],
+      getFillColor: `${yr}_${state.colorMode}_${_filterVersion}`,
+      getRadius: _filterVersion,
     },
   });
 
