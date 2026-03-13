@@ -91,6 +91,14 @@
     text-shadow: 0 2px 12px rgba(0,0,0,0.8);
   }
 
+  /* Mapbox zoom controls */
+  .mapboxgl-ctrl-bottom-right { bottom: 110px; right: 10px; }
+  .mapboxgl-ctrl-group { background: rgba(10,10,10,0.85) !important; border: 1px solid rgba(255,255,255,0.12) !important; border-radius: 4px !important; }
+  .mapboxgl-ctrl-group button { width: 32px; height: 32px; }
+  .mapboxgl-ctrl-group button .mapboxgl-ctrl-icon { filter: invert(1) brightness(0.7); }
+  .mapboxgl-ctrl-group button:hover .mapboxgl-ctrl-icon { filter: invert(1) brightness(1); }
+  .mapboxgl-ctrl-group button + button { border-top: 1px solid rgba(255,255,255,0.1) !important; }
+
   /* Bottom controls */
   #controls {
     position: absolute; bottom: 0; left: 0; right: 0;
@@ -852,6 +860,8 @@ function updateLayers() {
   });
 
   state.deckgl.setProps({ layers: [parksLayer, layer] });
+  // Force Mapbox to repaint so deck.gl overlay updates even when map view is static
+  state.map.triggerRepaint();
 }
 
 // ============================================================
@@ -1014,6 +1024,7 @@ async function init() {
   document.getElementById('loading-status').textContent = 'Creating overlay...';
   state.deckgl = new deck.MapboxOverlay({ interleaved: true, layers: [] });
   state.map.addControl(state.deckgl);
+  state.map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'bottom-right');
 
   // Load all data in parallel
   document.getElementById('loading-status').textContent = 'Loading data...';
