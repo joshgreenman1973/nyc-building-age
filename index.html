@@ -331,6 +331,7 @@
       <div id="mode-row">
         <span class="label">Color:</span>
         <button class="btn mode-btn active" data-mode="age">Age</button>
+        <button class="btn mode-btn" data-mode="height">Height</button>
         <button class="btn mode-btn" data-mode="class">Type</button>
         <button class="btn mode-btn" data-mode="borough">Borough</button>
       </div>
@@ -568,6 +569,18 @@ function getColor(i, yr) {
   // Not yet built or unknown year
   if (yb > yr || yb <= 0) return [0,0,0,0];
 
+  // Color mode: height — dedicated spectrum from pale to vivid by floor count
+  if (state.colorMode === 'height') {
+    const floors = Math.max(nf, 1);
+    const t = Math.min((floors - 1) / 50, 1); // 1..50+ floors mapped to 0..1
+    // Pale cream → warm gold → deep crimson
+    return [
+      200 + (t * 55) | 0,    // 200 → 255
+      200 - (t * 140) | 0,   // 200 → 60
+      180 - (t * 160) | 0,   // 180 → 20
+      160 + (t * 60) | 0,
+    ];
+  }
   // Color mode: type
   if (state.colorMode === 'class') {
     const ci = cls.charCodeAt(0) - 65;
