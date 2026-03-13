@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>When Was New York City Built?</title>
+<title>Every Building — By the Numbers</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&display=swap');
 
@@ -275,6 +275,21 @@
 
   .source { font-size: 11px; color: var(--charcoal); margin-top: 20px; }
 
+  /* ---- METHODOLOGY ---- */
+  .methodology {
+    max-width: 780px; margin: 0 auto; padding: 48px 32px;
+    border-top: 1px solid var(--cloud);
+  }
+  .methodology h2 {
+    font-size: 16px; font-weight: 700; margin-bottom: 16px;
+    text-transform: uppercase; letter-spacing: 0.5px; color: var(--charcoal);
+  }
+  .methodology p {
+    font-size: 13px; color: var(--charcoal); line-height: 1.7;
+    margin-bottom: 12px;
+  }
+  .methodology p strong { color: var(--black); }
+
   .footer { background: var(--orange); padding: 32px; text-align: center; }
   .footer p { font-size: 13px; color: var(--white); }
 
@@ -539,6 +554,17 @@
     <div class="demo-legend-item"><div class="demo-legend-swatch" style="background:var(--cerulean)"></div>New construction on lot</div>
   </div>
   <div class="source">Source: NYC Dept. of Buildings job filings (DM and NB permits). *2020s data is partial through 2025.</div>
+</div>
+
+<!-- METHODOLOGY -->
+<div class="methodology">
+  <h2>About the data</h2>
+  <p><strong>Where the building dates come from.</strong> The construction year for each building comes from the YearBuilt field in MapPLUTO, a tax-lot-level dataset maintained by the NYC Department of City Planning. That field is populated primarily from Department of Buildings permit records. It reflects the year the <em>current</em> structure on a lot was built or last substantially reconstructed &mdash; not every building that has ever stood there.</p>
+  <p><strong>Why so few buildings before the 1800s.</strong> New York was founded in 1624, but only a handful of structures in the dataset predate 1800. That's mostly a record-keeping gap, not a building gap. DOB permit records don't reliably reach back to the colonial era, and most pre-Revolutionary structures have been demolished, burned, or replaced many times over. The oldest entries &mdash; a few dozen lots dating to the 1600s and 1700s &mdash; are typically stone farmhouses, churches, or civic buildings that survived by luck or landmark protection.</p>
+  <p><strong>What "unknown year" means.</strong> About 39,000 lots (4.6%) have a YearBuilt of zero, meaning no construction date was recorded. These tend to be utility lots, parking structures, vacant land with minor improvements, or older buildings whose records were lost. They appear on the map as dark gray dots.</p>
+  <p><strong>Demolitions and rebuilds.</strong> Demolition and new-construction counts come from DOB job filings (type DM for demolition, type NB for new building). These records are only reliably available from roughly 2000 onward, so the demolition data here captures about 25 years of activity &mdash; not the full history of what's been torn down in New York.</p>
+  <p><strong>Floor counts.</strong> The NumFloors field in MapPLUTO is self-reported by property owners on tax forms and can be inconsistent. A "floor" in a warehouse is not the same as a floor in a residential tower. The stories-per-decade chart uses these numbers at face value, so treat it as a rough proxy for building volume, not a precise engineering measure.</p>
+  <p><strong>Landmark designations.</strong> Landmark data comes from the Landmarks Preservation Commission's individual and interior landmark lists, joined by BBL. Historic district boundaries are not yet included in this version.</p>
 </div>
 
 <!-- FOOTER -->
