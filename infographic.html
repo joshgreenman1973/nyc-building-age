@@ -110,8 +110,10 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: flex-end;
     position: relative;
     min-width: 0;
+    height: 100%;
   }
   .bar {
     width: 100%;
@@ -119,6 +121,7 @@
     transition: height 1.2s cubic-bezier(0.22, 1, 0.36, 1);
     height: 0;
     position: relative;
+    background: #bbb;
   }
   .bar-label {
     font-size: 9px;
@@ -565,7 +568,7 @@ const ax = document.getElementById('decade-axis');
 decades.forEach((d,i) => {
   const col = document.createElement('div'); col.className = 'bar-col';
   const bar = document.createElement('div'); bar.className = 'bar';
-  bar.dataset.h = (d.v / maxV * 100);
+  bar.dataset.h = Math.round(d.v / maxV * 260);
   bar.style.background = d.l==='1920' ? 'var(--chartreuse)' : d.l==='1930' ? 'var(--chartreuse-50)' : 'var(--cloud)';
   if (['1890','1910','1920','1930','1950','2000'].includes(d.l)) {
     const lbl = document.createElement('div'); lbl.className = 'bar-label';
@@ -593,7 +596,7 @@ const sax = document.getElementById('stories-axis');
 storiesData.forEach((d,i) => {
   const col = document.createElement('div'); col.className = 'bar-col';
   const bar = document.createElement('div'); bar.className = 'bar';
-  bar.dataset.h = (d.v / maxS * 100);
+  bar.dataset.h = Math.round(d.v / maxS * 260);
   // Highlight 1920s peak in orange, 2000s comeback in cerulean
   bar.style.background = d.l==='1920' ? 'var(--orange)' : d.l==='2000' ? 'var(--cerulean)' : 'var(--cloud)';
   if (['1900','1920','1930','1960','2000'].includes(d.l)) {
@@ -623,11 +626,11 @@ const observer = new IntersectionObserver((entries) => {
 document.querySelectorAll('.section').forEach(s => observer.observe(s));
 
 // Fallback: trigger animation for sections already in viewport on load
-setTimeout(() => {
+function checkVisible() {
   document.querySelectorAll('.section').forEach(s => {
     if (!animated.has(s.id)) {
       const rect = s.getBoundingClientRect();
-      if (rect.top < window.innerHeight && rect.bottom > 0) {
+      if (rect.top < window.innerHeight * 1.2 && rect.bottom > 0) {
         animated.add(s.id);
         s.classList.add('visible');
         animateSection(s);
@@ -635,7 +638,10 @@ setTimeout(() => {
       }
     }
   });
-}, 300);
+}
+setTimeout(checkVisible, 300);
+setTimeout(checkVisible, 1000);
+window.addEventListener('scroll', checkVisible, { passive: true });
 
 function animateSection(section) {
   section.querySelectorAll('.counter').forEach(el => {
@@ -645,7 +651,7 @@ function animateSection(section) {
   });
 
   if (section.id === 'decade-section' || section.id === 'stories-section') {
-    setTimeout(() => section.querySelectorAll('.bar').forEach(b => { b.style.height = b.dataset.h + '%'; }), 200);
+    setTimeout(() => section.querySelectorAll('.bar').forEach(b => { b.style.height = b.dataset.h + 'px'; }), 200);
   }
   if (section.id === 'height-section' || section.id === 'type-section') {
     setTimeout(() => {
