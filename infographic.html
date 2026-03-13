@@ -292,22 +292,19 @@
   <div class="dek">A statistical portrait of every building in the five boroughs — when they were built, how tall they stand, what they are, and what's been torn down</div>
 </div>
 
-<!-- SECTION 1: WHEN WAS NYC BUILT? -->
+<!-- SECTION 1: WHEN WAS NYC BUILT? (morphing chart) -->
 <div class="section" id="decade-section">
-  <div class="chart-title">The 1920s shaped New York more than any other decade</div>
-  <div class="chart-subtitle">Buildings constructed per decade, 1850–2020s. Four of every five boroughs hit their construction peak in the Roaring Twenties.</div>
+  <div class="chart-title" id="decade-title">The 1920s shaped New York more than any other decade</div>
+  <div class="chart-subtitle" id="decade-subtitle">Buildings constructed per decade, 1850–2020s. Four of every five boroughs hit their construction peak in the Roaring Twenties.</div>
+  <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
+    <div id="decade-toggle" style="display:inline-flex;border:1px solid var(--cloud);border-radius:4px;overflow:hidden;font-size:12px;">
+      <button class="decade-tog active" data-view="buildings" style="padding:6px 14px;border:none;cursor:pointer;font-family:inherit;font-weight:600;background:var(--black);color:var(--white);transition:background .3s,color .3s;">Buildings</button>
+      <button class="decade-tog" data-view="stories" style="padding:6px 14px;border:none;border-left:1px solid var(--cloud);cursor:pointer;font-family:inherit;font-weight:500;background:var(--white);color:var(--charcoal);transition:background .3s,color .3s;">Total stories</button>
+    </div>
+  </div>
   <div class="bar-chart" id="decade-chart"></div>
   <div class="bar-axis" id="decade-axis"></div>
-  <div class="source">Source: NYC MapPLUTO tax lot data, Dept. of City Planning</div>
-</div>
-
-<!-- SECTION: TOTAL STORIES BY DECADE -->
-<div class="section" id="stories-section">
-  <div class="chart-title">Measured in stories, the 2000s were the biggest building decade since the 1960s</div>
-  <div class="chart-subtitle">Total stories of new construction per decade — a measure of how much city was actually built, not just how many buildings went up</div>
-  <div class="bar-chart" id="stories-chart"></div>
-  <div class="bar-axis" id="stories-axis"></div>
-  <div class="source">Source: NYC MapPLUTO (YearBuilt × NumFloors). A 50-story tower counts 50×; a two-story home counts 2×.</div>
+  <div class="source" id="decade-source">Source: NYC MapPLUTO tax lot data, Dept. of City Planning</div>
 </div>
 
 <!-- CALLOUT: 1920s -->
@@ -553,7 +550,7 @@
 
 <script>
 // ============================================================
-// DECADE BAR CHART
+// MORPHING DECADE CHART (buildings ↔ stories)
 // ============================================================
 const decades = [
   {l:'1850',v:1818},{l:'1860',v:1554},{l:'1870',v:2770},{l:'1880',v:5134},
@@ -562,27 +559,6 @@ const decades = [
   {l:'1970',v:32500},{l:'1980',v:27212},{l:'1990',v:28975},{l:'2000',v:43286},
   {l:'2010',v:16263},{l:'2020',v:6797},
 ];
-const maxV = Math.max(...decades.map(d=>d.v));
-const ch = document.getElementById('decade-chart');
-const ax = document.getElementById('decade-axis');
-decades.forEach((d,i) => {
-  const col = document.createElement('div'); col.className = 'bar-col';
-  const bar = document.createElement('div'); bar.className = 'bar';
-  bar.dataset.h = Math.round(d.v / maxV * 260);
-  bar.style.background = d.l==='1920' ? 'var(--chartreuse)' : d.l==='1930' ? 'var(--chartreuse-50)' : 'var(--cloud)';
-  if (['1890','1910','1920','1930','1950','2000'].includes(d.l)) {
-    const lbl = document.createElement('div'); lbl.className = 'bar-label';
-    lbl.textContent = (d.v/1000).toFixed(0)+'k'; bar.appendChild(lbl);
-  }
-  col.appendChild(bar); ch.appendChild(col);
-  const al = document.createElement('div'); al.className = 'bar-axis-label';
-  al.textContent = (i%2===0||d.l==='1920') ? d.l.slice(2)+'s' : '';
-  ax.appendChild(al);
-});
-
-// ============================================================
-// TOTAL STORIES BAR CHART
-// ============================================================
 const storiesData = [
   {l:'1850',v:6368},{l:'1860',v:5567},{l:'1870',v:9352},{l:'1880',v:17847},
   {l:'1890',v:69992},{l:'1900',v:119420},{l:'1910',v:168033},{l:'1920',v:411643},
@@ -590,23 +566,79 @@ const storiesData = [
   {l:'1970',v:75956},{l:'1980',v:70994},{l:'1990',v:70642},{l:'2000',v:123935},
   {l:'2010',v:64328},{l:'2020',v:30715},
 ];
+const maxV = Math.max(...decades.map(d=>d.v));
 const maxS = Math.max(...storiesData.map(d=>d.v));
-const sch = document.getElementById('stories-chart');
-const sax = document.getElementById('stories-axis');
-storiesData.forEach((d,i) => {
+let decadeView = 'buildings'; // current view
+
+const viewConfig = {
+  buildings: {
+    title: 'The 1920s shaped New York more than any other decade',
+    subtitle: 'Buildings constructed per decade, 1850–2020s. Four of every five boroughs hit their construction peak in the Roaring Twenties.',
+    source: 'Source: NYC MapPLUTO tax lot data, Dept. of City Planning',
+    data: decades, max: maxV,
+    highlight: (l) => l==='1920' ? 'var(--chartreuse)' : l==='1930' ? 'var(--chartreuse-50)' : 'var(--cloud)',
+    labels: ['1890','1910','1920','1930','1950','2000'],
+  },
+  stories: {
+    title: 'Measured in stories, the 2000s were the biggest building decade since the 1960s',
+    subtitle: 'Total stories of new construction per decade — a measure of how much city was actually built, not just how many buildings went up',
+    source: 'Source: NYC MapPLUTO (YearBuilt × NumFloors). A 50-story tower counts 50×; a two-story home counts 2×.',
+    data: storiesData, max: maxS,
+    highlight: (l) => l==='1920' ? 'var(--orange)' : l==='2000' ? 'var(--cerulean)' : 'var(--cloud)',
+    labels: ['1900','1920','1930','1960','2000'],
+  }
+};
+
+// Build bars once
+const ch = document.getElementById('decade-chart');
+const ax = document.getElementById('decade-axis');
+const bars = [];
+decades.forEach((d,i) => {
   const col = document.createElement('div'); col.className = 'bar-col';
   const bar = document.createElement('div'); bar.className = 'bar';
-  bar.dataset.h = Math.round(d.v / maxS * 260);
-  // Highlight 1920s peak in orange, 2000s comeback in cerulean
-  bar.style.background = d.l==='1920' ? 'var(--orange)' : d.l==='2000' ? 'var(--cerulean)' : 'var(--cloud)';
-  if (['1900','1920','1930','1960','2000'].includes(d.l)) {
-    const lbl = document.createElement('div'); lbl.className = 'bar-label';
-    lbl.textContent = (d.v/1000).toFixed(0)+'k'; bar.appendChild(lbl);
-  }
-  col.appendChild(bar); sch.appendChild(col);
+  bar.dataset.h = Math.round(d.v / maxV * 260);
+  bar.style.background = d.l==='1920' ? 'var(--chartreuse)' : d.l==='1930' ? 'var(--chartreuse-50)' : 'var(--cloud)';
+  const lbl = document.createElement('div'); lbl.className = 'bar-label';
+  lbl.textContent = (d.v/1000).toFixed(0)+'k';
+  lbl.style.display = ['1890','1910','1920','1930','1950','2000'].includes(d.l) ? '' : 'none';
+  bar.appendChild(lbl);
+  col.appendChild(bar); ch.appendChild(col);
+  bars.push({ bar, lbl, decade: d.l });
   const al = document.createElement('div'); al.className = 'bar-axis-label';
-  al.textContent = (i%2===0||d.l==='1920'||d.l==='2000') ? d.l.slice(2)+'s' : '';
-  sax.appendChild(al);
+  al.textContent = (i%2===0||d.l==='1920') ? d.l.slice(2)+'s' : '';
+  ax.appendChild(al);
+});
+
+function switchDecadeView(view) {
+  decadeView = view;
+  const cfg = viewConfig[view];
+  document.getElementById('decade-title').textContent = cfg.title;
+  document.getElementById('decade-subtitle').textContent = cfg.subtitle;
+  document.getElementById('decade-source').textContent = cfg.source;
+  // Update toggle buttons
+  document.querySelectorAll('.decade-tog').forEach(b => {
+    const active = b.dataset.view === view;
+    b.classList.toggle('active', active);
+    b.style.background = active ? 'var(--black)' : 'var(--white)';
+    b.style.color = active ? 'var(--white)' : 'var(--charcoal)';
+    b.style.fontWeight = active ? '600' : '500';
+  });
+  // Update bar heights, colors, labels
+  bars.forEach((b, i) => {
+    const val = cfg.data[i].v;
+    const h = Math.round(val / cfg.max * 260);
+    b.bar.dataset.h = h;
+    b.bar.style.height = h + 'px';
+    b.bar.style.background = cfg.highlight(b.decade);
+    const showLabel = cfg.labels.includes(b.decade);
+    b.lbl.style.display = showLabel ? '' : 'none';
+    b.lbl.textContent = (val/1000).toFixed(0)+'k';
+  });
+}
+
+// Toggle click handler
+document.querySelectorAll('.decade-tog').forEach(btn => {
+  btn.addEventListener('click', () => switchDecadeView(btn.dataset.view));
 });
 
 // ============================================================
@@ -650,7 +682,7 @@ function animateSection(section) {
     animateCounter(el, parseInt(el.dataset.target), parseInt(el.dataset.duration)||2000, el.dataset.suffix||'');
   });
 
-  if (section.id === 'decade-section' || section.id === 'stories-section') {
+  if (section.id === 'decade-section') {
     setTimeout(() => section.querySelectorAll('.bar').forEach(b => { b.style.height = b.dataset.h + 'px'; }), 200);
   }
   if (section.id === 'height-section' || section.id === 'type-section') {
