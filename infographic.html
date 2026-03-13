@@ -584,6 +584,21 @@ const observer = new IntersectionObserver((entries) => {
 }, { threshold: 0.15 });
 document.querySelectorAll('.section').forEach(s => observer.observe(s));
 
+// Fallback: trigger animation for sections already in viewport on load
+setTimeout(() => {
+  document.querySelectorAll('.section').forEach(s => {
+    if (!animated.has(s.id)) {
+      const rect = s.getBoundingClientRect();
+      if (rect.top < window.innerHeight && rect.bottom > 0) {
+        animated.add(s.id);
+        s.classList.add('visible');
+        animateSection(s);
+        observer.unobserve(s);
+      }
+    }
+  });
+}, 300);
+
 function animateSection(section) {
   section.querySelectorAll('.counter').forEach(el => {
     if (el.dataset.animated) return;
