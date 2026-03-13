@@ -309,8 +309,8 @@
 
 <!-- SECTION 1: WHEN WAS NYC BUILT? (morphing chart) -->
 <div class="section" id="decade-section">
-  <div class="chart-title" id="decade-title">The 1920s shaped New York more than any other decade</div>
-  <div class="chart-subtitle" id="decade-subtitle">Buildings constructed per decade, 1850–2020s. Four of every five boroughs hit their construction peak in the Roaring Twenties.</div>
+  <div class="chart-title" id="decade-title">City records say the 1920s shaped New York more than any other decade</div>
+  <div class="chart-subtitle" id="decade-subtitle">Buildings constructed per decade, 1850–2020s, according to DOB permit records. Earlier decades are likely undercounted.</div>
   <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
     <div id="decade-toggle" style="display:inline-flex;border:1px solid var(--cloud);border-radius:4px;overflow:hidden;font-size:12px;">
       <button class="decade-tog active" data-view="buildings" style="padding:6px 14px;border:none;cursor:pointer;font-family:inherit;font-weight:600;background:var(--black);color:var(--white);transition:background .3s,color .3s;">Buildings</button>
@@ -320,18 +320,19 @@
   <div class="bar-chart" id="decade-chart"></div>
   <div class="bar-axis" id="decade-axis"></div>
   <div class="source" id="decade-source">Source: NYC MapPLUTO tax lot data, Dept. of City Planning</div>
+  <div style="font-size:11px;color:var(--cloud);margin-top:6px;line-height:1.4;font-style:italic;">Note: Construction dates before ~1950 come from DOB permit records, which are incomplete for older buildings. Pre-1950 counts likely understate actual construction in those decades.</div>
 </div>
 
 <!-- CALLOUT: 1920s -->
 <div class="callout section" id="callout-1920">
   <div class="callout-number"><span class="counter" data-target="176201" data-duration="2000">0</span></div>
-  <div class="callout-text">buildings went up <strong>in the 1920s alone</strong> — more than one in five structures standing in New York today</div>
+  <div class="callout-text">buildings are <strong>dated to the 1920s</strong> in city records — more than one in five structures standing in New York today. Earlier decades are likely undercounted.</div>
 </div>
 
 <!-- SECTION: ERA BREAKDOWN -->
 <div class="section" id="era-section">
-  <div class="chart-title">Nearly two-thirds of New York was built before the end of World War II</div>
-  <div class="chart-subtitle">Share of buildings by construction era</div>
+  <div class="chart-title">Nearly two-thirds of New York is dated to before the end of World War II</div>
+  <div class="chart-subtitle">Share of buildings by construction era, per city records. Pre-1950 dates are approximate.</div>
   <div class="era-row" id="era-row">
     <div class="era-segment" data-pct="0.3" style="background:var(--indigo);color:#fff;">pre-1850</div>
     <div class="era-segment" data-pct="4.5" style="background:var(--cerulean);color:#fff;">1850–99</div>
@@ -598,16 +599,16 @@ let decadeView = 'buildings'; // current view
 
 const viewConfig = {
   buildings: {
-    title: 'The 1920s shaped New York more than any other decade',
-    subtitle: 'Buildings constructed per decade, 1850–2020s. Four of every five boroughs hit their construction peak in the Roaring Twenties.',
+    title: 'City records say the 1920s shaped New York more than any other decade',
+    subtitle: 'Buildings constructed per decade, 1850–2020s, according to DOB permit records. Earlier decades are likely undercounted.',
     source: 'Source: NYC MapPLUTO tax lot data, Dept. of City Planning',
     data: decades, max: maxV,
     highlight: (l) => l==='1920' ? 'var(--chartreuse)' : l==='1930' ? 'var(--chartreuse-50)' : 'var(--cloud)',
     labels: ['1890','1910','1920','1930','1950','2000'],
   },
   stories: {
-    title: 'Measured in stories, the 2000s were the biggest building decade since the 1960s',
-    subtitle: 'Total stories of new construction per decade — a measure of how much city was actually built, not just how many buildings went up',
+    title: 'Measured in stories, the 2000s rival any decade since the 1960s',
+    subtitle: 'Total stories of new construction per decade. Pre-1950 figures rely on incomplete permit records and likely undercount actual construction.',
     source: 'Source: NYC MapPLUTO (YearBuilt × NumFloors). A 50-story tower counts 50×; a two-story home counts 2×.',
     data: storiesData, max: maxS,
     highlight: (l) => l==='1920' ? 'var(--orange)' : l==='2000' ? 'var(--cerulean)' : 'var(--cloud)',
