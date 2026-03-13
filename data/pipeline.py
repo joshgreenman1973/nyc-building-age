@@ -343,6 +343,21 @@ def step7_export(gdf, landmark_lookup, demo_lookup, rebuild_lookup):
     bin_size = bin_path.stat().st_size / (1024 * 1024)
     print(f"  Binary written: {bin_size:.1f} MB")
 
+    # Export addresses as newline-delimited text (index = line number)
+    addr_path = PROCESSED_DIR / "addresses.txt"
+    print("  Writing addresses sidecar...")
+    with open(addr_path, "w") as f:
+        for _, row in gdf_export.iterrows():
+            addr = str(row.get("address", "")).strip()
+            # Clean up address: title case, remove extra whitespace
+            if addr and addr.lower() not in ("", "0", "nan", "none"):
+                addr = " ".join(addr.split())  # collapse whitespace
+            else:
+                addr = ""
+            f.write(addr + "\n")
+    addr_size = addr_path.stat().st_size / (1024 * 1024)
+    print(f"  Addresses written: {addr_size:.1f} MB ({len(gdf_export)} lines)")
+
     # Export landmark lookup as JSON
     landmarks_json = {bbl: year for bbl, year in landmark_lookup.items() if year > 0}
     with open(PROCESSED_DIR / "landmarks.json", "w") as f:

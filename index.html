@@ -558,6 +558,7 @@ const LANDMARKS_URL = 'data/processed/landmarks.json';
 const DEMOLITIONS_URL = 'data/processed/demolitions.json';
 const STATS_URL = 'data/processed/stats.json';
 const PARKS_URL = 'data/processed/parks.json';
+const ADDRESSES_URL = 'data/processed/addresses.txt';
 
 const MIN_YEAR = 1700;
 const MAX_YEAR = 2026;
@@ -586,6 +587,7 @@ const state = {
   landmarkLookup: {},
   demoLookup: {},
   stats: null,
+  addresses: null,    // Array of address strings, loaded lazily
   parks: [],
   colorMode: 'age',
   deckgl: null,
@@ -695,6 +697,18 @@ async function loadBinaryData() {
 
   // Build index-based data array for Deck.gl
   state.dataIndices = Array.from({length: count}, (_, i) => i);
+}
+
+async function loadAddresses() {
+  try {
+    const resp = await fetch(ADDRESSES_URL);
+    if (!resp.ok) { console.warn('Addresses not available'); return; }
+    const text = await resp.text();
+    state.addresses = text.split('\n');
+    console.log(`Loaded ${state.addresses.length} addresses`);
+  } catch (e) {
+    console.warn('Could not load addresses:', e);
+  }
 }
 
 // ============================================================
@@ -977,11 +991,9 @@ function onHover(info) {
   const ry = state.rebuildYear[i];
 
   let html = '';
-  // No address in binary format, show location info
-  const lon = state.positions[i*2].toFixed(5);
-  const lat = state.positions[i*2+1].toFixed(5);
-
-  html += `<div class="tt-address">Building ${i + 1}</div>`;
+  const addrRaw = state.addresses && state.addresses[i] ? state.addresses[i].trim() : '';
+  const addr = addrRaw ? addrRaw.replace(/\w\S*/g, w => w.charAt(0) + w.slice(1).toLowerCase()) : '';
+  html += `<div class="tt-address">${addr || 'Building ' + (i + 1)}</div>`;
 
   if (yb > 0) html += `<div class="tt-row"><span>Built</span><span>${yb}</span></div>`;
   if (nf > 0) html += `<div class="tt-row"><span>Floors</span><span>${nf}</span></div>`;
@@ -1059,6 +1071,10 @@ async function init() {
   document.getElementById('loading').classList.add('hidden');
 
   setupControls();
+
+  // Lazy-load addresses in background (not critical for initial render)
+  loadAddresses();
+
   console.log('Every Building app initialized');
 }
 
