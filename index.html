@@ -35,6 +35,14 @@
   #title-bar .subtitle {
     font-size: 12px; color: #999; margin-top: 2px;
   }
+  #infographic-top-link {
+    display: inline-block; margin-top: 10px; pointer-events: auto;
+    font-size: 13px; font-weight: 600; color: #000;
+    background: #FF9020; text-decoration: none;
+    padding: 6px 14px; border-radius: 4px;
+    transition: background 0.2s;
+  }
+  #infographic-top-link:hover { background: #ffaa44; }
 
   /* Year display */
   #year-display {
@@ -238,6 +246,7 @@
 <div id="title-bar">
   <h1>NYC Building Age</h1>
   <div class="subtitle">Every structure, every year — from the 1600s to today</div>
+  <a id="infographic-top-link" href="infographic.html" target="_blank">NYC by the Numbers &#8599;</a>
 </div>
 
 <div id="year-display">2026</div>
@@ -345,7 +354,6 @@
     </div>
   </div>
   <div id="footer-row">
-    <a id="infographic-link" href="infographic.html" target="_blank">NYC by the Numbers &#8599;</a>
     <span id="credit">Conceived by Josh Greenman. Built by Claude Code. Data may contain errors — AI, like people, makes mistakes.</span>
   </div>
 </div>
