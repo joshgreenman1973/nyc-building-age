@@ -194,7 +194,11 @@
   .filter-section { margin-bottom: 10px; }
   .filter-section .section-label {
     font-size: 10px; color: #666; text-transform: uppercase;
-    letter-spacing: 0.5px; margin-bottom: 6px;
+    letter-spacing: 0.5px; margin-bottom: 2px;
+  }
+  .filter-section .section-hint {
+    font-size: 9px; color: #555; margin-bottom: 6px; line-height: 1.3;
+    font-style: italic;
   }
   .filter-check {
     display: flex; align-items: center; gap: 6px; margin-bottom: 3px;
@@ -256,6 +260,71 @@
   .legend-swatch.outline {
     background: transparent; border: 2px solid #FFD700;
   }
+
+  /* ---- MOBILE LAYOUT ---- */
+  @media (max-width: 600px) {
+    /* Hide filter panel and legend by default — too much screen real estate */
+    #filter-panel { display: none; }
+    #legend { display: none; }
+
+    /* Shrink title bar */
+    #title-bar { padding: 10px 14px; }
+    #title-bar h1 { font-size: 16px; }
+    #title-bar .subtitle { font-size: 10px; }
+    #infographic-top-link { font-size: 11px; padding: 4px 10px; margin-top: 6px; }
+
+    /* Smaller year display */
+    #year-display { font-size: 40px; right: 14px; top: 10px; }
+
+    /* Compact bottom controls */
+    #controls { padding: 8px 12px 10px; }
+    #timeline-row { margin-bottom: 6px; gap: 8px; }
+
+    /* Stack playback row vertically */
+    #playback-row { flex-wrap: wrap; gap: 6px; }
+    #playback-row > div:first-child { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+    /* Hide jump buttons on mobile */
+    .jump-btn { display: none; }
+
+    /* Smaller stats */
+    #stats-row { gap: 12px; }
+    .stat-value { font-size: 13px; }
+    .stat-label { font-size: 9px; }
+
+    /* Compact mode row */
+    #mode-row { margin-top: 4px; margin-bottom: 0; }
+    #mode-row .mode-btn { padding: 5px 10px; font-size: 11px; min-width: 50px; }
+    #mode-row .label { font-size: 10px; margin-right: 6px; }
+
+    /* Compact footer */
+    #footer-row { margin-top: 4px; padding-top: 4px; }
+    #credit { font-size: 9px; }
+
+    /* Mobile toggle buttons for legend/filters */
+    #mobile-toggles {
+      position: absolute; top: 70px; right: 10px; z-index: 16;
+      display: flex; gap: 6px;
+    }
+    .mobile-tog {
+      background: rgba(10,10,10,0.85); border: 1px solid rgba(255,255,255,0.12);
+      color: #aaa; padding: 6px 10px; border-radius: 4px; cursor: pointer;
+      font-size: 11px; font-family: inherit;
+    }
+    .mobile-tog.open { background: rgba(255,144,32,0.25); color: #FF9020; border-color: rgba(255,144,32,0.4); }
+
+    /* When toggled visible on mobile */
+    #filter-panel.mobile-show {
+      display: block; top: 100px; right: 10px; left: 10px;
+      max-height: 60vh; overflow-y: auto;
+    }
+    #legend.mobile-show {
+      display: block; bottom: auto; top: 100px; left: 10px; right: auto;
+    }
+  }
+  @media (min-width: 601px) {
+    #mobile-toggles { display: none; }
+  }
 </style>
 </head>
 <body>
@@ -272,29 +341,40 @@
 
 <div id="year-display">2026</div>
 
+<div id="mobile-toggles">
+  <button class="mobile-tog" id="mob-legend-btn">Legend</button>
+  <button class="mobile-tog" id="mob-filter-btn">Filters</button>
+</div>
+
 <div id="tooltip">
   <div class="tt-address"></div>
   <div class="tt-details"></div>
 </div>
 
 <div id="legend">
-  <div class="legend-title">Building Age</div>
+  <div class="legend-title">Color: Building Age</div>
+  <div style="font-size:9px;color:#777;margin-bottom:6px;">Warm = newer, cool = older</div>
   <div class="legend-item"><div class="legend-swatch" style="background:#FF781E"></div> Recently built</div>
   <div class="legend-item"><div class="legend-swatch" style="background:#B05030"></div> 50 years</div>
   <div class="legend-item"><div class="legend-swatch" style="background:#703C60"></div> 100 years</div>
   <div class="legend-item"><div class="legend-swatch" style="background:#553C82"></div> 200+ years</div>
+  <div style="border-top:1px solid rgba(255,255,255,0.1);margin:8px 0 6px;"></div>
+  <div style="font-size:9px;color:#777;margin-bottom:4px;">Always shown:</div>
   <div class="legend-item"><div class="legend-swatch" style="background:#2D8C4E"></div> Park</div>
   <div class="legend-item"><div class="legend-swatch outline"></div> Landmark</div>
   <div class="legend-item"><div class="legend-swatch" style="background:#FF3C3C"></div> Demolished (DOB filings)</div>
   <div class="legend-item"><div class="legend-swatch" style="background:#00DDFF"></div> Rebuilt</div>
-  <div class="legend-item" style="margin-top:6px; font-size:10px; color:#888; line-height:1.3">Brighter = taller building<br>Lighter = shorter building</div>
+  <div style="border-top:1px solid rgba(255,255,255,0.1);margin:8px 0 6px;"></div>
+  <div class="legend-item" style="font-size:10px; color:#888; line-height:1.3">Brighter = taller building<br>Dimmer = shorter building</div>
 </div>
 
 <div id="filter-panel">
-  <div class="panel-title">Filters</div>
+  <div class="panel-title">Show / Hide Buildings</div>
+  <div style="font-size:9px;color:#555;margin-bottom:10px;line-height:1.3;">Uncheck a box to hide that category from the map.</div>
 
   <div class="filter-section">
     <div class="section-label">Borough</div>
+    <div class="section-hint">Which boroughs to display</div>
     <div class="filter-check"><input type="checkbox" id="boro-1" checked data-boro="1"><label for="boro-1" class="boro-mn">Manhattan</label></div>
     <div class="filter-check"><input type="checkbox" id="boro-3" checked data-boro="3"><label for="boro-3" class="boro-bk">Brooklyn</label></div>
     <div class="filter-check"><input type="checkbox" id="boro-4" checked data-boro="4"><label for="boro-4" class="boro-qn">Queens</label></div>
@@ -303,7 +383,8 @@
   </div>
 
   <div class="filter-section">
-    <div class="section-label">Era</div>
+    <div class="section-label">Construction Era</div>
+    <div class="section-hint">Filter by when buildings were constructed</div>
     <div class="filter-check"><input type="checkbox" id="era-colonial" checked data-era="colonial"><label for="era-colonial">Colonial (pre-1800)</label></div>
     <div class="filter-check"><input type="checkbox" id="era-antebellum" checked data-era="antebellum"><label for="era-antebellum">19th Century</label></div>
     <div class="filter-check"><input type="checkbox" id="era-prewar" checked data-era="prewar"><label for="era-prewar">Prewar (1900-1945)</label></div>
@@ -313,7 +394,8 @@
   </div>
 
   <div class="filter-section">
-    <div class="section-label">Height</div>
+    <div class="section-label">Building Height</div>
+    <div class="section-hint">Filter by number of floors</div>
     <div class="filter-check"><input type="checkbox" id="ht-low" checked data-ht="low"><label for="ht-low">Low-rise (1-6 fl)</label></div>
     <div class="filter-check"><input type="checkbox" id="ht-mid" checked data-ht="mid"><label for="ht-mid">Mid-rise (7-20 fl)</label></div>
     <div class="filter-check"><input type="checkbox" id="ht-high" checked data-ht="high"><label for="ht-high">High-rise (21-49 fl)</label></div>
@@ -321,7 +403,8 @@
   </div>
 
   <div class="filter-section">
-    <div class="section-label">Highlight</div>
+    <div class="section-label">Spotlight</div>
+    <div class="section-hint">Dim everything except one category</div>
     <div class="filter-check"><input type="checkbox" id="hl-landmarks" data-hl="landmarks"><label for="hl-landmarks" style="color:#FFD700">Landmarks only</label></div>
     <div class="filter-check"><input type="checkbox" id="hl-demolished" data-hl="demolished"><label for="hl-demolished" style="color:#FF3C3C">Demolished only</label></div>
     <div class="filter-check"><input type="checkbox" id="hl-vacant" data-hl="vacant"><label for="hl-vacant" style="color:#DDE44C">Vacant lots</label></div>
@@ -371,11 +454,11 @@
     </div>
   </div>
   <div id="mode-row">
-    <span class="label">Color by:</span>
-    <button class="btn mode-btn active" data-mode="age">Age</button>
-    <button class="btn mode-btn" data-mode="height">Height</button>
-    <button class="btn mode-btn" data-mode="class">Type</button>
-    <button class="btn mode-btn" data-mode="borough">Borough</button>
+    <span class="label" title="Changes what the colors on the map represent">Color by:</span>
+    <button class="btn mode-btn active" data-mode="age" title="Color buildings by how old they are">Age</button>
+    <button class="btn mode-btn" data-mode="height" title="Color buildings by number of floors">Height</button>
+    <button class="btn mode-btn" data-mode="class" title="Color buildings by use (residential, office, etc.)">Type</button>
+    <button class="btn mode-btn" data-mode="borough" title="Color buildings by borough">Borough</button>
   </div>
   <div id="footer-row">
     <span id="credit">Conceived by Josh Greenman. Built by Claude Code. Data may contain errors — AI, like people, makes mistakes.</span>
@@ -884,19 +967,22 @@ function updateLegend() {
   let html = '';
 
   if (mode === 'age') {
-    html = `<div class="legend-title">Building Age</div>
+    html = `<div class="legend-title">Color: Building Age</div>
+      <div style="font-size:9px;color:#777;margin-bottom:6px;">Warm = newer, cool = older</div>
       <div class="legend-item"><div class="legend-swatch" style="background:#FF781E"></div> Recently built</div>
       <div class="legend-item"><div class="legend-swatch" style="background:#B05030"></div> 50 years</div>
       <div class="legend-item"><div class="legend-swatch" style="background:#703C60"></div> 100 years</div>
       <div class="legend-item"><div class="legend-swatch" style="background:#553C82"></div> 200+ years</div>`;
   } else if (mode === 'height') {
-    html = `<div class="legend-title">Building Height</div>
+    html = `<div class="legend-title">Color: Building Height</div>
+      <div style="font-size:9px;color:#777;margin-bottom:6px;">Redder = taller building</div>
       <div class="legend-item"><div class="legend-swatch" style="background:rgb(200,200,180)"></div> 1-2 floors</div>
       <div class="legend-item"><div class="legend-swatch" style="background:rgb(230,150,100)"></div> 10 floors</div>
       <div class="legend-item"><div class="legend-swatch" style="background:rgb(245,100,50)"></div> 25 floors</div>
       <div class="legend-item"><div class="legend-swatch" style="background:rgb(255,60,20)"></div> 50+ floors</div>`;
   } else if (mode === 'class') {
-    html = `<div class="legend-title">Building Type</div>
+    html = `<div class="legend-title">Color: Building Type</div>
+      <div style="font-size:9px;color:#777;margin-bottom:6px;">Each use category has its own color</div>
       <div class="legend-item"><div class="legend-swatch" style="background:rgb(120,180,80)"></div> One-Family Home</div>
       <div class="legend-item"><div class="legend-swatch" style="background:rgb(60,140,180)"></div> Walk-Up Apt</div>
       <div class="legend-item"><div class="legend-swatch" style="background:rgb(100,100,200)"></div> Elevator Apt</div>
@@ -904,7 +990,8 @@ function updateLegend() {
       <div class="legend-item"><div class="legend-swatch" style="background:rgb(80,120,80)"></div> Retail</div>
       <div class="legend-item"><div class="legend-swatch" style="background:rgb(200,150,60)"></div> Warehouse</div>`;
   } else if (mode === 'borough') {
-    html = `<div class="legend-title">Borough</div>
+    html = `<div class="legend-title">Color: Borough</div>
+      <div style="font-size:9px;color:#777;margin-bottom:6px;">Each borough has its own color</div>
       <div class="legend-item"><div class="legend-swatch" style="background:rgb(255,144,32)"></div> Manhattan</div>
       <div class="legend-item"><div class="legend-swatch" style="background:rgb(102,187,255)"></div> Brooklyn</div>
       <div class="legend-item"><div class="legend-swatch" style="background:rgb(136,221,102)"></div> Queens</div>
@@ -912,14 +999,17 @@ function updateLegend() {
       <div class="legend-item"><div class="legend-swatch" style="background:rgb(255,204,68)"></div> Staten Island</div>`;
   }
 
-  // Common items across all modes
-  html += `<div class="legend-item"><div class="legend-swatch" style="background:#2D8C4E"></div> Park</div>
+  // Common items — always visible regardless of mode
+  html += `<div style="border-top:1px solid rgba(255,255,255,0.1);margin:8px 0 6px;"></div>
+    <div style="font-size:9px;color:#777;margin-bottom:4px;">Always shown:</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#2D8C4E"></div> Park</div>
     <div class="legend-item"><div class="legend-swatch outline"></div> Landmark</div>
     <div class="legend-item"><div class="legend-swatch" style="background:#FF3C3C"></div> Demolished (DOB filings)</div>
     <div class="legend-item"><div class="legend-swatch" style="background:#00DDFF"></div> Rebuilt</div>`;
 
   if (mode !== 'height') {
-    html += `<div class="legend-item" style="margin-top:6px; font-size:10px; color:#888; line-height:1.3">Brighter = taller building<br>Lighter = shorter building</div>`;
+    html += `<div style="border-top:1px solid rgba(255,255,255,0.1);margin:8px 0 6px;"></div>
+      <div class="legend-item" style="font-size:10px; color:#888; line-height:1.3">Brighter = taller building<br>Dimmer = shorter building</div>`;
   }
 
   legend.innerHTML = html;
@@ -1007,6 +1097,30 @@ function setupControls() {
     state.filters.highlightVacant = e.target.checked;
     if (e.target.checked) { document.getElementById('hl-landmarks').checked = false; state.filters.highlightLandmarks = false; document.getElementById('hl-demolished').checked = false; state.filters.highlightDemolished = false; }
     _filterVersion++; updateLayers(); updateStats();
+  });
+
+  // Mobile toggle buttons for legend/filters
+  document.getElementById('mob-legend-btn').addEventListener('click', () => {
+    const legend = document.getElementById('legend');
+    const panel = document.getElementById('filter-panel');
+    const btn = document.getElementById('mob-legend-btn');
+    legend.classList.toggle('mobile-show');
+    btn.classList.toggle('open');
+    if (panel.classList.contains('mobile-show')) {
+      panel.classList.remove('mobile-show');
+      document.getElementById('mob-filter-btn').classList.remove('open');
+    }
+  });
+  document.getElementById('mob-filter-btn').addEventListener('click', () => {
+    const panel = document.getElementById('filter-panel');
+    const legend = document.getElementById('legend');
+    const btn = document.getElementById('mob-filter-btn');
+    panel.classList.toggle('mobile-show');
+    btn.classList.toggle('open');
+    if (legend.classList.contains('mobile-show')) {
+      legend.classList.remove('mobile-show');
+      document.getElementById('mob-legend-btn').classList.remove('open');
+    }
   });
 
   document.addEventListener('keydown', (e) => {
