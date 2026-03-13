@@ -461,7 +461,8 @@
   <div class="filter-section">
     <div class="section-label">Building Height</div>
     <div class="section-hint">Filter by number of floors</div>
-    <div class="filter-check"><input type="checkbox" id="ht-low" checked data-ht="low"><label for="ht-low">Low-rise (1-6 fl)</label></div>
+    <div class="filter-check"><input type="checkbox" id="ht-single" checked data-ht="single"><label for="ht-single">Single-story (1 fl)</label></div>
+    <div class="filter-check"><input type="checkbox" id="ht-low" checked data-ht="low"><label for="ht-low">Low-rise (2-6 fl)</label></div>
     <div class="filter-check"><input type="checkbox" id="ht-mid" checked data-ht="mid"><label for="ht-mid">Mid-rise (7-20 fl)</label></div>
     <div class="filter-check"><input type="checkbox" id="ht-high" checked data-ht="high"><label for="ht-high">High-rise (21-49 fl)</label></div>
     <div class="filter-check"><input type="checkbox" id="ht-super" checked data-ht="super"><label for="ht-super">Skyscraper (50+ fl)</label></div>
@@ -586,7 +587,7 @@ const state = {
   filters: {
     boroughs: new Set([1,2,3,4,5]),
     eras: new Set(['colonial','antebellum','prewar','postwar','modern','unknown']),
-    heights: new Set(['low','mid','high','super']),
+    heights: new Set(['single','low','mid','high','super']),
     highlightLandmarks: false,
     highlightDemolished: false,
     highlightVacant: false,
@@ -633,7 +634,7 @@ function getEra(yb) {
   if (yb < 1980) return 'postwar';
   return 'modern';
 }
-function getHt(nf) { return nf <= 6 ? 'low' : nf <= 20 ? 'mid' : nf <= 49 ? 'high' : 'super'; }
+function getHt(nf) { return nf <= 1 ? 'single' : nf <= 6 ? 'low' : nf <= 20 ? 'mid' : nf <= 49 ? 'high' : 'super'; }
 
 // ============================================================
 // BINARY DATA LOADER
@@ -1053,7 +1054,8 @@ function updateLegend() {
   } else if (mode === 'height') {
     html = `<div class="legend-title">Color: Building Height</div>
       <div style="font-size:9px;color:#777;margin-bottom:6px;">Redder = taller building</div>
-      <div class="legend-item"><div class="legend-swatch" style="background:rgb(200,200,180)"></div> 1-2 floors</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(190,190,170)"></div> 1 floor</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(200,200,180)"></div> 2-6 floors</div>
       <div class="legend-item"><div class="legend-swatch" style="background:rgb(230,150,100)"></div> 10 floors</div>
       <div class="legend-item"><div class="legend-swatch" style="background:rgb(245,100,50)"></div> 25 floors</div>
       <div class="legend-item"><div class="legend-swatch" style="background:rgb(255,60,20)"></div> 50+ floors</div>`;
