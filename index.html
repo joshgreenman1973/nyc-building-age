@@ -53,16 +53,16 @@
   #info-btn:hover { background: rgba(255,255,255,0.18); color: #fff; }
   #info-overlay {
     display: none; position: absolute; top: 100px; left: 24px;
-    width: 300px; max-height: 55vh; overflow-y: auto;
+    width: 270px; max-height: 55vh; overflow-y: auto;
     background: rgba(10,10,10,0.92); backdrop-filter: blur(16px);
     border: 1px solid rgba(255,255,255,0.08); border-radius: 6px;
-    padding: 12px 14px; z-index: 25; pointer-events: auto;
-    font-size: 10px; line-height: 1.45; color: #888;
+    padding: 10px 12px; z-index: 25; pointer-events: auto;
+    font-size: 9px; line-height: 1.4; color: #888;
     opacity: 0; transition: opacity 0.8s ease;
   }
   #info-overlay.show { display: block; opacity: 1; }
   #info-overlay.fade-out { opacity: 0; }
-  #info-overlay h2 { font-size: 11px; color: #bbb; margin: 0 0 6px; font-weight: 600; }
+  #info-overlay h2 { font-size: 10px; color: #bbb; margin: 0 0 5px; font-weight: 600; }
   #info-overlay p { margin: 0 0 7px; }
   #info-overlay p:last-child { margin-bottom: 0; }
   #info-overlay .caveat-label { color: #FF9020; font-weight: 600; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -860,7 +860,8 @@ function updateLayers() {
     pickable: true,
     onHover: onHover,
     updateTriggers: {
-      getFillColor: `${yr}_${state.colorMode}`,
+      getFillColor: `${yr}_${state.colorMode}_${_filterVersion}`,
+      getRadius: `${_filterVersion}`,
     },
   });
 
@@ -895,7 +896,8 @@ function updateLayers() {
   });
 
   state.deckgl.setProps({ layers: [parksLayer, layer] });
-  // Force Mapbox to repaint so deck.gl overlay updates even when map view is static
+  // Force deck.gl to redraw immediately, then also trigger Mapbox repaint
+  if (state.deckgl._deck) state.deckgl._deck.redraw(true);
   state.map.triggerRepaint();
 }
 
@@ -1064,15 +1066,21 @@ async function init() {
   state.map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'bottom-right');
 
   // Force cursor back to default after any map interaction (drag, zoom)
-  // Use requestAnimationFrame to override after Mapbox sets its own cursor
+  // Mapbox sets cursor asynchronously, so we need multiple frames to override
   const canvas = state.map.getCanvas();
   function resetCursor() {
-    requestAnimationFrame(() => { canvas.style.cursor = ''; });
+    canvas.style.cursor = '';
+    requestAnimationFrame(() => {
+      canvas.style.cursor = '';
+      requestAnimationFrame(() => { canvas.style.cursor = ''; });
+    });
   }
   state.map.on('dragend', resetCursor);
   state.map.on('zoomend', resetCursor);
   state.map.on('moveend', resetCursor);
   state.map.on('idle', resetCursor);
+  // Also reset on mouseup — catches drags that don't trigger dragend
+  canvas.addEventListener('mouseup', resetCursor);
 
   // Load all data in parallel
   document.getElementById('loading-status').textContent = 'Loading data...';
