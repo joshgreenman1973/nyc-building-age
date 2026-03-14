@@ -985,12 +985,12 @@ function updateStats() {
 // ============================================================
 function onHover(info) {
   const tooltip = document.getElementById('tooltip');
-  if (info.index < 0 || info.index === undefined) {
+  if (!info.object && info.object !== 0) {
     tooltip.style.display = 'none';
     return;
   }
 
-  const i = info.index;
+  const i = info.object; // data items are original building indices
   const yb = state.yearBuilt[i];
   const nf = state.numFloors[i];
   const cls = state.bldgClass[i].trim();
