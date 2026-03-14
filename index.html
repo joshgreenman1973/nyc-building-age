@@ -53,19 +53,19 @@
   #info-btn:hover { background: rgba(255,255,255,0.18); color: #fff; }
   #info-overlay {
     display: none; position: absolute; top: 100px; left: 24px;
-    width: 340px; max-height: 60vh; overflow-y: auto;
-    background: rgba(10,10,10,0.94); backdrop-filter: blur(16px);
-    border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;
-    padding: 16px 18px; z-index: 25; pointer-events: auto;
-    font-size: 11px; line-height: 1.5; color: #999;
+    width: 300px; max-height: 55vh; overflow-y: auto;
+    background: rgba(10,10,10,0.92); backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.08); border-radius: 6px;
+    padding: 12px 14px; z-index: 25; pointer-events: auto;
+    font-size: 10px; line-height: 1.45; color: #888;
     opacity: 0; transition: opacity 0.8s ease;
   }
   #info-overlay.show { display: block; opacity: 1; }
   #info-overlay.fade-out { opacity: 0; }
-  #info-overlay h2 { font-size: 12px; color: #ccc; margin: 0 0 8px; font-weight: 600; }
-  #info-overlay p { margin: 0 0 10px; }
+  #info-overlay h2 { font-size: 11px; color: #bbb; margin: 0 0 6px; font-weight: 600; }
+  #info-overlay p { margin: 0 0 7px; }
   #info-overlay p:last-child { margin-bottom: 0; }
-  #info-overlay .caveat-label { color: #FF9020; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+  #info-overlay .caveat-label { color: #FF9020; font-weight: 600; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; }
   #info-close {
     position: absolute; top: 10px; right: 14px; cursor: pointer;
     color: #666; font-size: 18px; line-height: 1; pointer-events: auto;
@@ -828,19 +828,28 @@ function getColor(i, yr) {
 // DECK.GL LAYER
 // ============================================================
 let _filterVersion = 0;
+let _cachedFilterVersion = -1;
+let _filteredData = null;
+
+function getFilteredData() {
+  if (_cachedFilterVersion !== _filterVersion || !_filteredData) {
+    _filteredData = state.dataIndices.filter(i => !isFiltered(i));
+    _cachedFilterVersion = _filterVersion;
+  }
+  return _filteredData;
+}
+
 function updateLayers() {
   if (!state.deckgl || !state.count) return;
 
   const yr = Math.floor(state.currentYear);
 
   const layer = new deck.ScatterplotLayer({
-    id: 'buildings',
-    data: state.dataIndices,
+    id: `buildings-v${_filterVersion}`,
+    data: getFilteredData(),
     getPosition: i => [state.positions[i*2], state.positions[i*2+1]],
     getFillColor: i => getColor(i, yr),
     getRadius: i => {
-      if (isFiltered(i)) return 0;
-      // Scale radius by lot area for visual weight (sqrt for area->radius)
       const la = state.lotArea[i];
       if (la > 0) return Math.max(4, Math.min(40, Math.sqrt(la) * 0.3));
       return 6;
@@ -851,8 +860,7 @@ function updateLayers() {
     pickable: true,
     onHover: onHover,
     updateTriggers: {
-      getFillColor: `${yr}_${state.colorMode}_${_filterVersion}`,
-      getRadius: _filterVersion,
+      getFillColor: `${yr}_${state.colorMode}`,
     },
   });
 
@@ -1056,10 +1064,15 @@ async function init() {
   state.map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'bottom-right');
 
   // Force cursor back to default after any map interaction (drag, zoom)
+  // Use requestAnimationFrame to override after Mapbox sets its own cursor
   const canvas = state.map.getCanvas();
-  state.map.on('dragend', () => { canvas.style.cursor = 'default'; });
-  state.map.on('zoomend', () => { canvas.style.cursor = 'default'; });
-  state.map.on('moveend', () => { canvas.style.cursor = 'default'; });
+  function resetCursor() {
+    requestAnimationFrame(() => { canvas.style.cursor = ''; });
+  }
+  state.map.on('dragend', resetCursor);
+  state.map.on('zoomend', resetCursor);
+  state.map.on('moveend', resetCursor);
+  state.map.on('idle', resetCursor);
 
   // Load all data in parallel
   document.getElementById('loading-status').textContent = 'Loading data...';
