@@ -444,7 +444,7 @@
   <p>This map shows <strong>857,000 buildings</strong> across all five boroughs of New York City. Press play to watch them appear in the year they were built, aging from bright amber to cool blue-gray over time.</p>
   <p>Use the filters on the right to show or hide buildings by borough, construction era, or height. The color mode buttons at the bottom switch between different ways of seeing the city.</p>
   <p class="caveat-label">A note on accuracy</p>
-  <p><strong>Construction dates before roughly 1950 are unreliable.</strong> The city's building records (MapPLUTO YearBuilt) were not designed as a historical archive — they come from DOB permit filings, which only go back so far. Much of New York was built in the 1800s, but you'll see surprisingly few buildings tagged before 1900. That's a gap in the data, not in history.</p>
+  <p><strong>Construction dates before roughly 1950 are highly unreliable.</strong> The city's building records (MapPLUTO YearBuilt) were not designed as a historical archive — they come from DOB permit filings, which only go back so far. Much of New York was built in the 1800s, but you'll see surprisingly few buildings tagged before 1900. That's a gap in the data, not in history. (<a href="https://www.reddit.com/r/centuryhomes/comments/1ggn7u3/how_accurate_are_date_built_records/" target="_blank" style="color:#aaa;text-decoration:underline;">More on this</a>, <a href="https://www.reddit.com/r/AskNYC/comments/12uaoao/can_you_reliably_find_the_yeardecade_of/" target="_blank" style="color:#aaa;text-decoration:underline;">and this</a>)</p>
   <p>Dates after ~1950 are more trustworthy but still imperfect. About 39,000 lots have no recorded year at all. Demolition tracking only begins around 2000. Floor counts are self-reported. Landmark designations cover individual buildings only, not historic districts.</p>
 </div>
 
@@ -468,7 +468,7 @@
   <div class="legend-item"><div class="legend-swatch" style="background:#B05030"></div> 50 years</div>
   <div class="legend-item"><div class="legend-swatch" style="background:#703C60"></div> 100 years*</div>
   <div class="legend-item"><div class="legend-swatch" style="background:#553C82"></div> 200+ years*</div>
-  <div style="font-size:8px;color:#666;margin:4px 0 0 18px;line-height:1.3;">*Dates before ~1950 are approximate</div>
+  <div style="font-size:8px;color:#666;margin:4px 0 0 18px;line-height:1.3;">*Dates before ~1950 are highly unreliable (<a href="https://www.reddit.com/r/centuryhomes/comments/1ggn7u3/how_accurate_are_date_built_records/" target="_blank" style="color:#888;text-decoration:underline;">why?</a>)</div>
   <div style="border-top:1px solid rgba(255,255,255,0.1);margin:8px 0 6px;"></div>
   <div style="font-size:9px;color:#777;margin-bottom:4px;">Always shown:</div>
   <div class="legend-item"><div class="legend-swatch" style="background:#2D8C4E"></div> Park</div>
@@ -1199,7 +1199,7 @@ function updateLegend() {
       <div class="legend-item"><div class="legend-swatch" style="background:#B05030"></div> 50 years</div>
       <div class="legend-item"><div class="legend-swatch" style="background:#703C60"></div> 100 years*</div>
       <div class="legend-item"><div class="legend-swatch" style="background:#553C82"></div> 200+ years*</div>
-      <div style="font-size:8px;color:#666;margin:4px 0 0 18px;line-height:1.3;">*Dates before ~1950 are approximate</div>`;
+      <div style="font-size:8px;color:#666;margin:4px 0 0 18px;line-height:1.3;">*Dates before ~1950 are highly unreliable (<a href="https://www.reddit.com/r/centuryhomes/comments/1ggn7u3/how_accurate_are_date_built_records/" target="_blank" style="color:#888;text-decoration:underline;">why?</a>)</div>`;
   } else if (mode === 'height') {
     html = `<div class="legend-title">Color: Building Height</div>
       <div style="font-size:9px;color:#777;margin-bottom:6px;">Redder = taller building</div>
