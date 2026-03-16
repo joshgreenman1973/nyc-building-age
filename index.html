@@ -259,6 +259,13 @@
   #filter-panel .panel-title .toggle-btn {
     cursor: pointer; color: #888; font-size: 14px;
   }
+  .select-toggle {
+    font-size: 9px; color: #666; cursor: pointer; user-select: none;
+    float: right; margin-top: 1px;
+  }
+  .select-toggle:hover { color: #aaa; }
+  .select-toggle span { margin: 0 2px; }
+  .select-toggle .sep { color: #444; }
   .filter-section {
     margin-bottom: 6px; padding: 8px 10px; border-radius: 4px;
     background: rgba(255,255,255,0.03);
@@ -466,7 +473,7 @@
   <div class="panel-title">Filter Buildings</div>
 
   <div class="filter-section fs-era">
-    <div class="section-label">Era</div>
+    <div class="section-label">Era <span class="select-toggle" data-section="era"><span class="all">All</span><span class="sep">/</span><span class="none">None</span></span></div>
     <div class="filter-check"><input type="checkbox" id="era-colonial" checked data-era="colonial"><label for="era-colonial">Colonial (pre-1800)</label></div>
     <div class="filter-check"><input type="checkbox" id="era-antebellum" checked data-era="antebellum"><label for="era-antebellum">19th Century</label></div>
     <div class="filter-check"><input type="checkbox" id="era-prewar" checked data-era="prewar"><label for="era-prewar">Prewar (1900-1945)</label></div>
@@ -476,7 +483,7 @@
   </div>
 
   <div class="filter-section fs-use">
-    <div class="section-label">Use</div>
+    <div class="section-label">Use <span class="select-toggle" data-section="use"><span class="all">All</span><span class="sep">/</span><span class="none">None</span></span></div>
     <div class="filter-check"><input type="checkbox" id="use-residential" checked data-use="residential"><label for="use-residential">Residential</label></div>
     <div class="filter-check sub-filter"><input type="checkbox" id="use-1fam" checked data-use="1fam"><label for="use-1fam">1-Family</label></div>
     <div class="filter-check sub-filter"><input type="checkbox" id="use-2fam" checked data-use="2fam"><label for="use-2fam">2-Family</label></div>
@@ -494,7 +501,7 @@
   </div>
 
   <div class="filter-section fs-height">
-    <div class="section-label">Height</div>
+    <div class="section-label">Height <span class="select-toggle" data-section="height"><span class="all">All</span><span class="sep">/</span><span class="none">None</span></span></div>
     <div class="filter-check"><input type="checkbox" id="ht-single" checked data-ht="single"><label for="ht-single">Single-story (1 fl)</label></div>
     <div class="filter-check"><input type="checkbox" id="ht-low" checked data-ht="low"><label for="ht-low">Low-rise (2-6 fl)</label></div>
     <div class="filter-check"><input type="checkbox" id="ht-mid" checked data-ht="mid"><label for="ht-mid">Mid-rise (7-20 fl)</label></div>
@@ -511,7 +518,7 @@
   </div>
 
   <div class="filter-section fs-boro">
-    <div class="section-label">Borough</div>
+    <div class="section-label">Borough <span class="select-toggle" data-section="boro"><span class="all">All</span><span class="sep">/</span><span class="none">None</span></span></div>
     <div class="filter-check"><input type="checkbox" id="boro-1" checked data-boro="1"><label for="boro-1" class="boro-mn">Manhattan</label></div>
     <div class="filter-check"><input type="checkbox" id="boro-3" checked data-boro="3"><label for="boro-3" class="boro-bk">Brooklyn</label></div>
     <div class="filter-check"><input type="checkbox" id="boro-4" checked data-boro="4"><label for="boro-4" class="boro-qn">Queens</label></div>
@@ -1347,6 +1354,46 @@ function setupControls() {
     if (e.target.checked) { document.getElementById('hl-landmarks').checked = false; state.filters.highlightLandmarks = false; document.getElementById('hl-demolished').checked = false; state.filters.highlightDemolished = false; }
     _filterVersion++; updateLayers(); updateStats();
   });
+
+  // All/None toggles per section
+  document.querySelectorAll('.select-toggle').forEach(toggle => {
+    toggle.querySelector('.all').addEventListener('click', () => selectSection(toggle.dataset.section, true));
+    toggle.querySelector('.none').addEventListener('click', () => selectSection(toggle.dataset.section, false));
+  });
+
+  function selectSection(section, checked) {
+    if (section === 'era') {
+      document.querySelectorAll('[data-era]').forEach(cb => {
+        cb.checked = checked;
+        if (checked) state.filters.eras.add(cb.dataset.era); else state.filters.eras.delete(cb.dataset.era);
+      });
+    } else if (section === 'height') {
+      document.querySelectorAll('[data-ht]').forEach(cb => {
+        cb.checked = checked;
+        if (checked) state.filters.heights.add(cb.dataset.ht); else state.filters.heights.delete(cb.dataset.ht);
+      });
+    } else if (section === 'use') {
+      document.querySelectorAll('[data-use]').forEach(cb => {
+        cb.checked = checked;
+        cb.indeterminate = false;
+        const use = cb.dataset.use;
+        if (checked) {
+          state.filters.uses.add(use);
+          if (state.filters.subUses !== undefined) state.filters.subUses.add(use);
+        } else {
+          state.filters.uses.delete(use);
+          if (state.filters.subUses !== undefined) state.filters.subUses.delete(use);
+        }
+      });
+    } else if (section === 'boro') {
+      document.querySelectorAll('[data-boro]').forEach(cb => {
+        cb.checked = checked;
+        const b = parseInt(cb.dataset.boro);
+        if (checked) state.filters.boroughs.add(b); else state.filters.boroughs.delete(b);
+      });
+    }
+    _filterVersion++; updateLayers(); updateStats();
+  }
 
   // Info overlay — auto-show on load, fade after 5s
   const infoOverlay = document.getElementById('info-overlay');
