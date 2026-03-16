@@ -259,13 +259,22 @@
   #filter-panel .panel-title .toggle-btn {
     cursor: pointer; color: #888; font-size: 14px;
   }
-  .filter-section { margin-bottom: 10px; }
+  .filter-section {
+    margin-bottom: 6px; padding: 8px 10px; border-radius: 4px;
+    background: rgba(255,255,255,0.03);
+    border-left: 2px solid rgba(255,255,255,0.08);
+  }
+  .filter-section.fs-era { border-left-color: rgba(255,144,32,0.4); }
+  .filter-section.fs-height { border-left-color: rgba(100,180,255,0.4); }
+  .filter-section.fs-use { border-left-color: rgba(120,220,100,0.4); }
+  .filter-section.fs-spotlight { border-left-color: rgba(255,215,0,0.4); }
+  .filter-section.fs-boro { border-left-color: rgba(180,140,220,0.4); }
   .filter-section .section-label {
-    font-size: 10px; color: #666; text-transform: uppercase;
-    letter-spacing: 0.5px; margin-bottom: 2px;
+    font-size: 10px; color: #888; text-transform: uppercase;
+    letter-spacing: 0.5px; margin-bottom: 2px; font-weight: 600;
   }
   .filter-section .section-hint {
-    font-size: 9px; color: #555; margin-bottom: 6px; line-height: 1.3;
+    font-size: 8px; color: #555; margin-bottom: 5px; line-height: 1.3;
     font-style: italic;
   }
   .filter-check {
@@ -454,22 +463,10 @@
 </div>
 
 <div id="filter-panel">
-  <div class="panel-title">Show / Hide Buildings</div>
-  <div style="font-size:9px;color:#555;margin-bottom:10px;line-height:1.3;">Uncheck a box to hide that category from the map.</div>
+  <div class="panel-title">Filter Buildings</div>
 
-  <div class="filter-section">
-    <div class="section-label">Borough</div>
-    <div class="section-hint">Which boroughs to display</div>
-    <div class="filter-check"><input type="checkbox" id="boro-1" checked data-boro="1"><label for="boro-1" class="boro-mn">Manhattan</label></div>
-    <div class="filter-check"><input type="checkbox" id="boro-3" checked data-boro="3"><label for="boro-3" class="boro-bk">Brooklyn</label></div>
-    <div class="filter-check"><input type="checkbox" id="boro-4" checked data-boro="4"><label for="boro-4" class="boro-qn">Queens</label></div>
-    <div class="filter-check"><input type="checkbox" id="boro-2" checked data-boro="2"><label for="boro-2" class="boro-bx">Bronx</label></div>
-    <div class="filter-check"><input type="checkbox" id="boro-5" checked data-boro="5"><label for="boro-5" class="boro-si">Staten Island</label></div>
-  </div>
-
-  <div class="filter-section">
-    <div class="section-label">Construction Era</div>
-    <div class="section-hint">Filter by when buildings were constructed</div>
+  <div class="filter-section fs-era">
+    <div class="section-label">Era</div>
     <div class="filter-check"><input type="checkbox" id="era-colonial" checked data-era="colonial"><label for="era-colonial">Colonial (pre-1800)</label></div>
     <div class="filter-check"><input type="checkbox" id="era-antebellum" checked data-era="antebellum"><label for="era-antebellum">19th Century</label></div>
     <div class="filter-check"><input type="checkbox" id="era-prewar" checked data-era="prewar"><label for="era-prewar">Prewar (1900-1945)</label></div>
@@ -478,19 +475,8 @@
     <div class="filter-check"><input type="checkbox" id="era-unknown" checked data-era="unknown"><label for="era-unknown" style="color:#666">Unknown year</label></div>
   </div>
 
-  <div class="filter-section">
-    <div class="section-label">Building Height</div>
-    <div class="section-hint">Filter by number of floors</div>
-    <div class="filter-check"><input type="checkbox" id="ht-single" checked data-ht="single"><label for="ht-single">Single-story (1 fl)</label></div>
-    <div class="filter-check"><input type="checkbox" id="ht-low" checked data-ht="low"><label for="ht-low">Low-rise (2-6 fl)</label></div>
-    <div class="filter-check"><input type="checkbox" id="ht-mid" checked data-ht="mid"><label for="ht-mid">Mid-rise (7-20 fl)</label></div>
-    <div class="filter-check"><input type="checkbox" id="ht-high" checked data-ht="high"><label for="ht-high">High-rise (21-49 fl)</label></div>
-    <div class="filter-check"><input type="checkbox" id="ht-super" checked data-ht="super"><label for="ht-super">Skyscraper (50+ fl)</label></div>
-  </div>
-
-  <div class="filter-section">
-    <div class="section-label">Building Use</div>
-    <div class="section-hint">Filter by primary use</div>
+  <div class="filter-section fs-use">
+    <div class="section-label">Use</div>
     <div class="filter-check"><input type="checkbox" id="use-residential" checked data-use="residential"><label for="use-residential">Residential</label></div>
     <div class="filter-check sub-filter"><input type="checkbox" id="use-1fam" checked data-use="1fam"><label for="use-1fam">1-Family</label></div>
     <div class="filter-check sub-filter"><input type="checkbox" id="use-2fam" checked data-use="2fam"><label for="use-2fam">2-Family</label></div>
@@ -507,12 +493,30 @@
     <div class="filter-check"><input type="checkbox" id="use-other" checked data-use="other"><label for="use-other">Other</label></div>
   </div>
 
-  <div class="filter-section">
+  <div class="filter-section fs-height">
+    <div class="section-label">Height</div>
+    <div class="filter-check"><input type="checkbox" id="ht-single" checked data-ht="single"><label for="ht-single">Single-story (1 fl)</label></div>
+    <div class="filter-check"><input type="checkbox" id="ht-low" checked data-ht="low"><label for="ht-low">Low-rise (2-6 fl)</label></div>
+    <div class="filter-check"><input type="checkbox" id="ht-mid" checked data-ht="mid"><label for="ht-mid">Mid-rise (7-20 fl)</label></div>
+    <div class="filter-check"><input type="checkbox" id="ht-high" checked data-ht="high"><label for="ht-high">High-rise (21-49 fl)</label></div>
+    <div class="filter-check"><input type="checkbox" id="ht-super" checked data-ht="super"><label for="ht-super">Skyscraper (50+ fl)</label></div>
+  </div>
+
+  <div class="filter-section fs-spotlight">
     <div class="section-label">Spotlight</div>
     <div class="section-hint">Dim everything except one category</div>
     <div class="filter-check"><input type="checkbox" id="hl-landmarks" data-hl="landmarks"><label for="hl-landmarks" style="color:#FFD700">Landmarks only</label></div>
     <div class="filter-check"><input type="checkbox" id="hl-demolished" data-hl="demolished"><label for="hl-demolished" style="color:#FF3C3C">Demolished only</label></div>
     <div class="filter-check"><input type="checkbox" id="hl-vacant" data-hl="vacant"><label for="hl-vacant" style="color:#DDE44C">Vacant lots</label></div>
+  </div>
+
+  <div class="filter-section fs-boro">
+    <div class="section-label">Borough</div>
+    <div class="filter-check"><input type="checkbox" id="boro-1" checked data-boro="1"><label for="boro-1" class="boro-mn">Manhattan</label></div>
+    <div class="filter-check"><input type="checkbox" id="boro-3" checked data-boro="3"><label for="boro-3" class="boro-bk">Brooklyn</label></div>
+    <div class="filter-check"><input type="checkbox" id="boro-4" checked data-boro="4"><label for="boro-4" class="boro-qn">Queens</label></div>
+    <div class="filter-check"><input type="checkbox" id="boro-2" checked data-boro="2"><label for="boro-2" class="boro-bx">Bronx</label></div>
+    <div class="filter-check"><input type="checkbox" id="boro-5" checked data-boro="5"><label for="boro-5" class="boro-si">Staten Island</label></div>
   </div>
 </div>
 
