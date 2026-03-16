@@ -487,6 +487,7 @@
     <div class="section-label">Building Use</div>
     <div class="section-hint">Filter by primary use</div>
     <div class="filter-check"><input type="checkbox" id="use-residential" checked data-use="residential"><label for="use-residential">Residential</label></div>
+    <div class="filter-check"><input type="checkbox" id="use-mixed" checked data-use="mixed"><label for="use-mixed">Mixed Use</label></div>
     <div class="filter-check"><input type="checkbox" id="use-commercial" checked data-use="commercial"><label for="use-commercial">Commercial</label></div>
     <div class="filter-check"><input type="checkbox" id="use-industrial" checked data-use="industrial"><label for="use-industrial">Industrial</label></div>
     <div class="filter-check"><input type="checkbox" id="use-institutional" checked data-use="institutional"><label for="use-institutional">Institutional</label></div>
@@ -615,7 +616,7 @@ const state = {
     boroughs: new Set([1,2,3,4,5]),
     eras: new Set(['colonial','antebellum','prewar','postwar','modern','unknown']),
     heights: new Set(['single','low','mid','high','super']),
-    uses: new Set(['residential','commercial','industrial','institutional','other']),
+    uses: new Set(['residential','mixed','commercial','industrial','institutional','other']),
     highlightLandmarks: false,
     highlightDemolished: false,
     highlightVacant: false,
@@ -665,7 +666,8 @@ function getEra(yb) {
 function getHt(nf) { return nf <= 1 ? 'single' : nf <= 6 ? 'low' : nf <= 20 ? 'mid' : nf <= 49 ? 'high' : 'super'; }
 
 const USE_MAP = { A:'residential', B:'residential', C:'residential', D:'residential', R:'residential',
-  H:'commercial', J:'commercial', K:'commercial', L:'commercial', O:'commercial', S:'commercial',
+  S:'mixed',
+  H:'commercial', J:'commercial', K:'commercial', L:'commercial', O:'commercial',
   E:'industrial', F:'industrial', G:'industrial', T:'industrial', U:'industrial',
   I:'institutional', M:'institutional', N:'institutional', W:'institutional',
   P:'other', Q:'other', V:'other', Z:'other' };
