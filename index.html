@@ -962,20 +962,38 @@ function updateLayers() {
 
   const layers = [parksLayer, layer];
 
-  // Construction overlay — cyan pulsing rings on active construction sites
+  // Construction overlay — pulsating cyan dots on active construction sites
   if (state.filters.highlightConstruction && state.constructionSites && state.constructionSites.length > 0) {
+    const pulse = (Math.sin(Date.now() / 400) + 1) / 2; // 0..1 oscillation
+    const alpha = 100 + pulse * 120; // 100..220
+    const radiusScale = 0.7 + pulse * 0.6; // 0.7..1.3
+
+    // Outer glow ring
+    layers.push(new deck.ScatterplotLayer({
+      id: 'construction-glow',
+      data: state.constructionSites,
+      getPosition: d => d.pos,
+      getFillColor: [0, 229, 255, alpha * 0.3],
+      getRadius: 40 * radiusScale,
+      radiusUnits: 'meters',
+      radiusMinPixels: 6,
+      radiusMaxPixels: 22,
+      pickable: false,
+    }));
+
+    // Core dot
     layers.push(new deck.ScatterplotLayer({
       id: 'construction',
       data: state.constructionSites,
       getPosition: d => d.pos,
-      getFillColor: [0, 229, 255, 160],
-      getLineColor: [0, 229, 255, 220],
-      getRadius: 25,
+      getFillColor: [0, 229, 255, alpha],
+      getLineColor: [255, 255, 255, alpha * 0.5],
+      getRadius: 20 * radiusScale,
       radiusUnits: 'meters',
-      radiusMinPixels: 4,
-      radiusMaxPixels: 16,
+      radiusMinPixels: 3,
+      radiusMaxPixels: 14,
       stroked: true,
-      lineWidthMinPixels: 2,
+      lineWidthMinPixels: 1,
       pickable: true,
       onHover: info => {
         if (info.object) {
@@ -998,6 +1016,23 @@ function updateLayers() {
   // Force deck.gl to redraw immediately, then also trigger Mapbox repaint
   if (state.deckgl._deck) state.deckgl._deck.redraw(true);
   state.map.triggerRepaint();
+}
+
+// Construction pulse animation
+let _pulseRAF = null;
+function pulseConstruction() {
+  if (!state.filters.highlightConstruction || !state.constructionSites) {
+    _pulseRAF = null;
+    return;
+  }
+  updateLayers();
+  _pulseRAF = requestAnimationFrame(pulseConstruction);
+}
+function startPulse() {
+  if (!_pulseRAF) _pulseRAF = requestAnimationFrame(pulseConstruction);
+}
+function stopPulse() {
+  if (_pulseRAF) { cancelAnimationFrame(_pulseRAF); _pulseRAF = null; }
 }
 
 // ============================================================
@@ -1419,12 +1454,16 @@ function setupControls() {
     if (e.target.checked) {
       clearOtherSpotlights('construction');
       // Fetch construction data on first use
-      if (!state.constructionBBLs) {
+      if (!state.constructionSites) {
         const statusEl = document.getElementById('construction-status');
         statusEl.textContent = 'loading...';
         try {
-          const url = "https://data.cityofnewyork.us/resource/w9ak-ipjd.json?$where=filing_status='Permit Issued' AND (job_type='New Building' OR job_type='ALT-CO - New Building with Existing Elements to Remain')&$select=bbl,house_no,street_name,borough,proposed_no_of_stories,latitude,longitude&$limit=500";
-          const resp = await fetch(url);
+          // Fetch all new building permits (Permit Entire + Permit Issued) filed since 2023
+          const baseUrl = "https://data.cityofnewyork.us/resource/w9ak-ipjd.json";
+          const where = encodeURIComponent("(job_type='New Building' OR job_type='ALT-CO - New Building with Existing Elements to Remain') AND (filing_status='Permit Entire' OR filing_status='Permit Issued') AND filing_date>'2023-01-01T00:00:00'");
+          const fields = "bbl,house_no,street_name,borough,proposed_no_of_stories,latitude,longitude";
+          // Paginate (API max 50K per request, we expect ~9K)
+          const resp = await fetch(`${baseUrl}?$where=${where}&$select=${fields}&$limit=15000`);
           const data = await resp.json();
           state.constructionSites = [];
           for (const d of data) {
@@ -1437,7 +1476,7 @@ function setupControls() {
               });
             }
           }
-          statusEl.textContent = `(${data.length} sites)`;
+          statusEl.textContent = `(${state.constructionSites.length.toLocaleString()} sites)`;
         } catch (err) {
           statusEl.textContent = 'fetch failed';
           console.error('Construction data fetch failed:', err);
@@ -1445,6 +1484,7 @@ function setupControls() {
       }
     }
     _filterVersion++; updateLayers(); updateStats();
+    if (e.target.checked) startPulse(); else stopPulse();
   });
 
   // All/None toggles per section
