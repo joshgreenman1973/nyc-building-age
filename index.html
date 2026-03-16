@@ -1142,7 +1142,8 @@ function updateLegend() {
       <div class="legend-item"><div class="legend-swatch" style="background:#B05030"></div> 50 years</div>
       <div class="legend-item"><div class="legend-swatch" style="background:#703C60"></div> 100 years*</div>
       <div class="legend-item"><div class="legend-swatch" style="background:#553C82"></div> 200+ years*</div>
-      <div style="font-size:8px;color:#666;margin:4px 0 0 18px;line-height:1.3;">*Dates before ~1950 are approximate</div>`;
+      <div style="font-size:8px;color:#666;margin:4px 0 0 18px;line-height:1.3;">*Dates before ~1950 are approximate</div>
+      <div style="font-size:8px;color:#666;margin:2px 0 0 18px;line-height:1.3;">Brighter = taller building</div>`;
   } else if (mode === 'height') {
     html = `<div class="legend-title">Color: Building Height</div>
       <div style="font-size:9px;color:#777;margin-bottom:6px;">Redder = taller building</div>
@@ -1159,7 +1160,8 @@ function updateLegend() {
       <div class="legend-item"><div class="legend-swatch" style="background:rgb(100,100,200)"></div> Elevator Apt</div>
       <div class="legend-item"><div class="legend-swatch" style="background:rgb(80,130,200)"></div> Office</div>
       <div class="legend-item"><div class="legend-swatch" style="background:rgb(80,120,80)"></div> Retail</div>
-      <div class="legend-item"><div class="legend-swatch" style="background:rgb(200,150,60)"></div> Warehouse</div>`;
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(200,150,60)"></div> Warehouse</div>
+      <div style="font-size:8px;color:#666;margin:4px 0 0 18px;line-height:1.3;">Brighter = taller building</div>`;
   } else if (mode === 'borough') {
     html = `<div class="legend-title">Color: Borough</div>
       <div style="font-size:9px;color:#777;margin-bottom:6px;">Each borough has its own color</div>
@@ -1167,7 +1169,8 @@ function updateLegend() {
       <div class="legend-item"><div class="legend-swatch" style="background:rgb(102,187,255)"></div> Brooklyn</div>
       <div class="legend-item"><div class="legend-swatch" style="background:rgb(136,221,102)"></div> Queens</div>
       <div class="legend-item"><div class="legend-swatch" style="background:rgb(221,119,204)"></div> Bronx</div>
-      <div class="legend-item"><div class="legend-swatch" style="background:rgb(255,204,68)"></div> Staten Island</div>`;
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(255,204,68)"></div> Staten Island</div>
+      <div style="font-size:8px;color:#666;margin:4px 0 0 18px;line-height:1.3;">Brighter = taller building</div>`;
   }
 
   // Common items — always visible regardless of mode
