@@ -524,6 +524,7 @@
     <div class="filter-check"><input type="checkbox" id="hl-landmarks" data-hl="landmarks"><label for="hl-landmarks" style="color:#FFD700">Landmarks only</label></div>
     <div class="filter-check"><input type="checkbox" id="hl-demolished" data-hl="demolished"><label for="hl-demolished" style="color:#FF3C3C">Demolished only</label></div>
     <div class="filter-check"><input type="checkbox" id="hl-vacant" data-hl="vacant"><label for="hl-vacant" style="color:#DDE44C">Vacant lots</label></div>
+    <div class="filter-check"><input type="checkbox" id="hl-construction"><label for="hl-construction" style="color:#00E5FF">Under construction</label> <span id="construction-status" style="font-size:8px;color:#555;"></span></div>
   </div>
 
   <div class="filter-section fs-boro">
@@ -650,6 +651,7 @@ const state = {
     highlightLandmarks: false,
     highlightDemolished: false,
     highlightVacant: false,
+    highlightConstruction: false,
   },
 };
 
@@ -958,7 +960,41 @@ function updateLayers() {
     updateTriggers: { getFillColor: [yr] },
   });
 
-  state.deckgl.setProps({ layers: [parksLayer, layer] });
+  const layers = [parksLayer, layer];
+
+  // Construction overlay — cyan pulsing rings on active construction sites
+  if (state.filters.highlightConstruction && state.constructionSites && state.constructionSites.length > 0) {
+    layers.push(new deck.ScatterplotLayer({
+      id: 'construction',
+      data: state.constructionSites,
+      getPosition: d => d.pos,
+      getFillColor: [0, 229, 255, 160],
+      getLineColor: [0, 229, 255, 220],
+      getRadius: 25,
+      radiusUnits: 'meters',
+      radiusMinPixels: 4,
+      radiusMaxPixels: 16,
+      stroked: true,
+      lineWidthMinPixels: 2,
+      pickable: true,
+      onHover: info => {
+        if (info.object) {
+          const tt = document.getElementById('tooltip');
+          const addr = info.object.addr.replace(/\w\S*/g, w => w.charAt(0) + w.slice(1).toLowerCase());
+          tt.innerHTML = `<div class="tt-address">${addr || 'Construction Site'}</div>
+            <div class="tt-row"><span>Status</span><span style="color:#00E5FF">Under Construction</span></div>
+            ${info.object.stories !== '?' ? `<div class="tt-row"><span>Proposed floors</span><span>${info.object.stories}</span></div>` : ''}
+            ${info.object.borough ? `<div class="tt-row"><span>Borough</span><span>${info.object.borough.charAt(0) + info.object.borough.slice(1).toLowerCase()}</span></div>` : ''}
+            <div style="font-size:8px;color:#666;margin-top:4px;">Source: DOB NOW</div>`;
+          tt.style.display = 'block';
+          tt.style.left = (info.x + 12) + 'px';
+          tt.style.top = (info.y + 12) + 'px';
+        }
+      },
+    }));
+  }
+
+  state.deckgl.setProps({ layers });
   // Force deck.gl to redraw immediately, then also trigger Mapbox repaint
   if (state.deckgl._deck) state.deckgl._deck.redraw(true);
   state.map.triggerRepaint();
@@ -1348,19 +1384,66 @@ function setupControls() {
     });
   });
 
+  function clearOtherSpotlights(except) {
+    const spotlights = {
+      landmarks: { el: 'hl-landmarks', key: 'highlightLandmarks' },
+      demolished: { el: 'hl-demolished', key: 'highlightDemolished' },
+      vacant: { el: 'hl-vacant', key: 'highlightVacant' },
+      construction: { el: 'hl-construction', key: 'highlightConstruction' },
+    };
+    for (const [name, s] of Object.entries(spotlights)) {
+      if (name !== except) {
+        document.getElementById(s.el).checked = false;
+        state.filters[s.key] = false;
+      }
+    }
+  }
+
   document.getElementById('hl-landmarks').addEventListener('change', (e) => {
     state.filters.highlightLandmarks = e.target.checked;
-    if (e.target.checked) { document.getElementById('hl-demolished').checked = false; state.filters.highlightDemolished = false; document.getElementById('hl-vacant').checked = false; state.filters.highlightVacant = false; }
+    if (e.target.checked) clearOtherSpotlights('landmarks');
     _filterVersion++; updateLayers(); updateStats();
   });
   document.getElementById('hl-demolished').addEventListener('change', (e) => {
     state.filters.highlightDemolished = e.target.checked;
-    if (e.target.checked) { document.getElementById('hl-landmarks').checked = false; state.filters.highlightLandmarks = false; document.getElementById('hl-vacant').checked = false; state.filters.highlightVacant = false; }
+    if (e.target.checked) clearOtherSpotlights('demolished');
     _filterVersion++; updateLayers(); updateStats();
   });
   document.getElementById('hl-vacant').addEventListener('change', (e) => {
     state.filters.highlightVacant = e.target.checked;
-    if (e.target.checked) { document.getElementById('hl-landmarks').checked = false; state.filters.highlightLandmarks = false; document.getElementById('hl-demolished').checked = false; state.filters.highlightDemolished = false; }
+    if (e.target.checked) clearOtherSpotlights('vacant');
+    _filterVersion++; updateLayers(); updateStats();
+  });
+  document.getElementById('hl-construction').addEventListener('change', async (e) => {
+    state.filters.highlightConstruction = e.target.checked;
+    if (e.target.checked) {
+      clearOtherSpotlights('construction');
+      // Fetch construction data on first use
+      if (!state.constructionBBLs) {
+        const statusEl = document.getElementById('construction-status');
+        statusEl.textContent = 'loading...';
+        try {
+          const url = "https://data.cityofnewyork.us/resource/w9ak-ipjd.json?$where=filing_status='Permit Issued' AND (job_type='New Building' OR job_type='ALT-CO - New Building with Existing Elements to Remain')&$select=bbl,house_no,street_name,borough,proposed_no_of_stories,latitude,longitude&$limit=500";
+          const resp = await fetch(url);
+          const data = await resp.json();
+          state.constructionSites = [];
+          for (const d of data) {
+            if (d.latitude && d.longitude) {
+              state.constructionSites.push({
+                pos: [parseFloat(d.longitude), parseFloat(d.latitude)],
+                addr: ((d.house_no || '') + ' ' + (d.street_name || '')).trim(),
+                borough: d.borough || '',
+                stories: d.proposed_no_of_stories || '?',
+              });
+            }
+          }
+          statusEl.textContent = `(${data.length} sites)`;
+        } catch (err) {
+          statusEl.textContent = 'fetch failed';
+          console.error('Construction data fetch failed:', err);
+        }
+      }
+    }
     _filterVersion++; updateLayers(); updateStats();
   });
 
