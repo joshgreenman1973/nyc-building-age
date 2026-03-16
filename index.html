@@ -71,6 +71,31 @@
     color: #666; font-size: 18px; line-height: 1; pointer-events: auto;
     transition: color 0.2s;
   }
+  #methodology-overlay {
+    display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 520px; max-width: 90vw; max-height: 80vh; overflow-y: auto;
+    background: rgba(10,10,10,0.96); backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.12); border-radius: 8px;
+    padding: 24px 28px; z-index: 100; pointer-events: auto;
+    font-size: 11px; line-height: 1.55; color: #999;
+  }
+  #methodology-overlay.show { display: block; }
+  #methodology-overlay h2 { font-size: 14px; color: #ddd; margin: 0 0 12px; font-weight: 600; }
+  #methodology-overlay h3 { font-size: 11px; color: #FF9020; margin: 14px 0 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+  #methodology-overlay p { margin: 0 0 8px; }
+  #methodology-overlay a { color: #aaa; text-decoration: underline; }
+  #methodology-overlay .def { margin: 0 0 6px; padding-left: 10px; border-left: 2px solid rgba(255,255,255,0.08); }
+  #methodology-overlay .def strong { color: #ccc; }
+  #methodology-overlay .close-btn {
+    position: absolute; top: 12px; right: 16px; cursor: pointer;
+    color: #666; font-size: 20px; line-height: 1; transition: color 0.2s;
+  }
+  #methodology-overlay .close-btn:hover { color: #fff; }
+  #methodology-backdrop {
+    display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.6); z-index: 99;
+  }
+  #methodology-backdrop.show { display: block; }
   #info-close:hover { color: #fff; }
 
   #infographic-top-link {
@@ -448,6 +473,81 @@
   <p>Dates after ~1950 are more trustworthy but still imperfect. About 39,000 lots have no recorded year at all. Demolition tracking only begins around 2000. Floor counts are self-reported. Landmark designations cover individual buildings only, not historic districts.</p>
 </div>
 
+<div id="methodology-backdrop"></div>
+<div id="methodology-overlay">
+  <span class="close-btn" id="methodology-close">&times;</span>
+  <h2>Methodology &amp; Definitions</h2>
+
+  <h3>Data Source</h3>
+  <p>Building data comes from <a href="https://www.nyc.gov/site/planning/data-maps/open-data/dwn-pluto-mappluto.page" target="_blank">MapPLUTO</a> (Primary Land Use Tax Lot Output), published by the NYC Department of City Planning. MapPLUTO merges tax lot data from the Department of Finance with building and zoning information from the Department of Buildings and City Planning. The dataset used here is version 25v1 (January 2025) and contains approximately 857,000 building records.</p>
+
+  <h3>Construction Era</h3>
+  <div class="def"><strong>Colonial (pre-1800)</strong> — MapPLUTO <code>YearBuilt</code> before 1800. Extremely unreliable; very few buildings carry dates this old in city records.</div>
+  <div class="def"><strong>19th Century (1800–1899)</strong> — <code>YearBuilt</code> between 1800 and 1899. Significantly undercounted. The city's DOB permit records do not reliably go back this far, so many 19th-century buildings are tagged with later dates or have no date at all.</div>
+  <div class="def"><strong>Prewar (1900–1945)</strong> — <code>YearBuilt</code> between 1900 and 1945. More reliable than earlier eras but still imperfect, especially for buildings constructed before ~1950.</div>
+  <div class="def"><strong>Postwar (1946–1979)</strong> — <code>YearBuilt</code> between 1946 and 1979. Generally reliable.</div>
+  <div class="def"><strong>Modern (1980+)</strong> — <code>YearBuilt</code> of 1980 or later. Most reliable era in the dataset.</div>
+  <div class="def"><strong>Unknown year</strong> — <code>YearBuilt</code> is 0 or missing. Approximately 39,000 lots.</div>
+  <p style="color:#FF9020;font-size:10px;"><strong>Important:</strong> Dates before roughly 1950 are highly unreliable. The city's building records (MapPLUTO YearBuilt) come from DOB permit filings, which were not designed as a historical archive. Much of New York was built in the 1800s, but the data dramatically undercounts pre-1900 construction. (<a href="https://www.reddit.com/r/centuryhomes/comments/1ggn7u3/how_accurate_are_date_built_records/" target="_blank">More</a>, <a href="https://www.reddit.com/r/AskNYC/comments/12uaoao/can_you_reliably_find_the_yeardecade_of/" target="_blank">more</a>)</p>
+
+  <h3>Building Height</h3>
+  <div class="def"><strong>Single-story (1 fl)</strong> — MapPLUTO <code>NumFloors</code> = 1 or 0 (defaulted to 1).</div>
+  <div class="def"><strong>Low-rise (2–6 fl)</strong> — <code>NumFloors</code> between 2 and 6. Includes most row houses and walk-up apartment buildings.</div>
+  <div class="def"><strong>Mid-rise (7–20 fl)</strong> — <code>NumFloors</code> between 7 and 20.</div>
+  <div class="def"><strong>High-rise (21–49 fl)</strong> — <code>NumFloors</code> between 21 and 49.</div>
+  <div class="def"><strong>Skyscraper (50+ fl)</strong> — <code>NumFloors</code> of 50 or more.</div>
+  <p>Floor counts are self-reported by building owners to the Department of Finance and may not always reflect current conditions.</p>
+
+  <h3>Building Use</h3>
+  <p>Derived from the first character of MapPLUTO's <code>BldgClass</code> field, which uses the <a href="https://www.nyc.gov/assets/finance/jump/hlpbldgcode.html" target="_blank">NYC Department of Finance building classification system</a>.</p>
+  <div class="def"><strong>Residential</strong> — Class A (one-family), B (two-family), C (walk-up apartment), D (elevator apartment), R (condominium).</div>
+  <div class="def" style="padding-left:20px;"><strong>1-Family</strong> — Class A. Detached and attached one-family homes.</div>
+  <div class="def" style="padding-left:20px;"><strong>2-Family</strong> — Class B. Two-family homes.</div>
+  <div class="def" style="padding-left:20px;"><strong>Walk-Up</strong> — Class C. Apartment buildings without elevators, typically under 6 stories.</div>
+  <div class="def" style="padding-left:20px;"><strong>Elevator/Condo</strong> — Classes D (elevator apartments) and R (condominiums).</div>
+  <div class="def"><strong>Mixed Use</strong> — Class S. Buildings combining residential with commercial use, such as ground-floor retail with apartments above.</div>
+  <div class="def"><strong>Commercial</strong> — Classes H (hotels), J (theaters/auditoriums), K (stores/retail), L (lofts), O (offices).</div>
+  <div class="def"><strong>Industrial</strong> — Classes E (warehouses), F (factories), G (garages), T (transportation facilities), U (utilities).</div>
+  <div class="def"><strong>Institutional</strong> — Classes I (hospitals/health facilities), M (religious buildings), N (asylums/civic institutions), W (schools/educational buildings).</div>
+  <div class="def" style="padding-left:20px;"><strong>Religious</strong> — Class M. Churches, synagogues, mosques, and other houses of worship.</div>
+  <div class="def" style="padding-left:20px;"><strong>Schools</strong> — Class W. Public and private schools, colleges, and other educational facilities.</div>
+  <div class="def" style="padding-left:20px;"><strong>Hospitals</strong> — Class I. Hospitals, clinics, and health facilities.</div>
+  <div class="def" style="padding-left:20px;"><strong>Other Civic</strong> — Class N. Asylums, nursing homes, and other institutional facilities.</div>
+  <div class="def"><strong>Other</strong> — Classes P (outdoor recreation), Q (parks/open space), V (vacant land), Z (miscellaneous), and any unrecognized class codes.</div>
+
+  <h3>Borough</h3>
+  <p>Derived from MapPLUTO <code>BoroCode</code>: 1 = Manhattan, 2 = Bronx, 3 = Brooklyn, 4 = Queens, 5 = Staten Island.</p>
+
+  <h3>Spotlight Layers</h3>
+  <div class="def"><strong>Landmarks</strong> — Buildings individually designated as landmarks by the NYC <a href="https://www.nyc.gov/site/lpc/index.page" target="_blank">Landmarks Preservation Commission</a>. Data from LPC's public designations list. Note: Historic <em>districts</em> are not included — only individual landmark designations.</div>
+  <div class="def"><strong>Demolished</strong> — Buildings with recorded demolition permits in DOB filings (approximately 2000 onward). Earlier demolitions are not tracked. Derived from DOB job filings with job type "DM" (Demolition).</div>
+  <div class="def"><strong>Vacant lots</strong> — Tax lots with building class starting with "V" (Vacant Land) in MapPLUTO.</div>
+  <div class="def"><strong>Under Construction</strong> — Active new-building permits from the <a href="https://data.cityofnewyork.us/Housing-Development/DOB-NOW-Build-Job-Application-Filings/w9ak-ipjd" target="_blank">DOB NOW: Build</a> filing system. Includes jobs with types "New Building" and "ALT-CO — New Building with Existing Elements to Remain" in "Permit Entire" or "Permit Issued" status, filed since January 2023. Fetched live from the NYC Open Data API. Does not include renovations or alterations to existing buildings.</div>
+
+  <h3>Color Modes</h3>
+  <div class="def"><strong>Age</strong> — Buildings colored on a warm-to-cool gradient. Bright orange = recently built; darker orange = ~50 years old; mauve/purple = ~100 years; deep purple = 200+ years. Gold-tinted dots indicate individually landmarked buildings. Red flash indicates a recently demolished building.</div>
+  <div class="def"><strong>Height</strong> — Buildings colored on a cream-to-crimson gradient based on floor count: pale cream = 1 floor; warm gold = mid-rise; deep crimson = 50+ floors.</div>
+  <div class="def"><strong>Type</strong> — Each building class is assigned a distinct color. See Building Use definitions above for the class-to-category mapping.</div>
+  <div class="def"><strong>Borough</strong> — Each borough gets a distinct color: Manhattan (amber), Bronx (pink), Brooklyn (blue), Queens (green), Staten Island (yellow).</div>
+
+  <h3>Other Data</h3>
+  <div class="def"><strong>Parks</strong> — Green polygons from NYC Parks Department open data. Shown at all times regardless of filters.</div>
+  <div class="def"><strong>Addresses</strong> — Derived from MapPLUTO <code>Address</code> field. Title-cased for display. Some lots have no address recorded.</div>
+  <div class="def"><strong>Lot size</strong> — Dot radius is proportional to MapPLUTO <code>LotArea</code> (in square feet), clamped to a reasonable range.</div>
+  <div class="def"><strong>Building count</strong> — The "812,036 Buildings" counter reflects the number of buildings currently visible given the active year and filters, not the total in the dataset (857,000).</div>
+
+  <h3>Known Limitations</h3>
+  <p>• Construction dates before ~1950 are highly unreliable (see above).<br>
+  • Demolition records only go back to approximately 2000.<br>
+  • Floor counts are self-reported and may be outdated.<br>
+  • Landmark data covers individual designations only, not historic districts.<br>
+  • Under Construction data covers DOB NOW filings only, not the older BIS system; some active construction sites may be missing.<br>
+  • Building class codes are assigned by the Department of Finance for tax purposes and may not perfectly reflect a building's current use.<br>
+  • MapPLUTO is updated quarterly; the data here may lag real-world conditions by several months.</p>
+
+  <p style="margin-top:12px;font-size:10px;color:#666;">Last updated: March 2026. Data sources: NYC Department of City Planning (MapPLUTO 25v1), NYC Landmarks Preservation Commission, NYC Department of Buildings (DOB NOW: Build), NYC Parks Department.</p>
+</div>
+
 <div id="year-display">2026</div>
 <div id="anim-caveat">Pre-1900 dates are unreliable — fast-forwarding</div>
 
@@ -587,7 +687,7 @@
     </div>
   </div>
   <div id="footer-row">
-    <span id="credit">Conceived by Josh Greenman. Built by Claude Code. Data may contain errors — AI, like people, makes mistakes.</span>
+    <span id="credit">Conceived by Josh Greenman. Built by Claude Code. Data may contain errors — AI, like people, makes mistakes. <a href="#" id="methodology-link" style="color:#888;text-decoration:underline;">Methodology &amp; Definitions</a></span>
   </div>
 </div>
 
@@ -1560,6 +1660,23 @@ function setupControls() {
   document.getElementById('info-close').addEventListener('click', () => {
     if (infoAutoFadeTimer) { clearTimeout(infoAutoFadeTimer); infoAutoFadeTimer = null; }
     hideInfo();
+  });
+
+  // Methodology overlay
+  const methOverlay = document.getElementById('methodology-overlay');
+  const methBackdrop = document.getElementById('methodology-backdrop');
+  document.getElementById('methodology-link').addEventListener('click', (e) => {
+    e.preventDefault();
+    methOverlay.classList.add('show');
+    methBackdrop.classList.add('show');
+  });
+  document.getElementById('methodology-close').addEventListener('click', () => {
+    methOverlay.classList.remove('show');
+    methBackdrop.classList.remove('show');
+  });
+  methBackdrop.addEventListener('click', () => {
+    methOverlay.classList.remove('show');
+    methBackdrop.classList.remove('show');
   });
 
   // Mobile toggle buttons for legend/filters
