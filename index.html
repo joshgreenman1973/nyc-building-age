@@ -950,6 +950,9 @@ function getColor(i, yr) {
   if (isFiltered(i)) return [0,0,0,0];
   if (state.filters.highlightVacant && cls.charAt(0) === 'V') return [221, 228, 76, 210]; // chartreuse
 
+  // Dim all buildings when Under Construction spotlight is active
+  const _dim = state.filters.highlightConstruction && state.constructionSites;
+
   // Not yet built or unknown year
   if (yb > yr || yb <= 0) return [0,0,0,0];
 
@@ -958,21 +961,24 @@ function getColor(i, yr) {
     const floors = Math.max(nf, 1);
     const t = Math.min((floors - 1) / 50, 1); // 1..50+ floors mapped to 0..1
     // Pale cream → warm gold → deep crimson
+    const a = _dim ? 40 : (160 + (t * 60) | 0);
     return [
       200 + (t * 55) | 0,    // 200 → 255
       200 - (t * 140) | 0,   // 200 → 60
       180 - (t * 160) | 0,   // 180 → 20
-      160 + (t * 60) | 0,
+      a,
     ];
   }
   // Color mode: type
   if (state.colorMode === 'class') {
     const ci = cls.charCodeAt(0) - 65;
-    return (ci >= 0 && ci < 26 && CLASS_COLORS[ci]) ? CLASS_COLORS[ci] : [80,80,80,160];
+    const c = (ci >= 0 && ci < 26 && CLASS_COLORS[ci]) ? CLASS_COLORS[ci] : [80,80,80,160];
+    return _dim ? [c[0], c[1], c[2], 40] : c;
   }
   // Color mode: borough
   if (state.colorMode === 'borough') {
-    return BORO_COLORS[bc] || [80,80,80,160];
+    const c = BORO_COLORS[bc] || [80,80,80,160];
+    return _dim ? [c[0], c[1], c[2], 40] : c;
   }
 
   // Age mode
@@ -980,11 +986,12 @@ function getColor(i, yr) {
   if (dy > 0 && dy <= yr) {
     if (ry > 0 && ry <= yr) {
       const ra = yr - ry;
-      if (ra < 5) { const t = 1 - ra/5; return [0, 140+(t*81)|0, 180+(t*75)|0, 220]; }
-      return ageGradient(ra);
+      if (ra < 5) { const t = 1 - ra/5; const a = _dim ? 40 : 220; return [0, 140+(t*81)|0, 180+(t*75)|0, a]; }
+      const c = ageGradient(ra);
+      return _dim ? [c[0], c[1], c[2], 40] : c;
     }
     const da = yr - dy;
-    if (da < 2) return [255, 60, 60, 220 - (da*80)|0]; // demolition flash stays full
+    if (da < 2) return _dim ? [255, 60, 60, 40] : [255, 60, 60, 220 - (da*80)|0];
     return [0,0,0,0];
   }
 
@@ -993,10 +1000,12 @@ function getColor(i, yr) {
   // Landmark?
   if (ly > 0 && ly <= yr) {
     const t = Math.min(age / 200, 1);
-    return [255-(t*30)|0, 200-(t*40)|0, 50+(t*20)|0, 210];
+    const a = _dim ? 40 : 210;
+    return [255-(t*30)|0, 200-(t*40)|0, 50+(t*20)|0, a];
   }
 
-  return ageGradient(age);
+  const c = ageGradient(age);
+  return _dim ? [c[0], c[1], c[2], 40] : c;
 }
 
 // ============================================================
@@ -1035,7 +1044,7 @@ function updateLayers() {
     pickable: true,
     onHover: onHover,
     updateTriggers: {
-      getFillColor: `${yr}_${state.colorMode}_${_filterVersion}`,
+      getFillColor: `${yr}_${state.colorMode}_${_filterVersion}_${state.filters.highlightConstruction}`,
       getRadius: `${_filterVersion}`,
     },
   });
