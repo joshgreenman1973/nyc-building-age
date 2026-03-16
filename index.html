@@ -91,6 +91,13 @@
     text-shadow: 0 2px 12px rgba(0,0,0,0.8);
   }
 
+  #anim-caveat {
+    display: none; position: absolute; top: 80px; right: 24px;
+    font-size: 11px; color: rgba(255,160,40,0.85); z-index: 10;
+    pointer-events: none; font-style: italic;
+    text-shadow: 0 1px 6px rgba(0,0,0,0.9);
+  }
+
   /* Mapbox zoom controls */
   .mapboxgl-ctrl-bottom-right { bottom: 110px; right: 10px; }
   .mapboxgl-ctrl-group { background: rgba(10,10,10,0.85) !important; border: 1px solid rgba(255,255,255,0.12) !important; border-radius: 4px !important; }
@@ -412,6 +419,7 @@
 </div>
 
 <div id="year-display">2026</div>
+<div id="anim-caveat">Pre-1900 dates are unreliable — fast-forwarding</div>
 
 <div id="mobile-toggles">
   <button class="mobile-tog" id="mob-legend-btn">Legend</button>
@@ -729,18 +737,18 @@ function ageGradient(age) {
 // nf=1 → factor ~0.55 (lightest), nf≥40 → factor 1.0 (full color)
 function heightFactor(nf) {
   if (nf <= 0) nf = 1;
-  const t = Math.min((nf - 1) / 39, 1); // 1..40 mapped to 0..1
-  return 0.55 + t * 0.45; // range [0.55, 1.0]
+  // Log scale spreads low-rise variation: 1fl=0, 3fl=0.29, 6fl=0.47, 20fl=0.77, 50fl=1.0
+  const t = Math.min(Math.log(nf) / Math.log(50), 1);
+  return 0.4 + t * 0.6; // range [0.4, 1.0] — wider range for more contrast
 }
 
 function applyHeight(color, nf) {
   const f = heightFactor(nf);
-  // Blend toward white for lighter (lower f) — desaturate + brighten
-  const inv = 1 - f;
+  // Low buildings get dimmer; tall buildings stay at full brightness
   return [
-    Math.min(255, (color[0] * f + 255 * inv * 0.6) | 0),
-    Math.min(255, (color[1] * f + 255 * inv * 0.6) | 0),
-    Math.min(255, (color[2] * f + 255 * inv * 0.6) | 0),
+    (color[0] * f) | 0,
+    (color[1] * f) | 0,
+    (color[2] * f) | 0,
     color[3],
   ];
 }
@@ -911,7 +919,10 @@ function animate(timestamp) {
   const rawDelta = (timestamp - state.lastFrameTime) / 1000;
   const delta = Math.min(rawDelta, 0.1); // cap at 100ms to prevent jumps
   state.lastFrameTime = timestamp;
-  state.currentYear += state.speed * delta;
+
+  // Pre-1900: run 5x faster since dates are unreliable
+  const speedMult = state.currentYear < 1900 ? 5 : 1;
+  state.currentYear += state.speed * speedMult * delta;
 
   if (state.currentYear >= MAX_YEAR) {
     state.currentYear = MAX_YEAR;
@@ -922,6 +933,12 @@ function animate(timestamp) {
   const yearInt = Math.floor(state.currentYear);
   document.getElementById('year-display').textContent = yearInt;
   document.getElementById('scrubber').value = yearInt;
+
+  // Show/hide pre-1900 caveat banner
+  const caveatBanner = document.getElementById('anim-caveat');
+  if (caveatBanner) {
+    caveatBanner.style.display = (state.playing && yearInt < 1900) ? 'block' : 'none';
+  }
 
   updateLayers();
   // Update stats less frequently (every ~10 frames)
@@ -935,13 +952,17 @@ function togglePlay() {
   if (state.playing) {
     if (state.currentYear >= MAX_YEAR) state.currentYear = MIN_YEAR;
     state.lastFrameTime = null;
-    // Immediately render the reset state so map clears before animation starts
     const yearInt = Math.floor(state.currentYear);
     document.getElementById('year-display').textContent = yearInt;
     document.getElementById('scrubber').value = yearInt;
+    const caveat = document.getElementById('anim-caveat');
+    if (caveat) caveat.style.display = yearInt < 1900 ? 'block' : 'none';
     updateLayers();
     updateStats();
     requestAnimationFrame(animate);
+  } else {
+    const caveat = document.getElementById('anim-caveat');
+    if (caveat) caveat.style.display = 'none';
   }
   updatePlayButton();
 }
