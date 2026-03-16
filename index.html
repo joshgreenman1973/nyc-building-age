@@ -278,6 +278,10 @@
   .filter-check .swatch {
     width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0;
   }
+  .filter-check.sub-filter {
+    margin-left: 19px; font-size: 10px;
+  }
+  .filter-check.sub-filter label { color: #aaa; }
 
   /* Borough colors */
   .boro-mn { color: #FF9020; }
@@ -487,10 +491,18 @@
     <div class="section-label">Building Use</div>
     <div class="section-hint">Filter by primary use</div>
     <div class="filter-check"><input type="checkbox" id="use-residential" checked data-use="residential"><label for="use-residential">Residential</label></div>
+    <div class="filter-check sub-filter"><input type="checkbox" id="use-1fam" checked data-use="1fam"><label for="use-1fam">1-Family</label></div>
+    <div class="filter-check sub-filter"><input type="checkbox" id="use-2fam" checked data-use="2fam"><label for="use-2fam">2-Family</label></div>
+    <div class="filter-check sub-filter"><input type="checkbox" id="use-walkup" checked data-use="walkup"><label for="use-walkup">Walk-Up</label></div>
+    <div class="filter-check sub-filter"><input type="checkbox" id="use-elevator" checked data-use="elevator"><label for="use-elevator">Elevator/Condo</label></div>
     <div class="filter-check"><input type="checkbox" id="use-mixed" checked data-use="mixed"><label for="use-mixed">Mixed Use</label></div>
     <div class="filter-check"><input type="checkbox" id="use-commercial" checked data-use="commercial"><label for="use-commercial">Commercial</label></div>
     <div class="filter-check"><input type="checkbox" id="use-industrial" checked data-use="industrial"><label for="use-industrial">Industrial</label></div>
     <div class="filter-check"><input type="checkbox" id="use-institutional" checked data-use="institutional"><label for="use-institutional">Institutional</label></div>
+    <div class="filter-check sub-filter"><input type="checkbox" id="use-religious" checked data-use="religious"><label for="use-religious">Religious</label></div>
+    <div class="filter-check sub-filter"><input type="checkbox" id="use-school" checked data-use="school"><label for="use-school">Schools</label></div>
+    <div class="filter-check sub-filter"><input type="checkbox" id="use-health" checked data-use="health"><label for="use-health">Hospitals</label></div>
+    <div class="filter-check sub-filter"><input type="checkbox" id="use-civic" checked data-use="civic"><label for="use-civic">Other Civic</label></div>
     <div class="filter-check"><input type="checkbox" id="use-other" checked data-use="other"><label for="use-other">Other</label></div>
   </div>
 
@@ -617,6 +629,7 @@ const state = {
     eras: new Set(['colonial','antebellum','prewar','postwar','modern','unknown']),
     heights: new Set(['single','low','mid','high','super']),
     uses: new Set(['residential','mixed','commercial','industrial','institutional','other']),
+    subUses: new Set(['1fam','2fam','walkup','elevator','religious','school','health','civic']),
     highlightLandmarks: false,
     highlightDemolished: false,
     highlightVacant: false,
@@ -672,6 +685,10 @@ const USE_MAP = { A:'residential', B:'residential', C:'residential', D:'resident
   I:'institutional', M:'institutional', N:'institutional', W:'institutional',
   P:'other', Q:'other', V:'other', Z:'other' };
 function getUse(cls) { return USE_MAP[cls.charAt(0).toUpperCase()] || 'other'; }
+
+const SUB_USE_MAP = { A:'1fam', B:'2fam', C:'walkup', D:'elevator', R:'elevator',
+  M:'religious', W:'school', I:'health', N:'civic' };
+function getSubUse(cls) { return SUB_USE_MAP[cls.charAt(0).toUpperCase()] || null; }
 
 // ============================================================
 // BINARY DATA LOADER
@@ -783,6 +800,8 @@ function isFiltered(i) {
   if (!state.filters.eras.has(getEra(yb))) return true;
   if (!state.filters.heights.has(getHt(nf))) return true;
   if (!state.filters.uses.has(getUse(cls))) return true;
+  const subUse = getSubUse(cls);
+  if (subUse && !state.filters.subUses.has(subUse)) return true;
   if (state.filters.highlightLandmarks && ly === 0) return true;
   if (state.filters.highlightDemolished && dy === 0) return true;
   if (state.filters.highlightVacant && cls.charAt(0) !== 'V') return true;
@@ -1268,9 +1287,44 @@ function setupControls() {
     });
   });
 
+  // Parent → subtype mappings for use filter
+  const PARENT_SUBS = {
+    residential: ['1fam','2fam','walkup','elevator'],
+    institutional: ['religious','school','health','civic'],
+  };
+  const SUB_TO_PARENT = {};
+  for (const [p, subs] of Object.entries(PARENT_SUBS)) {
+    for (const s of subs) SUB_TO_PARENT[s] = p;
+  }
+
   document.querySelectorAll('[data-use]').forEach(cb => {
     cb.addEventListener('change', () => {
-      if (cb.checked) state.filters.uses.add(cb.dataset.use); else state.filters.uses.delete(cb.dataset.use);
+      const use = cb.dataset.use;
+      const subs = PARENT_SUBS[use];
+      if (subs) {
+        // Parent toggle: also toggle all sub-checkboxes
+        if (cb.checked) state.filters.uses.add(use); else state.filters.uses.delete(use);
+        subs.forEach(s => {
+          const el = document.getElementById('use-' + s);
+          el.checked = cb.checked;
+          if (cb.checked) state.filters.subUses.add(s); else state.filters.subUses.delete(s);
+        });
+      } else if (SUB_TO_PARENT[use]) {
+        // Sub-checkbox: update subUses and sync parent visual
+        if (cb.checked) state.filters.subUses.add(use); else state.filters.subUses.delete(use);
+        const parent = SUB_TO_PARENT[use];
+        const parentSubs = PARENT_SUBS[parent];
+        const parentEl = document.getElementById('use-' + parent);
+        const allOn = parentSubs.every(s => state.filters.subUses.has(s));
+        const anyOn = parentSubs.some(s => state.filters.subUses.has(s));
+        parentEl.checked = anyOn;
+        parentEl.indeterminate = anyOn && !allOn;
+        // Parent use filter stays on as long as any sub is on
+        if (anyOn) state.filters.uses.add(parent); else state.filters.uses.delete(parent);
+      } else {
+        // Simple category (mixed, commercial, industrial, other)
+        if (cb.checked) state.filters.uses.add(use); else state.filters.uses.delete(use);
+      }
       _filterVersion++; updateLayers(); updateStats();
     });
   });
