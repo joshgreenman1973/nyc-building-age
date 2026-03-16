@@ -146,13 +146,22 @@
   #mode-row { order: 1; }
   /* Timeline is secondary, below */
   #timeline-row { order: 2; }
+  /* Footer at the very bottom */
+  #footer-row { order: 3; }
 
   /* Timeline scrubber */
   #timeline-row {
     display: flex; align-items: center; gap: 6px;
-    margin-top: 4px; opacity: 0.7; transition: opacity 0.2s;
+    margin-top: 4px; opacity: 0.8; transition: opacity 0.2s;
   }
   #timeline-row:hover { opacity: 1; }
+  #play-hint {
+    font-size: 9px; color: #FF9020; cursor: pointer;
+    white-space: nowrap; margin-right: 4px;
+    opacity: 0.9; transition: opacity 0.3s;
+  }
+  #play-hint:hover { opacity: 1; text-decoration: underline; }
+  #play-hint.hidden { display: none; }
   #year-label-min, #year-label-max {
     font-size: 9px; color: #555; font-variant-numeric: tabular-nums;
     min-width: 30px;
@@ -209,10 +218,10 @@
   .btn.active { background: rgba(255,144,32,0.25); color: #FF9020; border-color: rgba(255,144,32,0.4); }
 
   #play-btn {
-    width: 22px; height: 22px; border-radius: 50%;
+    width: 24px; height: 24px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    font-size: 9px; padding: 0;
-    background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.15); color: #999;
+    font-size: 10px; padding: 0;
+    background: rgba(255,144,32,0.15); border-color: rgba(255,144,32,0.3); color: #FF9020;
   }
   #play-btn:hover { background: rgba(255,255,255,0.2); color: #fff; }
   #play-btn.playing { background: #FF9020; border-color: #FF9020; color: #000; }
@@ -238,8 +247,7 @@
 
   #footer-row {
     display: flex; align-items: center; justify-content: space-between;
-    margin-top: 8px; padding-top: 8px;
-    border-top: 1px solid rgba(255,255,255,0.06);
+    margin-top: 2px; padding-top: 2px;
   }
   #infographic-link {
     font-size: 11px; color: #FF9020; text-decoration: none;
@@ -249,8 +257,9 @@
   }
   #infographic-link:hover { background: rgba(255,144,32,0.15); }
   #credit {
-    font-size: 10px; color: #555; text-align: right;
+    font-size: 8px; color: #444; text-align: center; width: 100%;
   }
+  #credit a { color: #555; }
 
   /* Color mode row — distinct visual group */
   #mode-row {
@@ -665,6 +674,7 @@
   </div>
   <div id="timeline-row">
     <button id="play-btn" class="btn" title="Play/Pause animation">&#9654;</button>
+    <span id="play-hint">Watch NYC grow</span>
     <span id="year-label-min">1700</span>
     <div id="scrubber-wrap">
       <span id="scrubber-marker-label">&#9664; dates approximate</span>
@@ -1175,6 +1185,9 @@ function animate(timestamp) {
 
 function togglePlay() {
   state.playing = !state.playing;
+  // Hide the "Watch NYC grow" hint once they've discovered the feature
+  const hint = document.getElementById('play-hint');
+  if (hint) hint.classList.add('hidden');
   if (state.playing) {
     if (state.currentYear >= MAX_YEAR) state.currentYear = MIN_YEAR;
     state.lastFrameTime = null;
@@ -1411,6 +1424,7 @@ function updateLegend() {
 
 function setupControls() {
   document.getElementById('play-btn').addEventListener('click', togglePlay);
+  document.getElementById('play-hint').addEventListener('click', togglePlay);
 
   const scrubber = document.getElementById('scrubber');
   scrubber.addEventListener('input', (e) => {
