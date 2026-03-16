@@ -484,6 +484,16 @@
   </div>
 
   <div class="filter-section">
+    <div class="section-label">Building Use</div>
+    <div class="section-hint">Filter by primary use</div>
+    <div class="filter-check"><input type="checkbox" id="use-residential" checked data-use="residential"><label for="use-residential">Residential</label></div>
+    <div class="filter-check"><input type="checkbox" id="use-commercial" checked data-use="commercial"><label for="use-commercial">Commercial</label></div>
+    <div class="filter-check"><input type="checkbox" id="use-industrial" checked data-use="industrial"><label for="use-industrial">Industrial</label></div>
+    <div class="filter-check"><input type="checkbox" id="use-institutional" checked data-use="institutional"><label for="use-institutional">Institutional</label></div>
+    <div class="filter-check"><input type="checkbox" id="use-other" checked data-use="other"><label for="use-other">Other</label></div>
+  </div>
+
+  <div class="filter-section">
     <div class="section-label">Spotlight</div>
     <div class="section-hint">Dim everything except one category</div>
     <div class="filter-check"><input type="checkbox" id="hl-landmarks" data-hl="landmarks"><label for="hl-landmarks" style="color:#FFD700">Landmarks only</label></div>
@@ -605,6 +615,7 @@ const state = {
     boroughs: new Set([1,2,3,4,5]),
     eras: new Set(['colonial','antebellum','prewar','postwar','modern','unknown']),
     heights: new Set(['single','low','mid','high','super']),
+    uses: new Set(['residential','commercial','industrial','institutional','other']),
     highlightLandmarks: false,
     highlightDemolished: false,
     highlightVacant: false,
@@ -652,6 +663,13 @@ function getEra(yb) {
   return 'modern';
 }
 function getHt(nf) { return nf <= 1 ? 'single' : nf <= 6 ? 'low' : nf <= 20 ? 'mid' : nf <= 49 ? 'high' : 'super'; }
+
+const USE_MAP = { A:'residential', B:'residential', C:'residential', D:'residential', R:'residential',
+  H:'commercial', J:'commercial', K:'commercial', L:'commercial', O:'commercial', S:'commercial',
+  E:'industrial', F:'industrial', G:'industrial', T:'industrial', U:'industrial',
+  I:'institutional', M:'institutional', N:'institutional', W:'institutional',
+  P:'other', Q:'other', V:'other', Z:'other' };
+function getUse(cls) { return USE_MAP[cls.charAt(0).toUpperCase()] || 'other'; }
 
 // ============================================================
 // BINARY DATA LOADER
@@ -762,6 +780,7 @@ function isFiltered(i) {
   if (!state.filters.boroughs.has(bc)) return true;
   if (!state.filters.eras.has(getEra(yb))) return true;
   if (!state.filters.heights.has(getHt(nf))) return true;
+  if (!state.filters.uses.has(getUse(cls))) return true;
   if (state.filters.highlightLandmarks && ly === 0) return true;
   if (state.filters.highlightDemolished && dy === 0) return true;
   if (state.filters.highlightVacant && cls.charAt(0) !== 'V') return true;
@@ -1243,6 +1262,13 @@ function setupControls() {
   document.querySelectorAll('[data-ht]').forEach(cb => {
     cb.addEventListener('change', () => {
       if (cb.checked) state.filters.heights.add(cb.dataset.ht); else state.filters.heights.delete(cb.dataset.ht);
+      _filterVersion++; updateLayers(); updateStats();
+    });
+  });
+
+  document.querySelectorAll('[data-use]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      if (cb.checked) state.filters.uses.add(cb.dataset.use); else state.filters.uses.delete(cb.dataset.use);
       _filterVersion++; updateLayers(); updateStats();
     });
   });
