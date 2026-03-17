@@ -1248,7 +1248,20 @@ function updateStats() {
     if (ly[i] > 0 && ly[i] <= yr) landmarks++;
   }
 
-  document.getElementById('stat-buildings').textContent = buildings.toLocaleString();
+  const filtered = getFilteredData();
+  let shown = 0;
+  for (const i of filtered) {
+    const y = yb[i];
+    if (y > 0 && y <= yr) {
+      const d = dy[i];
+      if (d > 0 && d <= yr) {
+        if (ry[i] > 0 && ry[i] <= yr) shown++;
+      } else {
+        shown++;
+      }
+    }
+  }
+  document.getElementById('stat-buildings').textContent = shown.toLocaleString();
   document.getElementById('stat-landmarks').textContent = landmarks.toLocaleString();
   document.getElementById('stat-demolished').textContent = demolished.toLocaleString();
   document.getElementById('stat-rebuilt').textContent = rebuilt.toLocaleString();
@@ -1612,7 +1625,7 @@ function setupControls() {
   });
 
   // All/None toggles per section
-  document.querySelectorAll('.select-toggle').forEach(toggle => {
+  document.querySelectorAll('.select-toggle[data-section]').forEach(toggle => {
     toggle.querySelector('.all').addEventListener('click', () => selectSection(toggle.dataset.section, true));
     toggle.querySelector('.none').addEventListener('click', () => selectSection(toggle.dataset.section, false));
   });
