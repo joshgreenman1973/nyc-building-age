@@ -1016,8 +1016,28 @@ let _filterVersion = 0;
 let _cachedFilterVersion = -1;
 let _filteredData = null;
 
+// Rebuild all filter Sets from DOM checkboxes — single source of truth
+function syncFiltersFromDOM() {
+  state.filters.eras = new Set();
+  document.querySelectorAll('[data-era]:checked').forEach(cb => state.filters.eras.add(cb.dataset.era));
+  state.filters.heights = new Set();
+  document.querySelectorAll('[data-ht]:checked').forEach(cb => state.filters.heights.add(cb.dataset.ht));
+  state.filters.boroughs = new Set();
+  document.querySelectorAll('[data-boro]:checked').forEach(cb => state.filters.boroughs.add(parseInt(cb.dataset.boro)));
+  // Uses: separate parents from subs
+  state.filters.uses = new Set();
+  state.filters.subUses = new Set();
+  const subKeys = new Set(['1fam','2fam','walkup','elevator','religious','school','health','civic']);
+  document.querySelectorAll('[data-use]:checked').forEach(cb => {
+    const u = cb.dataset.use;
+    if (subKeys.has(u)) state.filters.subUses.add(u);
+    else state.filters.uses.add(u);
+  });
+}
+
 function getFilteredData() {
   if (_cachedFilterVersion !== _filterVersion || !_filteredData) {
+    syncFiltersFromDOM();
     _filteredData = state.dataIndices.filter(i => !isFiltered(i));
     _cachedFilterVersion = _filterVersion;
   }
@@ -1044,6 +1064,7 @@ function updateLayers() {
     radiusMinPixels: 1,
     radiusMaxPixels: 20,
     pickable: true,
+    pickingRadius: 3,
     onHover: onHover,
     updateTriggers: {
       getFillColor: `${yr}_${state.colorMode}_${_filterVersion}_${state.filters.highlightConstruction}`,
