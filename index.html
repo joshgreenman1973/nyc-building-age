@@ -589,7 +589,7 @@
 </div>
 
 <div id="filter-panel">
-  <div class="panel-title">Filter Buildings</div>
+  <div class="panel-title">Filter Buildings <span class="select-toggle" id="global-toggle"><span class="all">All</span><span class="sep">/</span><span class="none">None</span></span></div>
 
   <div class="filter-section fs-era">
     <div class="section-label">Era <span class="select-toggle" data-section="era"><span class="all">All</span><span class="sep">/</span><span class="none">None</span></span></div>
@@ -1650,6 +1650,25 @@ function setupControls() {
     }
     _filterVersion++; updateLayers(); updateStats();
   }
+
+  // Global All/None toggle
+  document.getElementById('global-toggle').addEventListener('click', (e) => {
+    const t = e.target;
+    if (t.classList.contains('all')) {
+      selectSection('era', true); selectSection('use', true);
+      selectSection('height', true); selectSection('boro', true);
+      // Also select all sub-use checkboxes
+      document.querySelectorAll('[data-subuse]').forEach(cb => {
+        cb.checked = true; state.filters.subUses.add(cb.dataset.subuse);
+      });
+    } else if (t.classList.contains('none')) {
+      selectSection('era', false); selectSection('use', false);
+      selectSection('height', false); selectSection('boro', false);
+      document.querySelectorAll('[data-subuse]').forEach(cb => {
+        cb.checked = false; state.filters.subUses.delete(cb.dataset.subuse);
+      });
+    }
+  });
 
   // Info overlay — auto-show on load, fade after 5s
   const infoOverlay = document.getElementById('info-overlay');
