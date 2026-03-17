@@ -1029,9 +1029,10 @@ function updateLayers() {
 
   const yr = Math.floor(state.currentYear);
 
+  const filteredData = getFilteredData();
   const layer = new deck.ScatterplotLayer({
-    id: `buildings-v${_filterVersion}`,
-    data: getFilteredData(),
+    id: 'buildings',
+    data: filteredData,
     getPosition: i => [state.positions[i*2], state.positions[i*2+1]],
     getFillColor: i => getColor(i, yr),
     getRadius: i => {
@@ -1133,9 +1134,17 @@ function updateLayers() {
   }
 
   state.deckgl.setProps({ layers });
-  // Force deck.gl to redraw immediately, then also trigger Mapbox repaint
-  if (state.deckgl._deck) state.deckgl._deck.redraw(true);
+  // Force deck.gl to redraw — belt-and-suspenders approach because
+  // MapboxOverlay integration frequently skips repaints on data changes
+  if (state.deckgl._deck) {
+    state.deckgl._deck.redraw(true);
+  }
   state.map.triggerRepaint();
+  // Schedule a second forced repaint on the next frame as a fallback
+  requestAnimationFrame(() => {
+    if (state.deckgl._deck) state.deckgl._deck.redraw(true);
+    state.map.triggerRepaint();
+  });
 }
 
 // Construction pulse animation
