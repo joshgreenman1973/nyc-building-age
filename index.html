@@ -1031,7 +1031,7 @@ function updateLayers() {
 
   const filteredData = getFilteredData();
   const layer = new deck.ScatterplotLayer({
-    id: 'buildings',
+    id: `buildings-${_filterVersion}`,
     data: filteredData,
     getPosition: i => [state.positions[i*2], state.positions[i*2+1]],
     getFillColor: i => getColor(i, yr),
@@ -1651,17 +1651,14 @@ function setupControls() {
         if (checked) state.filters.heights.add(cb.dataset.ht); else state.filters.heights.delete(cb.dataset.ht);
       });
     } else if (section === 'use') {
+      // Reset both sets properly
+      const parentKeys = ['residential','mixed','commercial','industrial','institutional','other'];
+      const subKeys = ['1fam','2fam','walkup','elevator','religious','school','health','civic'];
+      parentKeys.forEach(k => { if (checked) state.filters.uses.add(k); else state.filters.uses.delete(k); });
+      subKeys.forEach(k => { if (checked) state.filters.subUses.add(k); else state.filters.subUses.delete(k); });
       document.querySelectorAll('[data-use]').forEach(cb => {
         cb.checked = checked;
         cb.indeterminate = false;
-        const use = cb.dataset.use;
-        if (checked) {
-          state.filters.uses.add(use);
-          if (state.filters.subUses !== undefined) state.filters.subUses.add(use);
-        } else {
-          state.filters.uses.delete(use);
-          if (state.filters.subUses !== undefined) state.filters.subUses.delete(use);
-        }
       });
     } else if (section === 'boro') {
       document.querySelectorAll('[data-boro]').forEach(cb => {
