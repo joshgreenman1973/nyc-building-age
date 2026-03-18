@@ -262,6 +262,115 @@
   }
   #credit a { color: #FF9020; text-decoration: underline; }
 
+  /* Share button */
+  #share-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    pointer-events: auto; cursor: pointer;
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.3);
+    background: rgba(255,255,255,0.08); color: #ccc;
+    font-size: 12px; vertical-align: middle; margin-left: 6px;
+    transition: background 0.2s, color 0.2s;
+    text-decoration: none;
+  }
+  #share-btn:hover { background: rgba(255,255,255,0.18); color: #fff; }
+  #share-toast {
+    position: absolute; top: 54px; left: 24px;
+    background: rgba(10,10,10,0.92); border: 1px solid rgba(255,144,32,0.3);
+    color: #FF9020; font-size: 11px; padding: 6px 12px; border-radius: 4px;
+    z-index: 30; opacity: 0; transition: opacity 0.3s; pointer-events: none;
+  }
+  #share-toast.show { opacity: 1; }
+
+  /* Address search */
+  #search-bar {
+    position: absolute; top: 80px; left: 24px;
+    width: 260px; z-index: 20; pointer-events: auto;
+  }
+  #search-input {
+    width: 100%; padding: 8px 30px 8px 10px;
+    background: rgba(10,10,10,0.88); border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 4px; color: #eee; font-size: 12px;
+    font-family: inherit; outline: none;
+    transition: border-color 0.2s;
+  }
+  #search-input:focus { border-color: rgba(255,144,32,0.4); }
+  #search-input::placeholder { color: #666; }
+  #search-clear {
+    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; color: #666; font-size: 14px;
+    cursor: pointer; display: none; padding: 2px;
+  }
+  #search-clear:hover { color: #aaa; }
+  #search-results {
+    display: none; position: absolute; top: 100%; left: 0; right: 0;
+    background: rgba(10,10,10,0.95); border: 1px solid rgba(255,255,255,0.12);
+    border-top: none; border-radius: 0 0 4px 4px;
+    max-height: 200px; overflow-y: auto;
+  }
+  .search-result {
+    padding: 8px 10px; font-size: 11px; color: #ccc; cursor: pointer;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .search-result:hover, .search-result.active { background: rgba(255,144,32,0.12); color: #fff; }
+  .search-result:last-child { border-bottom: none; }
+  @keyframes search-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255,144,32,0.5); }
+    50% { box-shadow: 0 0 0 8px rgba(255,144,32,0); }
+  }
+
+  /* Story UI */
+  #story-btn {
+    font-size: 9px; padding: 3px 8px; white-space: nowrap;
+    color: #aaa; margin-left: 6px;
+  }
+  #story-btn:hover { color: #FF9020; }
+  #story-menu {
+    display: none; position: absolute; bottom: calc(100% + 8px); left: 0;
+    width: 280px; background: rgba(10,10,10,0.95);
+    border: 1px solid rgba(255,255,255,0.12); border-radius: 6px;
+    padding: 8px 0; z-index: 30;
+  }
+  #story-menu.show { display: block; }
+  .story-menu-title {
+    font-size: 10px; font-weight: 600; color: #FF9020;
+    text-transform: uppercase; letter-spacing: 1px;
+    padding: 4px 14px 8px; border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .story-option {
+    padding: 8px 14px; font-size: 12px; color: #ccc; cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  .story-option:hover { background: rgba(255,144,32,0.1); color: #FF9020; }
+  .story-desc { font-size: 9px; color: #666; margin-top: 2px; }
+  #story-overlay {
+    display: none; position: absolute; bottom: 80px; left: 50%;
+    transform: translateX(-50%); width: 460px; max-width: 90vw;
+    background: rgba(10,10,10,0.94); backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;
+    padding: 14px 18px; z-index: 28;
+  }
+  #story-overlay.show { display: block; }
+  #story-title {
+    font-size: 10px; font-weight: 600; color: #FF9020;
+    text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;
+  }
+  #story-caption {
+    font-size: 13px; line-height: 1.5; color: #ddd; margin-bottom: 10px;
+  }
+  #story-controls {
+    display: flex; align-items: center; gap: 8px;
+  }
+  #story-step-label { font-size: 10px; color: #666; flex: 1; text-align: center; }
+  #story-progress {
+    height: 2px; background: rgba(255,255,255,0.06); border-radius: 1px;
+    margin-bottom: 10px; overflow: hidden;
+  }
+  #story-progress-bar {
+    height: 100%; width: 0; background: #FF9020;
+    transition: width linear;
+  }
+
   /* Color mode row — distinct visual group */
   #mode-row {
     display: flex; gap: 0; align-items: center;
@@ -468,9 +577,29 @@
 </div>
 
 <div id="title-bar">
-  <h1>Every Building <span id="info-btn" title="About this map">i</span></h1>
+  <h1>Every Building <span id="info-btn" title="About this map">i</span><span id="share-btn" title="Copy link to this view">&#128279;</span></h1>
   <div class="subtitle">Every structure in New York City — from the 1600s to today</div>
   <a id="infographic-top-link" href="infographic.html" target="_blank">By the Numbers &#8599;</a>
+</div>
+
+<div id="share-toast">Link copied!</div>
+
+<div id="search-bar">
+  <input id="search-input" type="text" placeholder="Search an address&hellip;" autocomplete="off" spellcheck="false">
+  <button id="search-clear">&times;</button>
+  <div id="search-results"></div>
+</div>
+
+<div id="story-overlay">
+  <div id="story-title"></div>
+  <div id="story-caption"></div>
+  <div id="story-progress"><div id="story-progress-bar"></div></div>
+  <div id="story-controls">
+    <button id="story-prev" class="btn" title="Previous step">&lsaquo;</button>
+    <span id="story-step-label"></span>
+    <button id="story-next" class="btn" title="Next step">&rsaquo;</button>
+    <button id="story-exit" class="btn" title="Exit tour">Exit</button>
+  </div>
 </div>
 
 <div id="info-overlay">
@@ -676,6 +805,17 @@
   <div id="timeline-row">
     <button id="play-btn" class="btn" title="Play/Pause animation">&#9654;</button>
     <span id="play-hint">Watch NYC grow</span>
+    <div style="position:relative;display:inline-block;">
+      <button id="story-btn" class="btn" title="Guided tours">Tours</button>
+      <div id="story-menu">
+        <div class="story-menu-title">Guided Tours</div>
+        <div class="story-option" data-story="growth">Watch NYC Grow<div class="story-desc">Animate 300 years of construction</div></div>
+        <div class="story-option" data-story="bronx">The Bronx Burns and Rebuilds<div class="story-desc">Demolitions and rebirth in the South Bronx</div></div>
+        <div class="story-option" data-story="skyline">Manhattan&rsquo;s Skyline<div class="story-desc">Skyscrapers from downtown to Hudson Yards</div></div>
+        <div class="story-option" data-story="victorian">Brooklyn&rsquo;s Victorian Belt<div class="story-desc">Brownstones from Park Slope to the Heights</div></div>
+        <div class="story-option" data-story="worship">Houses of Worship<div class="story-desc">5,000+ religious buildings across the city</div></div>
+      </div>
+    </div>
     <span id="year-label-min">1700</span>
     <div id="scrubber-wrap">
       <span id="scrubber-marker-label">&#9664; dates approximate</span>
@@ -764,6 +904,10 @@ const state = {
     highlightVacant: false,
     highlightConstruction: false,
   },
+  // Search
+  searchMarker: null,
+  // Story
+  story: { active: false, id: null, stepIndex: 0, timer: null, savedState: null },
 };
 
 // Building class human-readable names
@@ -1345,6 +1489,470 @@ function onHover(info) {
 }
 
 // ============================================================
+// SHAREABLE URLs
+// ============================================================
+const DEFAULTS = {
+  center: [-73.98, 40.75], zoom: 11, year: MAX_YEAR, mode: 'age',
+  eras: ['colonial','antebellum','prewar','postwar','modern','unknown'],
+  heights: ['single','low','mid','high','super'],
+  boroughs: [1,2,3,4,5],
+  uses: ['residential','mixed','commercial','industrial','institutional','other'],
+  subUses: ['1fam','2fam','walkup','elevator','religious','school','health','civic'],
+};
+const MODE_MAP = { age: 'a', height: 'h', class: 'c', borough: 'b' };
+const MODE_MAP_R = { a: 'age', h: 'height', c: 'class', b: 'borough' };
+
+function encodeState() {
+  const c = state.map.getCenter();
+  const parts = [];
+  parts.push(`c=${c.lng.toFixed(4)},${c.lat.toFixed(4)}`);
+  parts.push(`z=${state.map.getZoom().toFixed(1)}`);
+  if (Math.floor(state.currentYear) !== MAX_YEAR) parts.push(`y=${Math.floor(state.currentYear)}`);
+  if (state.colorMode !== 'age') parts.push(`m=${MODE_MAP[state.colorMode]}`);
+  // Filters — only encode if not all selected
+  syncFiltersFromDOM();
+  const eras = [...state.filters.eras];
+  if (eras.length < DEFAULTS.eras.length) parts.push(`e=${eras.join(',')}`);
+  const hts = [...state.filters.heights];
+  if (hts.length < DEFAULTS.heights.length) parts.push(`h=${hts.join(',')}`);
+  const boros = [...state.filters.boroughs];
+  if (boros.length < DEFAULTS.boroughs.length) parts.push(`b=${boros.join(',')}`);
+  const uses = [...state.filters.uses];
+  if (uses.length < DEFAULTS.uses.length) parts.push(`u=${uses.join(',')}`);
+  const subUses = [...state.filters.subUses];
+  if (subUses.length < DEFAULTS.subUses.length) parts.push(`su=${subUses.join(',')}`);
+  // Spotlights
+  if (state.filters.highlightLandmarks) parts.push('hl=lm');
+  else if (state.filters.highlightDemolished) parts.push('hl=dm');
+  else if (state.filters.highlightVacant) parts.push('hl=vc');
+  else if (state.filters.highlightConstruction) parts.push('hl=cn');
+  return '#' + parts.join('&');
+}
+
+function restoreFromHash() {
+  if (!location.hash || location.hash.length < 3) return false;
+  const params = {};
+  location.hash.slice(1).split('&').forEach(p => {
+    const [k, v] = p.split('=');
+    if (k && v) params[k] = v;
+  });
+  // Center + zoom
+  if (params.c) {
+    const [lng, lat] = params.c.split(',').map(Number);
+    if (!isNaN(lng) && !isNaN(lat)) state.map.jumpTo({ center: [lng, lat] });
+  }
+  if (params.z) {
+    const z = parseFloat(params.z);
+    if (!isNaN(z)) state.map.jumpTo({ zoom: z });
+  }
+  // Year
+  if (params.y) {
+    state.currentYear = parseInt(params.y);
+    document.getElementById('year-display').textContent = Math.floor(state.currentYear);
+    document.getElementById('scrubber').value = Math.floor(state.currentYear);
+  }
+  // Color mode
+  if (params.m && MODE_MAP_R[params.m]) {
+    state.colorMode = MODE_MAP_R[params.m];
+    document.querySelectorAll('.mode-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.mode === state.colorMode);
+    });
+    updateLegend();
+  }
+  // Filters — set checkboxes, then syncFiltersFromDOM will handle the rest
+  if (params.e) {
+    const eraSet = new Set(params.e.split(','));
+    document.querySelectorAll('[data-era]').forEach(cb => { cb.checked = eraSet.has(cb.dataset.era); });
+  }
+  if (params.h) {
+    const htSet = new Set(params.h.split(','));
+    document.querySelectorAll('[data-ht]').forEach(cb => { cb.checked = htSet.has(cb.dataset.ht); });
+  }
+  if (params.b) {
+    const boroSet = new Set(params.b.split(','));
+    document.querySelectorAll('[data-boro]').forEach(cb => { cb.checked = boroSet.has(cb.dataset.boro); });
+  }
+  if (params.u || params.su) {
+    const useSet = params.u ? new Set(params.u.split(',')) : new Set();
+    const subSet = params.su ? new Set(params.su.split(',')) : new Set();
+    const subKeys = new Set(['1fam','2fam','walkup','elevator','religious','school','health','civic']);
+    document.querySelectorAll('[data-use]').forEach(cb => {
+      const u = cb.dataset.use;
+      if (subKeys.has(u)) cb.checked = subSet.has(u);
+      else cb.checked = useSet.has(u);
+    });
+  }
+  // Spotlight
+  if (params.hl) {
+    const hlMap = { lm: 'hl-landmarks', dm: 'hl-demolished', vc: 'hl-vacant', cn: 'hl-construction' };
+    const hlKeyMap = { lm: 'highlightLandmarks', dm: 'highlightDemolished', vc: 'highlightVacant', cn: 'highlightConstruction' };
+    if (hlMap[params.hl]) {
+      document.getElementById(hlMap[params.hl]).checked = true;
+      state.filters[hlKeyMap[params.hl]] = true;
+    }
+  }
+  _filterVersion++;
+  return true;
+}
+
+let _hashDebounce = null;
+function updateHash() {
+  if (state.playing || state.story.active) return;
+  clearTimeout(_hashDebounce);
+  _hashDebounce = setTimeout(() => {
+    history.replaceState(null, '', encodeState());
+  }, 500);
+}
+
+// ============================================================
+// ADDRESS SEARCH
+// ============================================================
+let _searchDebounce = null;
+let _searchResults = [];
+let _searchActiveIdx = -1;
+
+function setupSearch() {
+  const input = document.getElementById('search-input');
+  const results = document.getElementById('search-results');
+  const clearBtn = document.getElementById('search-clear');
+
+  input.addEventListener('input', () => {
+    const q = input.value.trim();
+    clearBtn.style.display = q ? 'block' : 'none';
+    if (q.length < 3) { results.style.display = 'none'; _searchResults = []; return; }
+    clearTimeout(_searchDebounce);
+    _searchDebounce = setTimeout(() => geocodeSearch(q), 300);
+  });
+
+  input.addEventListener('keydown', (e) => {
+    if (!_searchResults.length) return;
+    if (e.key === 'ArrowDown') { e.preventDefault(); _searchActiveIdx = Math.min(_searchActiveIdx + 1, _searchResults.length - 1); highlightResult(); }
+    if (e.key === 'ArrowUp') { e.preventDefault(); _searchActiveIdx = Math.max(_searchActiveIdx - 1, 0); highlightResult(); }
+    if (e.key === 'Enter' && _searchActiveIdx >= 0) { e.preventDefault(); selectResult(_searchActiveIdx); }
+    if (e.key === 'Escape') { clearSearch(); }
+  });
+
+  clearBtn.addEventListener('click', clearSearch);
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#search-bar')) results.style.display = 'none';
+  });
+}
+
+async function geocodeSearch(query) {
+  const results = document.getElementById('search-results');
+  try {
+    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${MAPBOX_TOKEN}&bbox=-74.26,40.49,-73.7,40.92&types=address,poi&limit=5`;
+    const resp = await fetch(url);
+    const data = await resp.json();
+    _searchResults = data.features || [];
+    _searchActiveIdx = -1;
+    if (!_searchResults.length) {
+      results.innerHTML = '<div class="search-result" style="color:#666;">No results found</div>';
+      results.style.display = 'block';
+      return;
+    }
+    results.innerHTML = _searchResults.map((f, i) =>
+      `<div class="search-result" data-idx="${i}">${f.place_name}</div>`
+    ).join('');
+    results.style.display = 'block';
+    results.querySelectorAll('.search-result').forEach(el => {
+      el.addEventListener('click', () => selectResult(parseInt(el.dataset.idx)));
+    });
+  } catch (err) {
+    console.error('Geocode failed:', err);
+  }
+}
+
+function highlightResult() {
+  document.querySelectorAll('.search-result').forEach((el, i) => {
+    el.classList.toggle('active', i === _searchActiveIdx);
+  });
+}
+
+function selectResult(idx) {
+  const f = _searchResults[idx];
+  if (!f) return;
+  const [lng, lat] = f.center;
+  state.map.flyTo({ center: [lng, lat], zoom: 16, duration: 1500 });
+  // Drop marker
+  if (state.searchMarker) state.searchMarker.remove();
+  const el = document.createElement('div');
+  el.style.cssText = 'width:16px;height:16px;border-radius:50%;background:#FF9020;border:2px solid #fff;animation:search-pulse 1.5s ease-in-out infinite;';
+  state.searchMarker = new mapboxgl.Marker({ element: el }).setLngLat([lng, lat]).addTo(state.map);
+  // Update input
+  document.getElementById('search-input').value = f.place_name.split(',')[0];
+  document.getElementById('search-results').style.display = 'none';
+  document.getElementById('search-clear').style.display = 'block';
+}
+
+function clearSearch() {
+  document.getElementById('search-input').value = '';
+  document.getElementById('search-results').style.display = 'none';
+  document.getElementById('search-clear').style.display = 'none';
+  _searchResults = [];
+  _searchActiveIdx = -1;
+  if (state.searchMarker) { state.searchMarker.remove(); state.searchMarker = null; }
+}
+
+// ============================================================
+// GUIDED STORIES
+// ============================================================
+const STORIES = {
+  growth: {
+    title: 'Watch NYC Grow',
+    steps: [
+      { center: [-73.98, 40.75], zoom: 11, year: 1700, mode: 'age', caption: 'In 1700, New York was a small colonial settlement at the southern tip of Manhattan. The rest of the city\u2019s land was farms, forest, and marshland.', duration: 5000 },
+      { center: [-74.005, 40.715], zoom: 13, year: 1860, mode: 'age', caption: 'By the Civil War, Lower Manhattan is densely packed. Tenements crowd the Lower East Side as waves of immigrants arrive. Brooklyn is still a separate city.', duration: 5000 },
+      { center: [-73.98, 40.75], zoom: 12, year: 1930, mode: 'age', caption: 'The interwar building boom transforms New York. Art Deco towers rise in Midtown and downtown. The subway system opens the outer boroughs to development.', duration: 5000 },
+      { center: [-73.93, 40.72], zoom: 11.5, year: 1965, mode: 'age', caption: 'The postwar era brings Robert Moses\u2019s highways and towers-in-the-park. Public housing rises across the city. The suburbs draw families out of Brooklyn and the Bronx.', duration: 5000 },
+      { center: [-73.98, 40.75], zoom: 11, year: 2000, mode: 'age', caption: 'A new wave of construction arrives — luxury towers along the waterfront, new transit-oriented development, and the transformation of former industrial areas.', duration: 5000 },
+      { center: [-73.98, 40.75], zoom: 11, year: 2026, mode: 'age', caption: 'Today: 857,000 structures, from 17th-century stone houses to supertall glass towers. Three centuries of ambition, immigration, and reinvention — in every building.', duration: 6000 },
+    ],
+  },
+  bronx: {
+    title: 'The Bronx Burns and Rebuilds',
+    steps: [
+      { center: [-73.91, 40.82], zoom: 14, year: 1970, mode: 'age', caption: 'The South Bronx in 1970 — a dense neighborhood of prewar walk-ups and tenements. The Cross Bronx Expressway has already carved through, but the worst is yet to come.', duration: 5000 },
+      { center: [-73.91, 40.82], zoom: 14, year: 1985, mode: 'age', spotlight: 'demolished', caption: 'Arson, disinvestment, and abandonment devastate the South Bronx. Thousands of buildings are demolished. \u201cThe Bronx is burning\u201d becomes shorthand for urban crisis.', duration: 6000 },
+      { center: [-73.91, 40.82], zoom: 14, year: 2010, mode: 'age', caption: 'Rebuilding begins. New affordable housing rises on the cleared lots. Community organizations lead the recovery. The neighborhood slowly comes back.', duration: 5000 },
+      { center: [-73.91, 40.82], zoom: 13, year: 2026, mode: 'age', caption: 'Today the South Bronx is a patchwork — prewar survivors alongside modern construction, empty lots next to new development. The rebuilding continues.', duration: 6000 },
+    ],
+  },
+  skyline: {
+    title: 'Manhattan\u2019s Skyline',
+    steps: [
+      { center: [-74.01, 40.71], zoom: 15, year: 2026, mode: 'height', filters: { heights: ['high','super'] }, caption: 'Lower Manhattan: where it all started. The Financial District\u2019s towers began rising in the early 1900s — the Woolworth Building (1913) once the world\u2019s tallest.', duration: 5000 },
+      { center: [-73.978, 40.752], zoom: 14.5, year: 2026, mode: 'height', filters: { heights: ['high','super'] }, caption: 'Midtown: the second great cluster. The Empire State Building (1931), Chrysler Building (1930), and decades of corporate towers create the iconic skyline.', duration: 5000 },
+      { center: [-73.978, 40.752], zoom: 14.5, year: 2026, mode: 'age', filters: { heights: ['high','super'] }, caption: 'Switch to age view: notice how Midtown\u2019s towers span nearly a century — from 1920s Art Deco to 2020s supertalls.', duration: 5000 },
+      { center: [-74.0, 40.753], zoom: 15, year: 2026, mode: 'age', filters: { heights: ['high','super'] }, caption: 'Hudson Yards and the Far West Side: the newest frontier. Supertall towers rising on former rail yards — the latest chapter in Manhattan\u2019s vertical ambition.', duration: 6000 },
+    ],
+  },
+  victorian: {
+    title: 'Brooklyn\u2019s Victorian Belt',
+    steps: [
+      { center: [-73.977, 40.675], zoom: 15, year: 2026, mode: 'age', filters: { eras: ['colonial','antebellum','prewar'] }, caption: 'Park Slope: one of the finest collections of Victorian and Edwardian rowhouses in America. Block after block of brownstones built in the 1880s and 1890s.', duration: 5000 },
+      { center: [-73.94, 40.685], zoom: 15, year: 2026, mode: 'age', filters: { eras: ['colonial','antebellum','prewar'] }, caption: 'Bed-Stuy: the nation\u2019s largest collection of intact Victorian architecture. Thousands of brownstones and rowhouses, many dating to the 1870s\u20131900s.', duration: 5000 },
+      { center: [-73.995, 40.695], zoom: 15.5, year: 2026, mode: 'age', filters: { eras: ['colonial','antebellum','prewar'] }, caption: 'Brooklyn Heights: America\u2019s first suburb. Federal and Greek Revival homes from the 1830s\u20131860s, and the city\u2019s first designated historic district (1965).', duration: 6000 },
+    ],
+  },
+  worship: {
+    title: 'Houses of Worship',
+    steps: [
+      { center: [-73.98, 40.72], zoom: 11, year: 2026, mode: 'class', filters: { uses: ['institutional'], subUses: ['religious'] }, caption: 'More than 5,000 religious buildings dot every corner of New York — churches, synagogues, mosques, temples, and meeting houses. They appear in every neighborhood.', duration: 5000 },
+      { center: [-73.96, 40.635], zoom: 14, year: 2026, mode: 'age', filters: { uses: ['institutional'], subUses: ['religious'] }, caption: 'Flatbush and Midwood: one of the most religiously diverse areas in the country. Historic churches alongside newer mosques and yeshivas.', duration: 5000 },
+      { center: [-73.945, 40.815], zoom: 14.5, year: 2026, mode: 'age', filters: { uses: ['institutional'], subUses: ['religious'] }, caption: 'Harlem: its great churches — Abyssinian Baptist, Mother AME Zion, Riverside — anchor neighborhoods and anchor history. Many predate the Great Migration.', duration: 6000 },
+    ],
+  },
+};
+
+function saveStoryState() {
+  const checkboxState = {};
+  document.querySelectorAll('[data-era],[data-ht],[data-boro],[data-use]').forEach(cb => {
+    checkboxState[cb.id] = { checked: cb.checked, indeterminate: cb.indeterminate };
+  });
+  return {
+    center: state.map.getCenter(),
+    zoom: state.map.getZoom(),
+    year: state.currentYear,
+    mode: state.colorMode,
+    checkboxes: checkboxState,
+    highlightLandmarks: state.filters.highlightLandmarks,
+    highlightDemolished: state.filters.highlightDemolished,
+    highlightVacant: state.filters.highlightVacant,
+    highlightConstruction: state.filters.highlightConstruction,
+  };
+}
+
+function restoreStoryState(saved) {
+  if (!saved) return;
+  state.map.jumpTo({ center: saved.center, zoom: saved.zoom });
+  state.currentYear = saved.year;
+  document.getElementById('year-display').textContent = Math.floor(saved.year);
+  document.getElementById('scrubber').value = Math.floor(saved.year);
+  state.colorMode = saved.mode;
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === saved.mode));
+  updateLegend();
+  // Restore checkboxes
+  for (const [id, s] of Object.entries(saved.checkboxes)) {
+    const el = document.getElementById(id);
+    if (el) { el.checked = s.checked; el.indeterminate = s.indeterminate; }
+  }
+  // Restore spotlights
+  state.filters.highlightLandmarks = saved.highlightLandmarks;
+  state.filters.highlightDemolished = saved.highlightDemolished;
+  state.filters.highlightVacant = saved.highlightVacant;
+  state.filters.highlightConstruction = saved.highlightConstruction;
+  document.getElementById('hl-landmarks').checked = saved.highlightLandmarks;
+  document.getElementById('hl-demolished').checked = saved.highlightDemolished;
+  document.getElementById('hl-vacant').checked = saved.highlightVacant;
+  document.getElementById('hl-construction').checked = saved.highlightConstruction;
+  _filterVersion++;
+  syncFiltersFromDOM();
+  updateLayers();
+  updateStats();
+}
+
+function applyStoryFilters(step) {
+  if (!step.filters) return;
+  const f = step.filters;
+  // If specific filters given, deselect all first, then select only specified
+  if (f.eras) {
+    const eraSet = new Set(f.eras);
+    document.querySelectorAll('[data-era]').forEach(cb => { cb.checked = eraSet.has(cb.dataset.era); });
+  } else {
+    document.querySelectorAll('[data-era]').forEach(cb => { cb.checked = true; });
+  }
+  if (f.heights) {
+    const htSet = new Set(f.heights);
+    document.querySelectorAll('[data-ht]').forEach(cb => { cb.checked = htSet.has(cb.dataset.ht); });
+  } else {
+    document.querySelectorAll('[data-ht]').forEach(cb => { cb.checked = true; });
+  }
+  if (f.uses || f.subUses) {
+    const useSet = new Set(f.uses || []);
+    const subSet = new Set(f.subUses || []);
+    const subKeys = new Set(['1fam','2fam','walkup','elevator','religious','school','health','civic']);
+    document.querySelectorAll('[data-use]').forEach(cb => {
+      const u = cb.dataset.use;
+      if (subKeys.has(u)) cb.checked = subSet.has(u);
+      else cb.checked = useSet.has(u);
+      cb.indeterminate = false;
+    });
+    // Fix parent indeterminate state
+    const PARENT_SUBS = { residential: ['1fam','2fam','walkup','elevator'], institutional: ['religious','school','health','civic'] };
+    for (const [parent, subs] of Object.entries(PARENT_SUBS)) {
+      const parentEl = document.getElementById('use-' + parent);
+      const anyOn = subs.some(s => document.getElementById('use-' + s)?.checked);
+      const allOn = subs.every(s => document.getElementById('use-' + s)?.checked);
+      parentEl.checked = anyOn;
+      parentEl.indeterminate = anyOn && !allOn;
+    }
+  } else {
+    document.querySelectorAll('[data-use]').forEach(cb => { cb.checked = true; cb.indeterminate = false; });
+  }
+  if (f.boroughs) {
+    const boroSet = new Set(f.boroughs.map(String));
+    document.querySelectorAll('[data-boro]').forEach(cb => { cb.checked = boroSet.has(cb.dataset.boro); });
+  } else {
+    document.querySelectorAll('[data-boro]').forEach(cb => { cb.checked = true; });
+  }
+}
+
+function startStory(storyId) {
+  const story = STORIES[storyId];
+  if (!story) return;
+  // Stop animation if playing
+  if (state.playing) togglePlay();
+  // Save current state
+  state.story.savedState = saveStoryState();
+  state.story.active = true;
+  state.story.id = storyId;
+  state.story.stepIndex = 0;
+  // Clear spotlights
+  ['hl-landmarks','hl-demolished','hl-vacant','hl-construction'].forEach(id => {
+    document.getElementById(id).checked = false;
+  });
+  state.filters.highlightLandmarks = false;
+  state.filters.highlightDemolished = false;
+  state.filters.highlightVacant = false;
+  state.filters.highlightConstruction = false;
+  // Show overlay, hide menu
+  document.getElementById('story-menu').classList.remove('show');
+  document.getElementById('story-overlay').classList.add('show');
+  playStep(0);
+}
+
+function playStep(index) {
+  const story = STORIES[state.story.id];
+  if (!story || index >= story.steps.length) { endStory(); return; }
+  if (index < 0) index = 0;
+  state.story.stepIndex = index;
+  const step = story.steps[index];
+  // Update caption
+  document.getElementById('story-title').textContent = story.title;
+  document.getElementById('story-caption').textContent = step.caption;
+  document.getElementById('story-step-label').textContent = `${index + 1} / ${story.steps.length}`;
+  // Progress bar
+  const bar = document.getElementById('story-progress-bar');
+  bar.style.transition = 'none';
+  bar.style.width = '0%';
+  requestAnimationFrame(() => {
+    bar.style.transition = `width ${step.duration}ms linear`;
+    bar.style.width = '100%';
+  });
+  // Apply view
+  if (step.center && step.zoom != null) {
+    state.map.flyTo({ center: step.center, zoom: step.zoom, duration: 1500 });
+  }
+  if (step.mode) {
+    state.colorMode = step.mode;
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === step.mode));
+    updateLegend();
+  }
+  if (step.year != null) {
+    state.currentYear = step.year;
+    document.getElementById('year-display').textContent = Math.floor(step.year);
+    document.getElementById('scrubber').value = Math.floor(step.year);
+  }
+  // Spotlights
+  const spotMap = { landmarks: 'highlightLandmarks', demolished: 'highlightDemolished', vacant: 'highlightVacant', construction: 'highlightConstruction' };
+  const spotElMap = { landmarks: 'hl-landmarks', demolished: 'hl-demolished', vacant: 'hl-vacant', construction: 'hl-construction' };
+  for (const [name, key] of Object.entries(spotMap)) {
+    state.filters[key] = step.spotlight === name;
+    document.getElementById(spotElMap[name]).checked = step.spotlight === name;
+  }
+  // Filters
+  applyStoryFilters(step);
+  _filterVersion++;
+  syncFiltersFromDOM();
+  updateLayers();
+  updateStats();
+  // Auto-advance timer
+  clearTimeout(state.story.timer);
+  state.story.timer = setTimeout(() => {
+    if (state.story.active) playStep(index + 1);
+  }, step.duration);
+}
+
+function endStory() {
+  clearTimeout(state.story.timer);
+  state.story.active = false;
+  document.getElementById('story-overlay').classList.remove('show');
+  // Restore previous state
+  restoreStoryState(state.story.savedState);
+  state.story.savedState = null;
+}
+
+function exitStory() {
+  endStory();
+}
+
+function setupStories() {
+  const storyBtn = document.getElementById('story-btn');
+  const storyMenu = document.getElementById('story-menu');
+  storyBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    storyMenu.classList.toggle('show');
+  });
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#story-menu') && !e.target.closest('#story-btn')) {
+      storyMenu.classList.remove('show');
+    }
+  });
+  document.querySelectorAll('.story-option').forEach(opt => {
+    opt.addEventListener('click', () => startStory(opt.dataset.story));
+  });
+  document.getElementById('story-prev').addEventListener('click', () => {
+    if (state.story.active) playStep(state.story.stepIndex - 1);
+  });
+  document.getElementById('story-next').addEventListener('click', () => {
+    if (state.story.active) playStep(state.story.stepIndex + 1);
+  });
+  document.getElementById('story-exit').addEventListener('click', exitStory);
+}
+
+// ============================================================
 // INIT
 // ============================================================
 async function init() {
@@ -1412,6 +2020,9 @@ async function init() {
 
   console.log(`Loaded: ${state.count} buildings, ${Object.keys(state.landmarkLookup).length} landmarks`);
 
+  // Restore state from URL hash if present
+  restoreFromHash();
+
   // Initial render at current year
   updateLayers();
   updateStats();
@@ -1420,6 +2031,21 @@ async function init() {
   document.getElementById('loading').classList.add('hidden');
 
   setupControls();
+  setupSearch();
+  setupStories();
+
+  // Update hash on map movement
+  state.map.on('moveend', updateHash);
+
+  // Share button
+  document.getElementById('share-btn').addEventListener('click', () => {
+    history.replaceState(null, '', encodeState());
+    navigator.clipboard.writeText(location.href).then(() => {
+      const toast = document.getElementById('share-toast');
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2000);
+    });
+  });
 
   // Lazy-load addresses in background (not critical for initial render)
   loadAddresses();
@@ -1790,6 +2416,15 @@ function setupControls() {
   });
 
   document.addEventListener('keydown', (e) => {
+    // Don't intercept keys when typing in search
+    if (document.activeElement === document.getElementById('search-input')) return;
+    if (e.code === 'Escape' && state.story.active) { exitStory(); return; }
+    if (e.code === 'Escape') { clearSearch(); return; }
+    if (state.story.active) {
+      if (e.code === 'ArrowRight') { e.preventDefault(); playStep(state.story.stepIndex + 1); return; }
+      if (e.code === 'ArrowLeft') { e.preventDefault(); playStep(state.story.stepIndex - 1); return; }
+      return;
+    }
     if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
     if (e.code === 'ArrowRight') {
       state.currentYear = Math.min(state.currentYear + 5, MAX_YEAR);
