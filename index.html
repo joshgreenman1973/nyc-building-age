@@ -1025,10 +1025,13 @@ function syncFiltersFromDOM() {
   state.filters.boroughs = new Set();
   document.querySelectorAll('[data-boro]:checked').forEach(cb => state.filters.boroughs.add(parseInt(cb.dataset.boro)));
   // Uses: separate parents from subs
+  // Note: can't use :checked selector because indeterminate parent checkboxes
+  // have .checked=true but don't match :checked in CSS
   state.filters.uses = new Set();
   state.filters.subUses = new Set();
   const subKeys = new Set(['1fam','2fam','walkup','elevator','religious','school','health','civic']);
-  document.querySelectorAll('[data-use]:checked').forEach(cb => {
+  document.querySelectorAll('[data-use]').forEach(cb => {
+    if (!cb.checked) return;
     const u = cb.dataset.use;
     if (subKeys.has(u)) state.filters.subUses.add(u);
     else state.filters.uses.add(u);
