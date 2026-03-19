@@ -372,8 +372,8 @@
   }
   /* Story year flash — large centered year that fades in/out on step transitions */
   #story-year-flash {
-    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    font-size: 120px; font-weight: 800; color: #FF9020;
+    position: fixed; top: 30%; left: 50%; transform: translate(-50%, -50%);
+    font-size: 100px; font-weight: 800; color: #FF9020;
     text-shadow: 0 0 40px rgba(255,144,32,0.5), 0 2px 8px rgba(0,0,0,0.8);
     pointer-events: none; z-index: 40;
     opacity: 0; transition: opacity 0.3s ease;
@@ -383,18 +383,18 @@
     opacity: 1;
   }
   #story-year-flash.fade {
-    opacity: 0; transition: opacity 0.8s ease;
+    opacity: 0; transition: opacity 0.5s ease;
   }
   /* Story filter flash — brief label showing what filter is active */
   #story-filter-flash {
-    position: fixed; top: calc(50% + 70px); left: 50%; transform: translateX(-50%);
-    font-size: 16px; font-weight: 500; color: rgba(255,255,255,0.8);
+    position: fixed; top: calc(30% + 50px); left: 50%; transform: translateX(-50%);
+    font-size: 15px; font-weight: 500; color: rgba(255,255,255,0.8);
     letter-spacing: 2px; text-transform: uppercase;
     pointer-events: none; z-index: 40;
     opacity: 0; transition: opacity 0.3s ease;
   }
   #story-filter-flash.show { opacity: 1; }
-  #story-filter-flash.fade { opacity: 0; transition: opacity 0.8s ease; }
+  #story-filter-flash.fade { opacity: 0; transition: opacity 0.5s ease; }
 
   /* Color mode row — distinct visual group */
   #mode-row {
@@ -1948,16 +1948,16 @@ function playStep(index) {
   if (step.year != null && yearChanged) {
     yearFlash.textContent = Math.floor(step.year);
     yearFlash.className = 'show';
-    setTimeout(() => { yearFlash.className = 'fade'; }, 1200);
-    setTimeout(() => { yearFlash.className = ''; }, 2200);
+    setTimeout(() => { yearFlash.className = 'fade'; }, 800);
+    setTimeout(() => { yearFlash.className = ''; }, 1500);
   }
   // Show filter flash for filter-based stories
   const filterLabel = _getStepFilterLabel(step);
   if (filterLabel) {
     filterFlash.textContent = filterLabel;
     filterFlash.className = 'show';
-    setTimeout(() => { filterFlash.className = 'fade'; }, 1200);
-    setTimeout(() => { filterFlash.className = ''; }, 2200);
+    setTimeout(() => { filterFlash.className = 'fade'; }, 800);
+    setTimeout(() => { filterFlash.className = ''; }, 1500);
   } else {
     filterFlash.className = '';
   }
