@@ -968,7 +968,8 @@ function getSubUse(cls) { return SUB_USE_MAP[cls.charAt(0).toUpperCase()] || nul
 // BINARY DATA LOADER
 // ============================================================
 async function loadBinaryData() {
-  document.getElementById('loading-status').textContent = 'Loading building data...';
+  const statusEl = document.getElementById('loading-status');
+  statusEl.textContent = 'Loading building data...';
 
   const resp = await fetch(BIN_URL);
   if (!resp.ok) throw new Error(`Failed to load ${BIN_URL}: ${resp.status}`);
@@ -976,6 +977,8 @@ async function loadBinaryData() {
   const buf = await resp.arrayBuffer();
   const count = Math.floor(buf.byteLength / BYTES_PER_RECORD);
   console.log(`Loaded ${count} buildings (${(buf.byteLength / 1024 / 1024).toFixed(1)} MB)`);
+
+  statusEl.textContent = 'Processing buildings...';
 
   const view = new DataView(buf);
   const positions = new Float32Array(count * 2);
@@ -988,18 +991,28 @@ async function loadBinaryData() {
   const bldgClass = new Array(count);
   const lotArea = new Uint32Array(count);
 
-  for (let i = 0; i < count; i++) {
-    const off = i * BYTES_PER_RECORD;
-    positions[i * 2] = view.getFloat32(off, true);      // lon
-    positions[i * 2 + 1] = view.getFloat32(off + 4, true); // lat
-    yearBuilt[i] = view.getUint16(off + 8, true);
-    boroCode[i] = view.getUint8(off + 10);
-    numFloors[i] = view.getUint8(off + 11);
-    landmarkYear[i] = view.getUint16(off + 12, true);
-    demoYear[i] = view.getUint16(off + 14, true);
-    rebuildYear[i] = view.getUint16(off + 16, true);
-    bldgClass[i] = String.fromCharCode(view.getUint8(off + 18), view.getUint8(off + 19));
-    lotArea[i] = view.getUint32(off + 20, true);
+  // Parse in chunks to keep UI responsive
+  const CHUNK = 100000;
+  for (let start = 0; start < count; start += CHUNK) {
+    const end = Math.min(start + CHUNK, count);
+    for (let i = start; i < end; i++) {
+      const off = i * BYTES_PER_RECORD;
+      positions[i * 2] = view.getFloat32(off, true);
+      positions[i * 2 + 1] = view.getFloat32(off + 4, true);
+      yearBuilt[i] = view.getUint16(off + 8, true);
+      boroCode[i] = view.getUint8(off + 10);
+      numFloors[i] = view.getUint8(off + 11);
+      landmarkYear[i] = view.getUint16(off + 12, true);
+      demoYear[i] = view.getUint16(off + 14, true);
+      rebuildYear[i] = view.getUint16(off + 16, true);
+      bldgClass[i] = String.fromCharCode(view.getUint8(off + 18), view.getUint8(off + 19));
+      lotArea[i] = view.getUint32(off + 20, true);
+    }
+    // Yield to UI between chunks
+    if (end < count) {
+      statusEl.textContent = `Processing buildings... ${Math.round(end / count * 100)}%`;
+      await new Promise(r => setTimeout(r, 0));
+    }
   }
 
   state.positions = positions;
@@ -1198,7 +1211,7 @@ function updateLayers() {
 
   const filteredData = getFilteredData();
   const layer = new deck.ScatterplotLayer({
-    id: `buildings-${_filterVersion}`,
+    id: 'buildings',
     data: filteredData,
     getPosition: i => [state.positions[i*2], state.positions[i*2+1]],
     getFillColor: i => getColor(i, yr),
@@ -1905,9 +1918,12 @@ function playStep(index) {
   // Filters
   applyStoryFilters(step);
   _filterVersion++;
-  syncFiltersFromDOM();
+  _cachedFilterVersion = -1; // Force cache invalidation
   updateLayers();
   updateStats();
+  // Force deck.gl repaint
+  if (state.deckgl._deck) { state.deckgl._deck.redraw(true); }
+  state.map.triggerRepaint();
   // Auto-advance timer
   clearTimeout(state.story.timer);
   state.story.timer = setTimeout(() => {
@@ -1919,9 +1935,38 @@ function endStory() {
   clearTimeout(state.story.timer);
   state.story.active = false;
   document.getElementById('story-overlay').classList.remove('show');
-  // Restore previous state
-  restoreStoryState(state.story.savedState);
-  state.story.savedState = null;
+  // Restore previous state, or reset to defaults if restore fails
+  if (state.story.savedState) {
+    restoreStoryState(state.story.savedState);
+    state.story.savedState = null;
+  } else {
+    resetToDefaults();
+  }
+}
+
+function resetToDefaults() {
+  state.currentYear = MAX_YEAR;
+  document.getElementById('year-display').textContent = MAX_YEAR;
+  document.getElementById('scrubber').value = MAX_YEAR;
+  state.colorMode = 'age';
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === 'age'));
+  updateLegend();
+  // Check all filter checkboxes
+  document.querySelectorAll('[data-era],[data-ht],[data-boro]').forEach(cb => { cb.checked = true; });
+  document.querySelectorAll('[data-use]').forEach(cb => { cb.checked = true; cb.indeterminate = false; });
+  // Clear spotlights
+  ['hl-landmarks','hl-demolished','hl-vacant','hl-construction'].forEach(id => {
+    document.getElementById(id).checked = false;
+  });
+  state.filters.highlightLandmarks = false;
+  state.filters.highlightDemolished = false;
+  state.filters.highlightVacant = false;
+  state.filters.highlightConstruction = false;
+  state.map.jumpTo({ center: [-73.98, 40.75], zoom: 11 });
+  _filterVersion++;
+  syncFiltersFromDOM();
+  updateLayers();
+  updateStats();
 }
 
 function exitStory() {
@@ -2008,15 +2053,17 @@ async function init() {
   // Also reset on mouseup — catches drags that don't trigger dragend
   canvas.addEventListener('mouseup', resetCursor);
 
-  // Load all data in parallel
+  // Load critical data in parallel (binary + landmarks needed for initial render)
   document.getElementById('loading-status').textContent = 'Loading data...';
   await Promise.all([
     loadBinaryData(),
     fetch(LANDMARKS_URL).then(r => r.ok ? r.json() : {}).then(d => { state.landmarkLookup = d; }),
-    fetch(DEMOLITIONS_URL).then(r => r.ok ? r.json() : {}).then(d => { state.demoLookup = d; }),
     fetch(STATS_URL).then(r => r.ok ? r.json() : null).then(d => { state.stats = d; }),
-    fetch(PARKS_URL).then(r => r.ok ? r.json() : []).then(d => { state.parks = d; }),
   ]);
+
+  // Non-critical data: parks (decorative) and demolitions (spotlight only) — load after first render
+  fetch(DEMOLITIONS_URL).then(r => r.ok ? r.json() : {}).then(d => { state.demoLookup = d; });
+  fetch(PARKS_URL).then(r => r.ok ? r.json() : []).then(d => { state.parks = d; updateLayers(); });
 
   console.log(`Loaded: ${state.count} buildings, ${Object.keys(state.landmarkLookup).length} landmarks`);
 
