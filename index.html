@@ -370,6 +370,31 @@
     height: 100%; width: 0; background: #FF9020;
     transition: width linear;
   }
+  /* Story year flash — large centered year that fades in/out on step transitions */
+  #story-year-flash {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    font-size: 120px; font-weight: 800; color: #FF9020;
+    text-shadow: 0 0 40px rgba(255,144,32,0.5), 0 2px 8px rgba(0,0,0,0.8);
+    pointer-events: none; z-index: 40;
+    opacity: 0; transition: opacity 0.3s ease;
+    font-variant-numeric: tabular-nums;
+  }
+  #story-year-flash.show {
+    opacity: 1;
+  }
+  #story-year-flash.fade {
+    opacity: 0; transition: opacity 0.8s ease;
+  }
+  /* Story filter flash — brief label showing what filter is active */
+  #story-filter-flash {
+    position: fixed; top: calc(50% + 70px); left: 50%; transform: translateX(-50%);
+    font-size: 16px; font-weight: 500; color: rgba(255,255,255,0.8);
+    letter-spacing: 2px; text-transform: uppercase;
+    pointer-events: none; z-index: 40;
+    opacity: 0; transition: opacity 0.3s ease;
+  }
+  #story-filter-flash.show { opacity: 1; }
+  #story-filter-flash.fade { opacity: 0; transition: opacity 0.8s ease; }
 
   /* Color mode row — distinct visual group */
   #mode-row {
@@ -590,6 +615,8 @@
   <div id="search-results"></div>
 </div>
 
+<div id="story-year-flash"></div>
+<div id="story-filter-flash"></div>
 <div id="story-overlay">
   <div id="story-title"></div>
   <div id="story-caption"></div>
@@ -1876,6 +1903,25 @@ function startStory(storyId) {
   playStep(0);
 }
 
+function _getStepFilterLabel(step) {
+  if (!step.filters) return null;
+  const f = step.filters;
+  if (f.heights && !f.uses) {
+    const labels = { low: 'Low-Rise', mid: 'Mid-Rise', high: 'High-Rise', super: 'Supertall' };
+    return f.heights.map(h => labels[h] || h).join(' + ') + ' Only';
+  }
+  if (f.uses || f.subUses) {
+    const labels = { religious: 'Houses of Worship', institutional: 'Institutional', residential: 'Residential', commercial: 'Commercial' };
+    const items = [...(f.subUses || []), ...(f.uses || [])];
+    return items.map(u => labels[u] || u).join(' + ');
+  }
+  if (f.eras) {
+    const labels = { colonial: 'Colonial', antebellum: '19th Century', prewar: 'Prewar', postwar: 'Postwar', modern: 'Modern' };
+    return f.eras.map(e => labels[e] || e).join(' + ') + ' Buildings';
+  }
+  return null;
+}
+
 function playStep(index) {
   const story = STORIES[state.story.id];
   if (!story || index >= story.steps.length) { endStory(); return; }
@@ -1894,9 +1940,40 @@ function playStep(index) {
     bar.style.transition = `width ${step.duration}ms linear`;
     bar.style.width = '100%';
   });
+  // Show year flash for time-travel stories
+  const yearFlash = document.getElementById('story-year-flash');
+  const filterFlash = document.getElementById('story-filter-flash');
+  const prevStep = index > 0 ? story.steps[index - 1] : null;
+  const yearChanged = !prevStep || (step.year != null && step.year !== (prevStep.year || 2026));
+  if (step.year != null && yearChanged) {
+    yearFlash.textContent = Math.floor(step.year);
+    yearFlash.className = 'show';
+    setTimeout(() => { yearFlash.className = 'fade'; }, 1200);
+    setTimeout(() => { yearFlash.className = ''; }, 2200);
+  }
+  // Show filter flash for filter-based stories
+  const filterLabel = _getStepFilterLabel(step);
+  if (filterLabel) {
+    filterFlash.textContent = filterLabel;
+    filterFlash.className = 'show';
+    setTimeout(() => { filterFlash.className = 'fade'; }, 1200);
+    setTimeout(() => { filterFlash.className = ''; }, 2200);
+  } else {
+    filterFlash.className = '';
+  }
   // Apply view
   if (step.center && step.zoom != null) {
     state.map.flyTo({ center: step.center, zoom: step.zoom, duration: 1500 });
+    // Force a re-render when flyTo animation completes
+    state.map.once('moveend', () => {
+      if (state.story.active) {
+        _filterVersion++;
+        _cachedFilterVersion = -1;
+        updateLayers();
+        if (state.deckgl._deck) state.deckgl._deck.redraw(true);
+        state.map.triggerRepaint();
+      }
+    });
   }
   if (step.mode) {
     state.colorMode = step.mode;
@@ -1924,6 +2001,14 @@ function playStep(index) {
   // Force deck.gl repaint
   if (state.deckgl._deck) { state.deckgl._deck.redraw(true); }
   state.map.triggerRepaint();
+  // Schedule a delayed forced re-render as safety fallback
+  setTimeout(() => {
+    if (state.story.active && state.story.stepIndex === index) {
+      _cachedFilterVersion = -1;
+      updateLayers();
+      if (state.deckgl._deck) state.deckgl._deck.redraw(true);
+    }
+  }, 300);
   // Auto-advance timer
   clearTimeout(state.story.timer);
   state.story.timer = setTimeout(() => {
@@ -1935,6 +2020,8 @@ function endStory() {
   clearTimeout(state.story.timer);
   state.story.active = false;
   document.getElementById('story-overlay').classList.remove('show');
+  document.getElementById('story-year-flash').className = '';
+  document.getElementById('story-filter-flash').className = '';
   // Restore previous state, or reset to defaults if restore fails
   if (state.story.savedState) {
     restoreStoryState(state.story.savedState);
