@@ -1254,7 +1254,7 @@ function updateLayers() {
     pickingRadius: 3,
     onHover: onHover,
     updateTriggers: {
-      getFillColor: `${yr}_${state.colorMode}_${_filterVersion}_${state.filters.highlightConstruction}`,
+      getFillColor: `${yr}_${state.colorMode}_${_filterVersion}_${state.filters.highlightConstruction}_${state.filters.highlightLandmarks}_${state.filters.highlightDemolished}_${state.filters.highlightVacant}`,
       getRadius: `${_filterVersion}`,
     },
   });
