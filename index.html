@@ -800,6 +800,7 @@
     <div class="filter-check"><input type="checkbox" id="hl-demolished" data-hl="demolished"><label for="hl-demolished" style="color:#FF3C3C">Demolished only</label></div>
     <div class="filter-check"><input type="checkbox" id="hl-vacant" data-hl="vacant"><label for="hl-vacant" style="color:#DDE44C">Vacant lots</label></div>
     <div class="filter-check"><input type="checkbox" id="hl-construction"><label for="hl-construction" style="color:#00E5FF">Under construction</label> <span id="construction-status" style="font-size:8px;color:#555;"></span></div>
+    <div class="filter-check"><input type="checkbox" id="hl-stalled"><label for="hl-stalled" style="color:#FF6B35">Stalled sites</label> <span id="stalled-status" style="font-size:8px;color:#555;"></span></div>
   </div>
 </div>
 
@@ -930,9 +931,11 @@ const state = {
     highlightDemolished: false,
     highlightVacant: false,
     highlightConstruction: false,
+    highlightStalled: false,
   },
   // Search
   searchMarker: null,
+  stalledSites: null, // Array of {pos: [lng,lat], addr, borough, complaint, dateFiled, bin}
   // Story
   story: { active: false, id: null, stepIndex: 0, timer: null, savedState: null },
 };
@@ -1135,8 +1138,8 @@ function getColor(i, yr) {
   if (isFiltered(i)) return [0,0,0,0];
   if (state.filters.highlightVacant && cls.charAt(0) === 'V') return [221, 228, 76, 210]; // chartreuse
 
-  // Dim all buildings when Under Construction spotlight is active
-  const _dim = state.filters.highlightConstruction && state.constructionSites;
+  // Dim all buildings when Construction or Stalled spotlight is active
+  const _dim = (state.filters.highlightConstruction && state.constructionSites) || (state.filters.highlightStalled && state.stalledSites);
 
   // Not yet built or unknown year
   if (yb > yr || yb <= 0) return [0,0,0,0];
@@ -1254,7 +1257,7 @@ function updateLayers() {
     pickingRadius: 3,
     onHover: onHover,
     updateTriggers: {
-      getFillColor: `${yr}_${state.colorMode}_${_filterVersion}_${state.filters.highlightConstruction}_${state.filters.highlightLandmarks}_${state.filters.highlightDemolished}_${state.filters.highlightVacant}`,
+      getFillColor: `${yr}_${state.colorMode}_${_filterVersion}_${state.filters.highlightConstruction}_${state.filters.highlightLandmarks}_${state.filters.highlightDemolished}_${state.filters.highlightVacant}_${state.filters.highlightStalled}`,
       getRadius: `${_filterVersion}`,
     },
   });
@@ -1333,6 +1336,54 @@ function updateLayers() {
             ${info.object.stories !== '?' ? `<div class="tt-row"><span>Proposed floors</span><span>${info.object.stories}</span></div>` : ''}
             ${info.object.borough ? `<div class="tt-row"><span>Borough</span><span>${info.object.borough.charAt(0) + info.object.borough.slice(1).toLowerCase()}</span></div>` : ''}
             <div style="font-size:8px;color:#666;margin-top:4px;">Source: DOB NOW</div>`;
+          tt.style.display = 'block';
+          tt.style.left = (info.x + 12) + 'px';
+          tt.style.top = (info.y + 12) + 'px';
+        }
+      },
+    }));
+  }
+
+  // Stalled construction overlay — orange warning dots
+  if (state.filters.highlightStalled && state.stalledSites && state.stalledSites.length > 0) {
+    // Outer glow
+    layers.push(new deck.ScatterplotLayer({
+      id: 'stalled-glow',
+      data: state.stalledSites,
+      getPosition: d => d.pos,
+      getFillColor: [255, 107, 53, 60],
+      getRadius: 50,
+      radiusUnits: 'meters',
+      radiusMinPixels: 8,
+      radiusMaxPixels: 24,
+      pickable: false,
+    }));
+    // Core dot
+    layers.push(new deck.ScatterplotLayer({
+      id: 'stalled',
+      data: state.stalledSites,
+      getPosition: d => d.pos,
+      getFillColor: [255, 107, 53, 220],
+      getLineColor: [255, 255, 255, 120],
+      getRadius: 25,
+      radiusUnits: 'meters',
+      radiusMinPixels: 4,
+      radiusMaxPixels: 16,
+      stroked: true,
+      lineWidthMinPixels: 1,
+      pickable: true,
+      onHover: info => {
+        if (info.object) {
+          const tt = document.getElementById('tooltip');
+          const addr = info.object.addr.replace(/\w\S*/g, w => w.charAt(0) + w.slice(1).toLowerCase());
+          const filed = info.object.dateFiled ? new Date(info.object.dateFiled).toLocaleDateString('en-US', {year:'numeric', month:'short', day:'numeric'}) : 'Unknown';
+          const yearsStalled = info.object.yearFiled ? (2026 - info.object.yearFiled) : null;
+          tt.innerHTML = `<div class="tt-address">${addr || 'Stalled Site'}</div>
+            <div class="tt-row"><span>Status</span><span style="color:#FF6B35">Stalled construction</span></div>
+            <div class="tt-row"><span>Complaint filed</span><span>${filed}</span></div>
+            ${yearsStalled ? `<div class="tt-row"><span>Years stalled</span><span>${yearsStalled}+</span></div>` : ''}
+            ${info.object.borough ? `<div class="tt-row"><span>Borough</span><span>${info.object.borough}</span></div>` : ''}
+            <div style="font-size:8px;color:#666;margin-top:4px;">Source: DOB stalled sites database</div>`;
           tt.style.display = 'block';
           tt.style.left = (info.x + 12) + 'px';
           tt.style.top = (info.y + 12) + 'px';
@@ -1566,6 +1617,7 @@ function encodeState() {
   else if (state.filters.highlightDemolished) parts.push('hl=dm');
   else if (state.filters.highlightVacant) parts.push('hl=vc');
   else if (state.filters.highlightConstruction) parts.push('hl=cn');
+  else if (state.filters.highlightStalled) parts.push('hl=st');
   return '#' + parts.join('&');
 }
 
@@ -1624,8 +1676,8 @@ function restoreFromHash() {
   }
   // Spotlight
   if (params.hl) {
-    const hlMap = { lm: 'hl-landmarks', dm: 'hl-demolished', vc: 'hl-vacant', cn: 'hl-construction' };
-    const hlKeyMap = { lm: 'highlightLandmarks', dm: 'highlightDemolished', vc: 'highlightVacant', cn: 'highlightConstruction' };
+    const hlMap = { lm: 'hl-landmarks', dm: 'hl-demolished', vc: 'hl-vacant', cn: 'hl-construction', st: 'hl-stalled' };
+    const hlKeyMap = { lm: 'highlightLandmarks', dm: 'highlightDemolished', vc: 'highlightVacant', cn: 'highlightConstruction', st: 'highlightStalled' };
     if (hlMap[params.hl]) {
       document.getElementById(hlMap[params.hl]).checked = true;
       state.filters[hlKeyMap[params.hl]] = true;
@@ -1801,6 +1853,7 @@ function saveStoryState() {
     highlightDemolished: state.filters.highlightDemolished,
     highlightVacant: state.filters.highlightVacant,
     highlightConstruction: state.filters.highlightConstruction,
+    highlightStalled: state.filters.highlightStalled,
   };
 }
 
@@ -1823,10 +1876,12 @@ function restoreStoryState(saved) {
   state.filters.highlightDemolished = saved.highlightDemolished;
   state.filters.highlightVacant = saved.highlightVacant;
   state.filters.highlightConstruction = saved.highlightConstruction;
+  state.filters.highlightStalled = saved.highlightStalled || false;
   document.getElementById('hl-landmarks').checked = saved.highlightLandmarks;
   document.getElementById('hl-demolished').checked = saved.highlightDemolished;
   document.getElementById('hl-vacant').checked = saved.highlightVacant;
   document.getElementById('hl-construction').checked = saved.highlightConstruction;
+  document.getElementById('hl-stalled').checked = saved.highlightStalled || false;
   _filterVersion++;
   syncFiltersFromDOM();
   updateLayers();
@@ -1890,13 +1945,14 @@ function startStory(storyId) {
   state.story.id = storyId;
   state.story.stepIndex = 0;
   // Clear spotlights
-  ['hl-landmarks','hl-demolished','hl-vacant','hl-construction'].forEach(id => {
+  ['hl-landmarks','hl-demolished','hl-vacant','hl-construction','hl-stalled'].forEach(id => {
     document.getElementById(id).checked = false;
   });
   state.filters.highlightLandmarks = false;
   state.filters.highlightDemolished = false;
   state.filters.highlightVacant = false;
   state.filters.highlightConstruction = false;
+  state.filters.highlightStalled = false;
   // Show overlay, hide menu
   document.getElementById('story-menu').classList.remove('show');
   document.getElementById('story-overlay').classList.add('show');
@@ -2042,13 +2098,14 @@ function resetToDefaults() {
   document.querySelectorAll('[data-era],[data-ht],[data-boro]').forEach(cb => { cb.checked = true; });
   document.querySelectorAll('[data-use]').forEach(cb => { cb.checked = true; cb.indeterminate = false; });
   // Clear spotlights
-  ['hl-landmarks','hl-demolished','hl-vacant','hl-construction'].forEach(id => {
+  ['hl-landmarks','hl-demolished','hl-vacant','hl-construction','hl-stalled'].forEach(id => {
     document.getElementById(id).checked = false;
   });
   state.filters.highlightLandmarks = false;
   state.filters.highlightDemolished = false;
   state.filters.highlightVacant = false;
   state.filters.highlightConstruction = false;
+  state.filters.highlightStalled = false;
   state.map.jumpTo({ center: [-73.98, 40.75], zoom: 11 });
   _filterVersion++;
   syncFiltersFromDOM();
@@ -2355,6 +2412,7 @@ function setupControls() {
       demolished: { el: 'hl-demolished', key: 'highlightDemolished' },
       vacant: { el: 'hl-vacant', key: 'highlightVacant' },
       construction: { el: 'hl-construction', key: 'highlightConstruction' },
+      stalled: { el: 'hl-stalled', key: 'highlightStalled' },
     };
     for (const [name, s] of Object.entries(spotlights)) {
       if (name !== except) {
@@ -2415,6 +2473,66 @@ function setupControls() {
     }
     _filterVersion++; updateLayers(); updateStats();
     if (e.target.checked) startPulse(); else stopPulse();
+  });
+
+  document.getElementById('hl-stalled').addEventListener('change', async (e) => {
+    state.filters.highlightStalled = e.target.checked;
+    if (e.target.checked) {
+      clearOtherSpotlights('stalled');
+      stopPulse(); // stop construction pulse if running
+      if (!state.stalledSites) {
+        const statusEl = document.getElementById('stalled-status');
+        statusEl.textContent = 'loading...';
+        try {
+          // Fetch today's stalled construction sites from DOB
+          const baseUrl = 'https://data.cityofnewyork.us/resource/i296-73x5.json';
+          // Get latest snapshot (most recent dobrundate)
+          const dateResp = await fetch(`${baseUrl}?$select=dobrundate&$order=dobrundate%20DESC&$limit=1`);
+          const dateData = await dateResp.json();
+          const latestDate = dateData[0]?.dobrundate;
+          if (!latestDate) throw new Error('No data');
+          const where = encodeURIComponent(`dobrundate='${latestDate}'`);
+          const resp = await fetch(`${baseUrl}?$where=${where}&$limit=500`);
+          const data = await resp.json();
+
+          // Geocode using NYC Geoclient via BIN lookup against our binary data
+          // Since we have all BINs in DOB data but not in our binary, geocode via address
+          // Use the NYC Planning geocoder (geosearch)
+          state.stalledSites = [];
+          const geocodePromises = data.map(async (d) => {
+            const addr = ((d.house_number || '') + ' ' + (d.street_name || '')).trim();
+            const borough = d.borough_name || '';
+            if (!addr) return null;
+            try {
+              const q = encodeURIComponent(`${addr}, ${borough}, New York, NY`);
+              const geoResp = await fetch(`https://geosearch.planninglabs.nyc/v2/search?text=${q}&size=1`);
+              const geoData = await geoResp.json();
+              if (geoData.features && geoData.features.length > 0) {
+                const coords = geoData.features[0].geometry.coordinates;
+                const filed = d.date_complaint_received ? new Date(d.date_complaint_received).getFullYear() : null;
+                return {
+                  pos: coords,
+                  addr: addr,
+                  borough: borough,
+                  complaint: d.complaint_number || '',
+                  dateFiled: d.date_complaint_received || '',
+                  yearFiled: filed,
+                  bin: d.bin || '',
+                };
+              }
+            } catch (e) { /* skip failed geocodes */ }
+            return null;
+          });
+          const results = await Promise.all(geocodePromises);
+          state.stalledSites = results.filter(Boolean);
+          statusEl.textContent = `(${state.stalledSites.length} sites)`;
+        } catch (err) {
+          statusEl.textContent = 'fetch failed';
+          console.error('Stalled sites fetch failed:', err);
+        }
+      }
+    }
+    _filterVersion++; updateLayers(); updateStats();
   });
 
   // All/None toggles per section
