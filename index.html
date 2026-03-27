@@ -2479,14 +2479,15 @@ function setupControls() {
     state.filters.highlightStalled = e.target.checked;
     if (e.target.checked) {
       clearOtherSpotlights('stalled');
-      stopPulse(); // stop construction pulse if running
-      if (!state.stalledSites) {
+      stopPulse();
+      if (!state.stalledSites || state.stalledSites.length === 0) {
         const statusEl = document.getElementById('stalled-status');
         statusEl.textContent = 'loading...';
+        // Don't dim yet — wait until data arrives
+        state.filters.highlightStalled = false;
+        _filterVersion++; updateLayers(); updateStats();
         try {
-          // Fetch today's stalled construction sites from DOB
           const baseUrl = 'https://data.cityofnewyork.us/resource/i296-73x5.json';
-          // Get latest snapshot (most recent dobrundate)
           const dateResp = await fetch(`${baseUrl}?$select=dobrundate&$order=dobrundate%20DESC&$limit=1`);
           const dateData = await dateResp.json();
           const latestDate = dateData[0]?.dobrundate;
@@ -2494,42 +2495,43 @@ function setupControls() {
           const where = encodeURIComponent(`dobrundate='${latestDate}'`);
           const resp = await fetch(`${baseUrl}?$where=${where}&$limit=500`);
           const data = await resp.json();
+          statusEl.textContent = `geocoding ${data.length} sites...`;
 
-          // Geocode using NYC Geoclient via BIN lookup against our binary data
-          // Since we have all BINs in DOB data but not in our binary, geocode via address
-          // Use the NYC Planning geocoder (geosearch)
-          state.stalledSites = [];
-          const geocodePromises = data.map(async (d) => {
-            const addr = ((d.house_number || '') + ' ' + (d.street_name || '')).trim();
-            const borough = d.borough_name || '';
-            if (!addr) return null;
-            try {
-              const q = encodeURIComponent(`${addr}, ${borough}, New York, NY`);
-              const geoResp = await fetch(`https://geosearch.planninglabs.nyc/v2/search?text=${q}&size=1`);
-              const geoData = await geoResp.json();
-              if (geoData.features && geoData.features.length > 0) {
-                const coords = geoData.features[0].geometry.coordinates;
-                const filed = d.date_complaint_received ? new Date(d.date_complaint_received).getFullYear() : null;
-                return {
-                  pos: coords,
-                  addr: addr,
-                  borough: borough,
-                  complaint: d.complaint_number || '',
-                  dateFiled: d.date_complaint_received || '',
-                  yearFiled: filed,
-                  bin: d.bin || '',
-                };
-              }
-            } catch (e) { /* skip failed geocodes */ }
-            return null;
-          });
-          const results = await Promise.all(geocodePromises);
-          state.stalledSites = results.filter(Boolean);
-          statusEl.textContent = `(${state.stalledSites.length} sites)`;
+          // Geocode in batches of 10 to avoid hammering the API
+          const sites = [];
+          for (let i = 0; i < data.length; i += 10) {
+            const batch = data.slice(i, i + 10);
+            const results = await Promise.all(batch.map(async (d) => {
+              const addr = ((d.house_number || '') + ' ' + (d.street_name || '')).trim();
+              const borough = d.borough_name || '';
+              if (!addr) return null;
+              try {
+                const q = encodeURIComponent(`${addr}, ${borough}, New York, NY`);
+                const geoResp = await fetch(`https://geosearch.planninglabs.nyc/v2/search?text=${q}&size=1`);
+                const geoData = await geoResp.json();
+                if (geoData.features && geoData.features.length > 0) {
+                  const coords = geoData.features[0].geometry.coordinates;
+                  const filed = d.date_complaint_received ? new Date(d.date_complaint_received).getFullYear() : null;
+                  return { pos: coords, addr, borough, complaint: d.complaint_number || '', dateFiled: d.date_complaint_received || '', yearFiled: filed, bin: d.bin || '' };
+                }
+              } catch (e) { /* skip */ }
+              return null;
+            }));
+            sites.push(...results.filter(Boolean));
+            statusEl.textContent = `geocoding... ${Math.min(i + 10, data.length)}/${data.length}`;
+          }
+          state.stalledSites = sites;
+          statusEl.textContent = `(${sites.length} sites)`;
+          // NOW enable the dim + dots
+          if (document.getElementById('hl-stalled').checked) {
+            state.filters.highlightStalled = true;
+            _filterVersion++; updateLayers(); updateStats();
+          }
         } catch (err) {
           statusEl.textContent = 'fetch failed';
           console.error('Stalled sites fetch failed:', err);
         }
+        return; // already called updateLayers above
       }
     }
     _filterVersion++; updateLayers(); updateStats();
