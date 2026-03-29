@@ -2430,29 +2430,6 @@ function setupControls() {
     });
   });
 
-  // Borough filters (use integers)
-  document.querySelectorAll('[data-boro]').forEach(cb => {
-    cb.addEventListener('change', () => {
-      const b = parseInt(cb.dataset.boro);
-      if (cb.checked) state.filters.boroughs.add(b); else state.filters.boroughs.delete(b);
-      refreshMap();
-    });
-  });
-
-  document.querySelectorAll('[data-era]').forEach(cb => {
-    cb.addEventListener('change', () => {
-      if (cb.checked) state.filters.eras.add(cb.dataset.era); else state.filters.eras.delete(cb.dataset.era);
-      refreshMap();
-    });
-  });
-
-  document.querySelectorAll('[data-ht]').forEach(cb => {
-    cb.addEventListener('change', () => {
-      if (cb.checked) state.filters.heights.add(cb.dataset.ht); else state.filters.heights.delete(cb.dataset.ht);
-      refreshMap();
-    });
-  });
-
   // Parent → subtype mappings for use filter
   const PARENT_SUBS = {
     residential: ['1fam','2fam','walkup','elevator'],
@@ -2463,33 +2440,29 @@ function setupControls() {
     for (const s of subs) SUB_TO_PARENT[s] = p;
   }
 
+  // All filter checkboxes: just sync parent/child visuals, then refreshMap.
+  // syncFiltersFromDOM() (called inside getFilteredData) rebuilds all Sets
+  // from DOM state — no manual Set manipulation needed.
+  document.querySelectorAll('[data-boro],[data-era],[data-ht]').forEach(cb => {
+    cb.addEventListener('change', () => refreshMap());
+  });
+
   document.querySelectorAll('[data-use]').forEach(cb => {
     cb.addEventListener('change', () => {
       const use = cb.dataset.use;
       const subs = PARENT_SUBS[use];
       if (subs) {
-        // Parent toggle: also toggle all sub-checkboxes
-        if (cb.checked) state.filters.uses.add(use); else state.filters.uses.delete(use);
-        subs.forEach(s => {
-          const el = document.getElementById('use-' + s);
-          el.checked = cb.checked;
-          if (cb.checked) state.filters.subUses.add(s); else state.filters.subUses.delete(s);
-        });
+        // Parent toggle: sync all sub-checkboxes to match
+        subs.forEach(s => { document.getElementById('use-' + s).checked = cb.checked; });
       } else if (SUB_TO_PARENT[use]) {
-        // Sub-checkbox: update subUses and sync parent visual
-        if (cb.checked) state.filters.subUses.add(use); else state.filters.subUses.delete(use);
+        // Sub-checkbox: update parent visual (checked/indeterminate)
         const parent = SUB_TO_PARENT[use];
         const parentSubs = PARENT_SUBS[parent];
         const parentEl = document.getElementById('use-' + parent);
-        const allOn = parentSubs.every(s => state.filters.subUses.has(s));
-        const anyOn = parentSubs.some(s => state.filters.subUses.has(s));
+        const anyOn = parentSubs.some(s => document.getElementById('use-' + s).checked);
+        const allOn = parentSubs.every(s => document.getElementById('use-' + s).checked);
         parentEl.checked = anyOn;
         parentEl.indeterminate = anyOn && !allOn;
-        // Parent use filter stays on as long as any sub is on
-        if (anyOn) state.filters.uses.add(parent); else state.filters.uses.delete(parent);
-      } else {
-        // Simple category (mixed, commercial, industrial, other)
-        if (cb.checked) state.filters.uses.add(use); else state.filters.uses.delete(use);
       }
       refreshMap();
     });
@@ -2636,54 +2609,21 @@ function setupControls() {
     toggle.querySelector('.none').addEventListener('click', () => selectSection(toggle.dataset.section, false));
   });
 
+  // selectSection: just set checkboxes, syncFiltersFromDOM handles the rest
   function selectSection(section, checked) {
-    if (section === 'era') {
-      document.querySelectorAll('[data-era]').forEach(cb => {
-        cb.checked = checked;
-        if (checked) state.filters.eras.add(cb.dataset.era); else state.filters.eras.delete(cb.dataset.era);
-      });
-    } else if (section === 'height') {
-      document.querySelectorAll('[data-ht]').forEach(cb => {
-        cb.checked = checked;
-        if (checked) state.filters.heights.add(cb.dataset.ht); else state.filters.heights.delete(cb.dataset.ht);
-      });
-    } else if (section === 'use') {
-      // Reset both sets properly
-      const parentKeys = ['residential','mixed','commercial','industrial','institutional','other'];
-      const subKeys = ['1fam','2fam','walkup','elevator','religious','school','health','civic'];
-      parentKeys.forEach(k => { if (checked) state.filters.uses.add(k); else state.filters.uses.delete(k); });
-      subKeys.forEach(k => { if (checked) state.filters.subUses.add(k); else state.filters.subUses.delete(k); });
-      document.querySelectorAll('[data-use]').forEach(cb => {
-        cb.checked = checked;
-        cb.indeterminate = false;
-      });
-    } else if (section === 'boro') {
-      document.querySelectorAll('[data-boro]').forEach(cb => {
-        cb.checked = checked;
-        const b = parseInt(cb.dataset.boro);
-        if (checked) state.filters.boroughs.add(b); else state.filters.boroughs.delete(b);
-      });
-    }
+    const selectors = { era: '[data-era]', height: '[data-ht]', boro: '[data-boro]', use: '[data-use]' };
+    document.querySelectorAll(selectors[section]).forEach(cb => {
+      cb.checked = checked;
+      cb.indeterminate = false;
+    });
     refreshMap();
   }
 
   // Global All/None toggle
   document.getElementById('global-toggle').addEventListener('click', (e) => {
-    const t = e.target;
-    if (t.classList.contains('all')) {
-      selectSection('era', true); selectSection('use', true);
-      selectSection('height', true); selectSection('boro', true);
-      // Also select all sub-use checkboxes
-      document.querySelectorAll('[data-subuse]').forEach(cb => {
-        cb.checked = true; state.filters.subUses.add(cb.dataset.subuse);
-      });
-    } else if (t.classList.contains('none')) {
-      selectSection('era', false); selectSection('use', false);
-      selectSection('height', false); selectSection('boro', false);
-      document.querySelectorAll('[data-subuse]').forEach(cb => {
-        cb.checked = false; state.filters.subUses.delete(cb.dataset.subuse);
-      });
-    }
+    const checked = e.target.classList.contains('all');
+    if (!checked && !e.target.classList.contains('none')) return;
+    ['era', 'use', 'height', 'boro'].forEach(s => selectSection(s, checked));
   });
 
   // Info overlay — auto-show on load, fade after 5s
