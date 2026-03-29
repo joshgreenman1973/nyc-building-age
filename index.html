@@ -787,6 +787,11 @@
     <div class="filter-check"><input type="checkbox" id="hl-construction"><label for="hl-construction" style="color:#00E5FF">Under construction</label> <span id="construction-status" style="font-size:8px;color:#555;"></span></div>
     <div class="filter-check"><input type="checkbox" id="hl-stalled"><label for="hl-stalled" style="color:#FF6B35">Stalled sites</label> <span id="stalled-status" style="font-size:8px;color:#555;"></span></div>
   </div>
+
+  <div class="filter-section fs-overlay" style="border-left-color:rgba(100,160,255,0.4);">
+    <div class="section-label">Overlays</div>
+    <div class="filter-check"><input type="checkbox" id="show-subway"><label for="show-subway" style="color:#6BAED6">Subway lines</label> <span id="subway-status" style="font-size:8px;color:#555;"></span></div>
+  </div>
 </div>
 
 <div id="controls">
@@ -920,7 +925,9 @@ const state = {
   },
   // Search
   searchMarker: null,
-  stalledSites: null, // Array of {pos: [lng,lat], addr, borough, complaint, dateFiled, bin}
+  stalledSites: null,
+  subwayLoaded: false,
+  showSubway: false,
   // Story
   story: { active: false, id: null, stepIndex: 0, timer: null, savedState: null },
 };
@@ -1210,6 +1217,148 @@ function forceRepaint() {
   updateLayers();
   if (state.deckgl._deck) state.deckgl._deck.redraw(true);
   state.map.triggerRepaint();
+}
+
+// MTA official subway line colors by route
+const MTA_COLORS = {
+  '1':'#EE352E','2':'#EE352E','3':'#EE352E',
+  '4':'#00933C','5':'#00933C','5 Peak':'#00933C','6':'#00933C','6 Express':'#00933C',
+  '7':'#B933AD','7 Express':'#B933AD',
+  'A':'#0039A6','C':'#0039A6','E':'#0039A6',
+  'B':'#FF6319','D':'#FF6319','F':'#FF6319','M':'#FF6319',
+  'G':'#6CBE45',
+  'J':'#996633','Z':'#996633',
+  'L':'#A7A9AC',
+  'N':'#FCCC0A','Q':'#FCCC0A','R':'#FCCC0A','W':'#FCCC0A',
+  'S':'#808183','SF':'#808183','SR':'#808183','ST':'#808183','SIR':'#808183',
+};
+function hexToRgb(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+async function loadSubwayData() {
+  const statusEl = document.getElementById('subway-status');
+  statusEl.textContent = 'loading...';
+  try {
+    // Fetch subway lines from MTA/NY Open Data
+    const linesUrl = 'https://data.ny.gov/resource/s692-irgq.json?$limit=100';
+    const linesResp = await fetch(linesUrl);
+    const linesData = await linesResp.json();
+
+    const routeFeatures = [];
+    for (const line of linesData) {
+      if (!line.geometry) continue;
+      const geom = line.geometry;
+      const service = line.service || '';
+      const color = MTA_COLORS[service] || '#808183';
+      routeFeatures.push({
+        type: 'Feature',
+        properties: { service, color },
+        geometry: geom,
+      });
+    }
+
+    // Add as a single GeoJSON source
+    state.map.addSource('subway-lines', {
+      type: 'geojson',
+      data: { type: 'FeatureCollection', features: routeFeatures },
+    });
+
+    // Outer casing for visibility on dark background
+    state.map.addLayer({
+      id: 'subway-lines-casing',
+      type: 'line',
+      source: 'subway-lines',
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: {
+        'line-color': '#000000',
+        'line-width': ['interpolate', ['linear'], ['zoom'], 10, 4, 14, 7],
+        'line-opacity': 0.6,
+      },
+    });
+
+    // Colored lines
+    state.map.addLayer({
+      id: 'subway-lines-color',
+      type: 'line',
+      source: 'subway-lines',
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: {
+        'line-color': ['get', 'color'],
+        'line-width': ['interpolate', ['linear'], ['zoom'], 10, 2.5, 14, 5],
+        'line-opacity': 0.85,
+      },
+    }, 'building');
+
+    // Fetch stations
+    const stationsUrl = 'https://data.ny.gov/resource/39hk-dx4f.json?$limit=500&$select=stop_name,daytime_routes,gtfs_latitude,gtfs_longitude';
+    const stationsResp = await fetch(stationsUrl);
+    const stationsData = await stationsResp.json();
+
+    const stationFeatures = stationsData
+      .filter(s => s.gtfs_latitude && s.gtfs_longitude)
+      .map(s => {
+        const firstRoute = (s.daytime_routes || '').split(' ')[0];
+        const color = MTA_COLORS[firstRoute] || '#808183';
+        return {
+          type: 'Feature',
+          properties: { name: s.stop_name, routes: s.daytime_routes, color },
+          geometry: { type: 'Point', coordinates: [parseFloat(s.gtfs_longitude), parseFloat(s.gtfs_latitude)] },
+        };
+      });
+
+    state.map.addSource('subway-stations', {
+      type: 'geojson',
+      data: { type: 'FeatureCollection', features: stationFeatures },
+    });
+
+    state.map.addLayer({
+      id: 'subway-stations',
+      type: 'circle',
+      source: 'subway-stations',
+      paint: {
+        'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 1, 13, 3, 16, 6],
+        'circle-color': ['get', 'color'],
+        'circle-stroke-width': 1,
+        'circle-stroke-color': '#000',
+        'circle-opacity': 0.9,
+      },
+    });
+
+    // Station labels at higher zoom
+    state.map.addLayer({
+      id: 'subway-station-labels',
+      type: 'symbol',
+      source: 'subway-stations',
+      minzoom: 14,
+      layout: {
+        'text-field': ['get', 'name'],
+        'text-size': 10,
+        'text-offset': [0, 1.2],
+        'text-anchor': 'top',
+        'text-optional': true,
+      },
+      paint: {
+        'text-color': '#ccc',
+        'text-halo-color': '#000',
+        'text-halo-width': 1,
+      },
+    });
+
+    state.subwayLoaded = true;
+    statusEl.textContent = `(${routeFeatures.length} lines, ${stationFeatures.length} stations)`;
+  } catch (err) {
+    statusEl.textContent = 'fetch failed';
+    console.error('Subway data load failed:', err);
+  }
+}
+
+function toggleSubwayVisibility(visible) {
+  const vis = visible ? 'visible' : 'none';
+  ['subway-lines-casing', 'subway-lines-color', 'subway-stations', 'subway-station-labels'].forEach(id => {
+    if (state.map.getLayer(id)) state.map.setLayoutProperty(id, 'visibility', vis);
+  });
 }
 
 // ============================================================
@@ -2468,6 +2617,17 @@ function setupControls() {
       }
     }
     refreshMap();
+  });
+
+  // Subway overlay toggle
+  document.getElementById('show-subway').addEventListener('change', async (e) => {
+    state.showSubway = e.target.checked;
+    if (e.target.checked && !state.subwayLoaded) {
+      await loadSubwayData();
+    }
+    if (state.subwayLoaded) {
+      toggleSubwayVisibility(e.target.checked);
+    }
   });
 
   // All/None toggles per section
