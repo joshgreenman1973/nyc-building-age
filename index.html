@@ -1289,7 +1289,7 @@ async function loadSubwayData() {
         'line-width': ['interpolate', ['linear'], ['zoom'], 10, 2.5, 14, 5],
         'line-opacity': 0.85,
       },
-    }, 'building');
+    });
 
     // Fetch stations
     const stationsUrl = 'https://data.ny.gov/resource/39hk-dx4f.json?$limit=500&$select=stop_name,daytime_routes,gtfs_latitude,gtfs_longitude';
