@@ -462,6 +462,23 @@
     font-size: 8px; color: #555; margin-bottom: 5px; line-height: 1.3;
     font-style: italic;
   }
+  .era-info {
+    position: relative; display: inline-block; margin-left: 4px; cursor: help;
+    width: 12px; height: 12px; line-height: 12px; text-align: center;
+    border-radius: 50%; border: 1px solid rgba(255,255,255,0.2);
+    font-size: 8px; font-style: italic; font-family: Georgia, serif;
+    color: #888; vertical-align: 1px;
+  }
+  .era-info:hover { color: #ccc; border-color: rgba(255,255,255,0.4); }
+  .era-info .era-tooltip {
+    display: none; position: absolute; bottom: 100%; right: -40px;
+    width: 220px; padding: 8px 10px; margin-bottom: 6px;
+    background: rgba(10,10,10,0.95); border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 5px; font-size: 9px; font-style: normal; font-family: 'Helvetica Neue', Arial, sans-serif;
+    color: #aaa; line-height: 1.45; text-transform: none; letter-spacing: 0;
+    font-weight: 400; z-index: 30; pointer-events: none;
+  }
+  .era-info:hover .era-tooltip { display: block; }
   .filter-section.section-empty {
     border-left-color: rgba(255,60,60,0.6);
     background: rgba(255,40,40,0.06);
@@ -754,7 +771,7 @@
   <div class="panel-title">Filter Buildings <span class="select-toggle" id="global-toggle"><span class="all">All</span><span class="sep">/</span><span class="none">None</span></span></div>
 
   <div class="filter-section fs-era">
-    <div class="section-label">Era <span class="select-toggle" data-section="era"><span class="all">All</span><span class="sep">/</span><span class="none">None</span></span></div>
+    <div class="section-label">Era <span class="era-info">i<span class="era-tooltip">NYC building dates come from DOB permit filings, which were never designed as a historical archive. Dates before ~1920 are highly unreliable -- the city simply didn't track them consistently. We group everything before 1920 into one era rather than implying false precision about older buildings.</span></span> <span class="select-toggle" data-section="era"><span class="all">All</span><span class="sep">/</span><span class="none">None</span></span></div>
     <div class="filter-check"><input type="checkbox" id="era-pre1920" checked data-era="pre1920"><label for="era-pre1920">Before 1920</label></div>
     <div class="filter-check"><input type="checkbox" id="era-interwar" checked data-era="interwar"><label for="era-interwar">1920-1950</label></div>
     <div class="filter-check"><input type="checkbox" id="era-postwar" checked data-era="postwar"><label for="era-postwar">1950-1980</label></div>
@@ -1163,8 +1180,8 @@ function getColor(i, yr) {
   // Dim all buildings when Construction or Stalled spotlight is active
   const _dim = (state.filters.highlightConstruction && state.constructionSites) || (state.filters.highlightStalled && state.stalledSites);
 
-  // Not yet built or unknown year
-  if (yb > yr || yb <= 0) return [0,0,0,0];
+  // Not yet built (but allow unknown-year buildings through)
+  if (yb > yr && yb > 0) return [0,0,0,0];
 
   // Color mode: height — dedicated spectrum from pale to vivid by floor count
   if (state.colorMode === 'height') {
@@ -1192,6 +1209,11 @@ function getColor(i, yr) {
   }
 
   // Age mode
+  // Unknown year — show as dim gray
+  if (yb <= 0) {
+    const a = _dim ? 40 : 120;
+    return [80, 80, 80, a];
+  }
   // Demolished?
   if (dy > 0 && dy <= yr) {
     if (ry > 0 && ry <= yr) {
@@ -1239,6 +1261,7 @@ const SPOTLIGHT_URL_TO_KEY = Object.fromEntries(SPOTLIGHT_DEFS.map(s => [s.urlCo
 
 function refreshMap() {
   _filterVersion++;
+  _cachedFilterVersion = -1; // Force filter cache invalidation
   updateLayers();
   updateStats();
   updateFilterWarnings();
