@@ -664,11 +664,11 @@
   <p>Building data comes from <a href="https://www.nyc.gov/site/planning/data-maps/open-data/dwn-pluto-mappluto.page" target="_blank">MapPLUTO</a> (Primary Land Use Tax Lot Output), published by the NYC Department of City Planning. MapPLUTO merges tax lot data from the Department of Finance with building and zoning information from the Department of Buildings and City Planning. The dataset used here is version 25v1 (January 2025) and contains approximately 857,000 building records.</p>
 
   <h3>Construction Era</h3>
-  <div class="def"><strong>Colonial (pre-1800)</strong> — MapPLUTO <code>YearBuilt</code> before 1800. Extremely unreliable; very few buildings carry dates this old in city records.</div>
-  <div class="def"><strong>19th Century (1800–1899)</strong> — <code>YearBuilt</code> between 1800 and 1899. Significantly undercounted. The city's DOB permit records do not reliably go back this far, so many 19th-century buildings are tagged with later dates or have no date at all.</div>
-  <div class="def"><strong>Prewar (1900–1945)</strong> — <code>YearBuilt</code> between 1900 and 1945. More reliable than earlier eras but still imperfect, especially for buildings constructed before ~1950.</div>
-  <div class="def"><strong>Postwar (1946–1979)</strong> — <code>YearBuilt</code> between 1946 and 1979. Generally reliable.</div>
-  <div class="def"><strong>Modern (1980+)</strong> — <code>YearBuilt</code> of 1980 or later. Most reliable era in the dataset.</div>
+  <div class="def"><strong>Before 1920</strong> — MapPLUTO <code>YearBuilt</code> before 1920. Includes colonial, 19th-century, and early 20th-century construction. Dates this old are highly unreliable; the city's DOB permit records do not go back this far, so many buildings are tagged with later dates or have no date at all.</div>
+  <div class="def"><strong>1920–1950</strong> — <code>YearBuilt</code> between 1920 and 1949. The interwar building boom: Art Deco skyscrapers, the first public housing, and the outer-borough apartment expansion. More reliable than earlier eras but still imperfect.</div>
+  <div class="def"><strong>1950–1980</strong> — <code>YearBuilt</code> between 1950 and 1979. The postwar era: Robert Moses highways, towers-in-the-park, and suburban-style development in the outer boroughs. Generally reliable.</div>
+  <div class="def"><strong>1980–2010</strong> — <code>YearBuilt</code> between 1980 and 2009. Late 20th-century development through the post-9/11 building boom. Reliable.</div>
+  <div class="def"><strong>Since 2010</strong> — <code>YearBuilt</code> of 2010 or later. The most recent wave of construction. Most reliable era in the dataset.</div>
   <div class="def"><strong>Unknown year</strong> — <code>YearBuilt</code> is 0 or missing. Approximately 39,000 lots.</div>
   <p style="color:#FF9020;font-size:10px;"><strong>Important:</strong> Dates before roughly 1950 are highly unreliable. The city's building records (MapPLUTO YearBuilt) come from DOB permit filings, which were not designed as a historical archive. Much of New York was built in the 1800s, but the data dramatically undercounts pre-1900 construction. (<a href="https://www.reddit.com/r/centuryhomes/comments/1ggn7u3/how_accurate_are_date_built_records/" target="_blank">More</a>, <a href="https://www.reddit.com/r/AskNYC/comments/12uaoao/can_you_reliably_find_the_yeardecade_of/" target="_blank">more</a>)</p>
 
@@ -755,11 +755,11 @@
 
   <div class="filter-section fs-era">
     <div class="section-label">Era <span class="select-toggle" data-section="era"><span class="all">All</span><span class="sep">/</span><span class="none">None</span></span></div>
-    <div class="filter-check"><input type="checkbox" id="era-colonial" checked data-era="colonial"><label for="era-colonial">Colonial (pre-1800)</label></div>
-    <div class="filter-check"><input type="checkbox" id="era-antebellum" checked data-era="antebellum"><label for="era-antebellum">19th Century</label></div>
-    <div class="filter-check"><input type="checkbox" id="era-prewar" checked data-era="prewar"><label for="era-prewar">Prewar (1900-1945)</label></div>
-    <div class="filter-check"><input type="checkbox" id="era-postwar" checked data-era="postwar"><label for="era-postwar">Postwar (1946-1979)</label></div>
-    <div class="filter-check"><input type="checkbox" id="era-modern" checked data-era="modern"><label for="era-modern">Modern (1980+)</label></div>
+    <div class="filter-check"><input type="checkbox" id="era-pre1920" checked data-era="pre1920"><label for="era-pre1920">Before 1920</label></div>
+    <div class="filter-check"><input type="checkbox" id="era-interwar" checked data-era="interwar"><label for="era-interwar">1920-1950</label></div>
+    <div class="filter-check"><input type="checkbox" id="era-postwar" checked data-era="postwar"><label for="era-postwar">1950-1980</label></div>
+    <div class="filter-check"><input type="checkbox" id="era-late20c" checked data-era="late20c"><label for="era-late20c">1980-2010</label></div>
+    <div class="filter-check"><input type="checkbox" id="era-recent" checked data-era="recent"><label for="era-recent">Since 2010</label></div>
     <div class="filter-check"><input type="checkbox" id="era-unknown" checked data-era="unknown"><label for="era-unknown" style="color:#666">Unknown year</label></div>
     <div class="section-warning">No eras selected — buildings hidden</div>
   </div>
@@ -938,7 +938,7 @@ const state = {
   // Filters
   filters: {
     boroughs: new Set([1,2,3,4,5]),
-    eras: new Set(['colonial','antebellum','prewar','postwar','modern','unknown']),
+    eras: new Set(['pre1920','interwar','postwar','late20c','recent','unknown']),
     heights: new Set(['single','low','mid','high','super']),
     uses: new Set(['residential','mixed','commercial','industrial','institutional','other']),
     subUses: new Set(['1fam','2fam','walkup','elevator','religious','school','health','civic']),
@@ -991,11 +991,11 @@ for (const [k,v] of Object.entries(CC)) CLASS_COLORS[k.charCodeAt(0)-65] = [...v
 // Era + height helpers
 function getEra(yb) {
   if (yb <= 0) return 'unknown';
-  if (yb < 1800) return 'colonial';
-  if (yb < 1900) return 'antebellum';
-  if (yb < 1946) return 'prewar';
+  if (yb < 1920) return 'pre1920';
+  if (yb < 1950) return 'interwar';
   if (yb < 1980) return 'postwar';
-  return 'modern';
+  if (yb < 2010) return 'late20c';
+  return 'recent';
 }
 function getHt(nf) { return nf <= 1 ? 'single' : nf <= 6 ? 'low' : nf <= 20 ? 'mid' : nf <= 49 ? 'high' : 'super'; }
 
@@ -1092,14 +1092,19 @@ async function loadAddresses() {
 // ============================================================
 // COLOR FUNCTIONS (work on array index, not object)
 // ============================================================
-function ageGradient(age) {
-  const t = Math.min(age / 200, 1);
-  return [
-    255 - (t * 170) | 0,   // 255 → 85
-    120 - (t * 60) | 0,    // 120 → 60
-    30 + (t * 100) | 0,    // 30 → 130
-    210 - (t * 50) | 0,
-  ];
+// Distinct per-era base colors — chosen to be visually separable at city scale
+const ERA_COLORS = {
+  pre1920:  [74, 91, 199],    // deep indigo-blue
+  interwar: [27, 153, 139],   // teal
+  postwar:  [232, 168, 56],   // amber/gold
+  late20c:  [224, 82, 99],    // coral-red
+  recent:   [240, 230, 211],  // warm cream
+  unknown:  [80, 80, 80],     // dim gray
+};
+
+function ageColor(yb) {
+  const era = getEra(yb);
+  return ERA_COLORS[era] || ERA_COLORS.unknown;
 }
 
 // Height-based brightness: taller buildings are more vivid/saturated,
@@ -1192,8 +1197,9 @@ function getColor(i, yr) {
     if (ry > 0 && ry <= yr) {
       const ra = yr - ry;
       if (ra < 5) { const t = 1 - ra/5; const a = _dim ? 40 : 220; return [0, 140+(t*81)|0, 180+(t*75)|0, a]; }
-      const c = ageGradient(ra);
-      return _dim ? [c[0], c[1], c[2], 40] : c;
+      const c = ageColor(ry);
+      const a = _dim ? 40 : 200;
+      return [c[0], c[1], c[2], a];
     }
     const da = yr - dy;
     if (da < 2) return _dim ? [255, 60, 60, 40] : [255, 60, 60, 220 - (da*80)|0];
@@ -1204,13 +1210,13 @@ function getColor(i, yr) {
 
   // Landmark?
   if (ly > 0 && ly <= yr) {
-    const t = Math.min(age / 200, 1);
     const a = _dim ? 40 : 210;
-    return [255-(t*30)|0, 200-(t*40)|0, 50+(t*20)|0, a];
+    return [255, 200, 50, a];
   }
 
-  const c = ageGradient(age);
-  return _dim ? [c[0], c[1], c[2], 40] : c;
+  const c = ageColor(yb);
+  const a = _dim ? 40 : 200;
+  return [c[0], c[1], c[2], a];
 }
 
 // ============================================================
@@ -1758,7 +1764,7 @@ function onHover(info) {
 // ============================================================
 const DEFAULTS = {
   center: [-73.98, 40.75], zoom: 11, year: MAX_YEAR, mode: 'age',
-  eras: ['colonial','antebellum','prewar','postwar','modern','unknown'],
+  eras: ['pre1920','interwar','postwar','late20c','recent','unknown'],
   heights: ['single','low','mid','high','super'],
   boroughs: [1,2,3,4,5],
   uses: ['residential','mixed','commercial','industrial','institutional','other'],
@@ -1990,9 +1996,9 @@ const STORIES = {
   victorian: {
     title: 'Brooklyn\u2019s Victorian Belt',
     steps: [
-      { center: [-73.977, 40.675], zoom: 15, year: 2026, mode: 'age', filters: { eras: ['colonial','antebellum','prewar'] }, caption: 'Park Slope: one of the finest collections of Victorian and Edwardian rowhouses in America. Block after block of brownstones built in the 1880s and 1890s.', duration: 5000 },
-      { center: [-73.94, 40.685], zoom: 15, year: 2026, mode: 'age', filters: { eras: ['colonial','antebellum','prewar'] }, caption: 'Bed-Stuy: the nation\u2019s largest collection of intact Victorian architecture. Thousands of brownstones and rowhouses, many dating to the 1870s\u20131900s.', duration: 5000 },
-      { center: [-73.995, 40.695], zoom: 15.5, year: 2026, mode: 'age', filters: { eras: ['colonial','antebellum','prewar'] }, caption: 'Brooklyn Heights: America\u2019s first suburb. Federal and Greek Revival homes from the 1830s\u20131860s, and the city\u2019s first designated historic district (1965).', duration: 6000 },
+      { center: [-73.977, 40.675], zoom: 15, year: 2026, mode: 'age', filters: { eras: ['pre1920','interwar'] }, caption: 'Park Slope: one of the finest collections of Victorian and Edwardian rowhouses in America. Block after block of brownstones built in the 1880s and 1890s.', duration: 5000 },
+      { center: [-73.94, 40.685], zoom: 15, year: 2026, mode: 'age', filters: { eras: ['pre1920','interwar'] }, caption: 'Bed-Stuy: the nation\u2019s largest collection of intact Victorian architecture. Thousands of brownstones and rowhouses, many dating to the 1870s\u20131900s.', duration: 5000 },
+      { center: [-73.995, 40.695], zoom: 15.5, year: 2026, mode: 'age', filters: { eras: ['pre1920','interwar'] }, caption: 'Brooklyn Heights: America\u2019s first suburb. Federal and Greek Revival homes from the 1830s\u20131860s, and the city\u2019s first designated historic district (1965).', duration: 6000 },
     ],
   },
   worship: {
@@ -2124,7 +2130,7 @@ function _getStepFilterLabel(step) {
     return items.map(u => labels[u] || u).join(' + ');
   }
   if (f.eras) {
-    const labels = { colonial: 'Colonial', antebellum: '19th Century', prewar: 'Prewar', postwar: 'Postwar', modern: 'Modern' };
+    const labels = { pre1920: 'Before 1920', interwar: '1920-1950', postwar: '1950-1980', late20c: '1980-2010', recent: 'Since 2010' };
     return f.eras.map(e => labels[e] || e).join(' + ') + ' Buildings';
   }
   return null;
@@ -2391,11 +2397,12 @@ function updateLegend() {
 
   if (mode === 'age') {
     html = `<div class="legend-title">Color: Building Age</div>
-      <div style="font-size:9px;color:#777;margin-bottom:6px;">Warm = newer, cool = older</div>
-      <div class="legend-item"><div class="legend-swatch" style="background:#FF781E"></div> Recently built</div>
-      <div class="legend-item"><div class="legend-swatch" style="background:#B05030"></div> 50 years</div>
-      <div class="legend-item"><div class="legend-swatch" style="background:#703C60"></div> 100 years*</div>
-      <div class="legend-item"><div class="legend-swatch" style="background:#553C82"></div> 200+ years*</div>
+      <div style="font-size:9px;color:#777;margin-bottom:6px;">Each era has a distinct color</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(240,230,211)"></div> Since 2010</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(224,82,99)"></div> 1980-2010</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(232,168,56)"></div> 1950-1980</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(27,153,139)"></div> 1920-1950</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(74,91,199)"></div> Before 1920*</div>
       <div style="font-size:8px;color:#666;margin:4px 0 0 18px;line-height:1.3;">*Dates before ~1950 are highly unreliable (<a href="https://www.reddit.com/r/centuryhomes/comments/1ggn7u3/how_accurate_are_date_built_records/" target="_blank" style="color:#888;text-decoration:underline;">why?</a>)</div>`;
   } else if (mode === 'height') {
     html = `<div class="legend-title">Color: Building Height</div>
