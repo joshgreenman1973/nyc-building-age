@@ -1158,9 +1158,11 @@ function isFiltered(i) {
   if (!state.filters.uses.has(getUse(cls))) return true;
   const subUse = getSubUse(cls);
   if (subUse && !state.filters.subUses.has(subUse)) return true;
-  if (state.filters.highlightLandmarks && ly === 0) return true;
-  if (state.filters.highlightDemolished && dy === 0) return true;
-  if (state.filters.highlightVacant && cls.charAt(0) !== 'V') return true;
+  // Spotlight filters: when active, show ONLY the spotlight items,
+  // bypassing era/height/use/boro filters that might exclude them
+  if (state.filters.highlightLandmarks) return ly === 0;
+  if (state.filters.highlightDemolished) return dy === 0;
+  if (state.filters.highlightVacant) return cls.charAt(0) !== 'V';
   return false;
 }
 
