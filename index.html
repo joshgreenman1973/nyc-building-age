@@ -5,12 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Every Building — New York City</title>
 
-<!-- MapLibre GL JS -->
-<link href="https://cdn.jsdelivr.net/npm/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+<!-- Mapbox GL JS -->
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.js"></script>
 
-<!-- PMTiles protocol adapter -->
-<script src="https://cdn.jsdelivr.net/npm/pmtiles@3.0.6/dist/pmtiles.js"></script>
+<!-- Deck.gl -->
+<script src="https://unpkg.com/deck.gl@9.0.16/dist.min.js"></script>
+
+<!-- No FlatGeobuf needed — using compact binary format for speed -->
 
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -50,7 +52,7 @@
   }
   #info-btn:hover { background: rgba(255,255,255,0.18); color: #fff; }
   #info-overlay {
-    display: none; position: absolute; top: 100px; left: 220px;
+    display: none; position: absolute; top: 100px; left: 24px;
     width: 270px; max-height: 55vh; overflow-y: auto;
     background: rgba(10,10,10,0.92); backdrop-filter: blur(16px);
     border: 1px solid rgba(255,255,255,0.08); border-radius: 6px;
@@ -121,13 +123,13 @@
     text-shadow: 0 1px 6px rgba(0,0,0,0.9);
   }
 
-  /* MapLibre zoom controls */
-  .maplibregl-ctrl-bottom-right { bottom: 110px; right: 10px; }
-  .maplibregl-ctrl-group { background: rgba(10,10,10,0.85) !important; border: 1px solid rgba(255,255,255,0.12) !important; border-radius: 4px !important; }
-  .maplibregl-ctrl-group button { width: 32px; height: 32px; }
-  .maplibregl-ctrl-group button .maplibregl-ctrl-icon { filter: invert(1) brightness(0.7); }
-  .maplibregl-ctrl-group button:hover .maplibregl-ctrl-icon { filter: invert(1) brightness(1); }
-  .maplibregl-ctrl-group button + button { border-top: 1px solid rgba(255,255,255,0.1) !important; }
+  /* Mapbox zoom controls */
+  .mapboxgl-ctrl-bottom-right { bottom: 110px; right: 10px; }
+  .mapboxgl-ctrl-group { background: rgba(10,10,10,0.85) !important; border: 1px solid rgba(255,255,255,0.12) !important; border-radius: 4px !important; }
+  .mapboxgl-ctrl-group button { width: 32px; height: 32px; }
+  .mapboxgl-ctrl-group button .mapboxgl-ctrl-icon { filter: invert(1) brightness(0.7); }
+  .mapboxgl-ctrl-group button:hover .mapboxgl-ctrl-icon { filter: invert(1) brightness(1); }
+  .mapboxgl-ctrl-group button + button { border-top: 1px solid rgba(255,255,255,0.1) !important; }
 
   /* Bottom controls */
   #controls {
@@ -282,8 +284,8 @@
 
   /* Address search */
   #search-bar {
-    position: absolute; top: 68px; left: 16px;
-    width: 180px; z-index: 20; pointer-events: auto;
+    position: absolute; top: 80px; left: 24px;
+    width: 260px; z-index: 20; pointer-events: auto;
   }
   #search-input {
     width: 100%; padding: 8px 30px 8px 10px;
@@ -294,13 +296,6 @@
   }
   #search-input:focus { border-color: rgba(255,144,32,0.4); }
   #search-input::placeholder { color: #666; }
-  #search-input:-webkit-autofill,
-  #search-input:-webkit-autofill:hover,
-  #search-input:-webkit-autofill:focus {
-    -webkit-box-shadow: 0 0 0 40px rgba(10,10,10,0.95) inset !important;
-    -webkit-text-fill-color: #eee !important;
-    caret-color: #eee;
-  }
   #search-clear {
     position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
     background: none; border: none; color: #666; font-size: 14px;
@@ -375,7 +370,7 @@
     height: 100%; width: 0; background: #FF9020;
     transition: width linear;
   }
-  /* Story year flash */
+  /* Story year flash — large centered year that fades in/out on step transitions */
   #story-year-flash {
     position: fixed; top: 30%; left: 50%; transform: translate(-50%, -50%);
     font-size: 100px; font-weight: 800; color: #FF9020;
@@ -390,7 +385,7 @@
   #story-year-flash.fade {
     opacity: 0; transition: opacity 0.5s ease;
   }
-  /* Story filter flash */
+  /* Story filter flash — brief label showing what filter is active */
   #story-filter-flash {
     position: fixed; top: calc(30% + 50px); left: 50%; transform: translateX(-50%);
     font-size: 15px; font-weight: 500; color: rgba(255,255,255,0.8);
@@ -401,7 +396,7 @@
   #story-filter-flash.show { opacity: 1; }
   #story-filter-flash.fade { opacity: 0; transition: opacity 0.5s ease; }
 
-  /* Color mode row */
+  /* Color mode row — distinct visual group */
   #mode-row {
     display: flex; gap: 0; align-items: center;
     margin-bottom: 2px;
@@ -430,7 +425,7 @@
 
   /* Filter panel (right side) */
   #filter-panel {
-    position: absolute; top: 100px; left: 16px; bottom: 95px;
+    position: absolute; top: 100px; right: 16px; bottom: 95px;
     background: rgba(10,10,10,0.88); border: 1px solid rgba(255,255,255,0.08);
     border-radius: 6px; padding: 12px 14px; z-index: 15;
     font-size: 11px; min-width: 170px; overflow-y: auto;
@@ -517,11 +512,11 @@
   .filter-check.sub-filter label { color: #aaa; }
 
   /* Borough colors */
-  .boro-mn { color: rgb(255,144,32); }
-  .boro-bk { color: rgb(80,170,255); }
-  .boro-qn { color: rgb(120,210,100); }
-  .boro-bx { color: rgb(200,100,200); }
-  .boro-si { color: rgb(255,210,70); }
+  .boro-mn { color: #FF9020; }
+  .boro-bk { color: #66BBFF; }
+  .boro-qn { color: #88DD66; }
+  .boro-bx { color: #DD77CC; }
+  .boro-si { color: #FFCC44; }
 
   /* Tooltip */
   #tooltip {
@@ -549,7 +544,7 @@
 
   /* Legend */
   #legend {
-    position: absolute; bottom: 110px; right: 16px;
+    position: absolute; bottom: 110px; left: 24px;
     background: rgba(10,10,10,0.85); border: 1px solid rgba(255,255,255,0.08);
     border-radius: 6px; padding: 12px 16px; z-index: 15;
     font-size: 11px;
@@ -565,52 +560,48 @@
     background: transparent; border: 2px solid #FFD700;
   }
 
-  /* Dark MapLibre popup */
-  .building-popup .maplibregl-popup-content {
-    background: rgba(10,10,10,0.95); color: #ddd;
-    backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.15);
-    border-radius: 6px; padding: 10px 14px; box-shadow: 0 4px 16px rgba(0,0,0,0.5);
-    font-size: 12px;
-  }
-  .building-popup .maplibregl-popup-tip {
-    border-top-color: rgba(10,10,10,0.95);
-  }
-  .building-popup .maplibregl-popup-close-button {
-    color: #666; font-size: 16px;
-  }
-
   /* ---- MOBILE LAYOUT ---- */
   @media (max-width: 600px) {
+    /* Hide filter panel and legend by default — too much screen real estate */
     #filter-panel { display: none; }
     #legend { display: none; }
 
+    /* Shrink title bar */
     #title-bar { padding: 10px 14px; }
     #title-bar h1 { font-size: 18px; letter-spacing: 1px; }
     #title-bar h1 .dingbat { font-size: 12px; }
     #title-bar .subtitle { font-size: 10px; }
     #infographic-top-link { font-size: 11px; padding: 4px 10px; margin-top: 6px; }
 
+    /* Smaller year display */
     #year-display { font-size: 28px; right: 14px; top: 10px; }
 
+    /* Compact bottom controls */
     #controls { padding: 8px 12px 10px; }
     #timeline-row { margin-bottom: 6px; gap: 8px; }
 
+    /* Stack playback row vertically */
     #playback-row { flex-wrap: wrap; gap: 6px; }
     #playback-row > div:first-child { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
+    /* Hide jump buttons on mobile */
     .jump-btn { display: none; }
 
+    /* Smaller stats */
     #stats-row { gap: 12px; }
     .stat-value { font-size: 13px; }
     .stat-label { font-size: 9px; }
 
+    /* Compact mode row */
     #mode-row { margin-top: 4px; margin-bottom: 0; }
     #mode-row .mode-btn { padding: 5px 10px; font-size: 11px; min-width: 50px; }
     #mode-row .label { font-size: 10px; margin-right: 6px; }
 
+    /* Compact footer */
     #footer-row { margin-top: 4px; padding-top: 4px; }
     #credit { font-size: 9px; }
 
+    /* Mobile toggle buttons for legend/filters */
     #mobile-toggles {
       position: absolute; top: 70px; right: 10px; z-index: 16;
       display: flex; gap: 6px;
@@ -622,6 +613,7 @@
     }
     .mobile-tog.open { background: rgba(255,144,32,0.25); color: #FF9020; border-color: rgba(255,144,32,0.4); }
 
+    /* When toggled visible on mobile */
     #filter-panel.mobile-show {
       display: block; top: 100px; right: 10px; left: 10px;
       max-height: 60vh; overflow-y: auto;
@@ -656,6 +648,20 @@
   <div id="search-results"></div>
 </div>
 
+<div id="story-year-flash"></div>
+<div id="story-filter-flash"></div>
+<div id="story-overlay">
+  <div id="story-title"></div>
+  <div id="story-caption"></div>
+  <div id="story-progress"><div id="story-progress-bar"></div></div>
+  <div id="story-controls">
+    <button id="story-prev" class="btn" title="Previous step">&lsaquo;</button>
+    <span id="story-step-label"></span>
+    <button id="story-next" class="btn" title="Next step">&rsaquo;</button>
+    <button id="story-exit" class="btn" title="Exit tour">Exit</button>
+  </div>
+</div>
+
 <div id="info-overlay">
   <span id="info-close">&times;</span>
   <h2>About this map</h2>
@@ -676,18 +682,18 @@
 
   <h3>Construction Era</h3>
   <div class="def"><strong>Before 1920</strong> — MapPLUTO <code>YearBuilt</code> before 1920. Includes colonial, 19th-century, and early 20th-century construction. Dates this old are highly unreliable; the city's DOB permit records do not go back this far, so many buildings are tagged with later dates or have no date at all.</div>
-  <div class="def"><strong>1920-1950</strong> — <code>YearBuilt</code> between 1920 and 1949. The interwar building boom: Art Deco skyscrapers, the first public housing, and the outer-borough apartment expansion. More reliable than earlier eras but still imperfect.</div>
-  <div class="def"><strong>1950-1980</strong> — <code>YearBuilt</code> between 1950 and 1979. The postwar era: Robert Moses highways, towers-in-the-park, and suburban-style development in the outer boroughs. Generally reliable.</div>
-  <div class="def"><strong>1980-2010</strong> — <code>YearBuilt</code> between 1980 and 2009. Late 20th-century development through the post-9/11 building boom. Reliable.</div>
+  <div class="def"><strong>1920–1950</strong> — <code>YearBuilt</code> between 1920 and 1949. The interwar building boom: Art Deco skyscrapers, the first public housing, and the outer-borough apartment expansion. More reliable than earlier eras but still imperfect.</div>
+  <div class="def"><strong>1950–1980</strong> — <code>YearBuilt</code> between 1950 and 1979. The postwar era: Robert Moses highways, towers-in-the-park, and suburban-style development in the outer boroughs. Generally reliable.</div>
+  <div class="def"><strong>1980–2010</strong> — <code>YearBuilt</code> between 1980 and 2009. Late 20th-century development through the post-9/11 building boom. Reliable.</div>
   <div class="def"><strong>Since 2010</strong> — <code>YearBuilt</code> of 2010 or later. The most recent wave of construction. Most reliable era in the dataset.</div>
   <div class="def"><strong>Unknown year</strong> — <code>YearBuilt</code> is 0 or missing. Approximately 39,000 lots.</div>
   <p style="color:#FF9020;font-size:10px;"><strong>Important:</strong> Dates before roughly 1950 are highly unreliable. The city's building records (MapPLUTO YearBuilt) come from DOB permit filings, which were not designed as a historical archive. Much of New York was built in the 1800s, but the data dramatically undercounts pre-1900 construction. (<a href="https://www.reddit.com/r/centuryhomes/comments/1ggn7u3/how_accurate_are_date_built_records/" target="_blank">More</a>, <a href="https://www.reddit.com/r/AskNYC/comments/12uaoao/can_you_reliably_find_the_yeardecade_of/" target="_blank">more</a>)</p>
 
   <h3>Building Height</h3>
   <div class="def"><strong>Single-story (1 fl)</strong> — MapPLUTO <code>NumFloors</code> = 1 or 0 (defaulted to 1).</div>
-  <div class="def"><strong>Low-rise (2-6 fl)</strong> — <code>NumFloors</code> between 2 and 6. Includes most row houses and walk-up apartment buildings.</div>
-  <div class="def"><strong>Mid-rise (7-20 fl)</strong> — <code>NumFloors</code> between 7 and 20.</div>
-  <div class="def"><strong>High-rise (21-49 fl)</strong> — <code>NumFloors</code> between 21 and 49.</div>
+  <div class="def"><strong>Low-rise (2–6 fl)</strong> — <code>NumFloors</code> between 2 and 6. Includes most row houses and walk-up apartment buildings.</div>
+  <div class="def"><strong>Mid-rise (7–20 fl)</strong> — <code>NumFloors</code> between 7 and 20.</div>
+  <div class="def"><strong>High-rise (21–49 fl)</strong> — <code>NumFloors</code> between 21 and 49.</div>
   <div class="def"><strong>Skyscraper (50+ fl)</strong> — <code>NumFloors</code> of 50 or more.</div>
   <p>Floor counts are self-reported by building owners to the Department of Finance and may not always reflect current conditions.</p>
 
@@ -718,7 +724,7 @@
   <div class="def"><strong>Under Construction</strong> — Active new-building permits from the <a href="https://data.cityofnewyork.us/Housing-Development/DOB-NOW-Build-Job-Application-Filings/w9ak-ipjd" target="_blank">DOB NOW: Build</a> filing system. Includes jobs with types "New Building" and "ALT-CO — New Building with Existing Elements to Remain" in "Permit Entire" or "Permit Issued" status, filed since January 2023. Fetched live from the NYC Open Data API. Does not include renovations or alterations to existing buildings.</div>
 
   <h3>Color Modes</h3>
-  <div class="def"><strong>Age</strong> — Buildings colored by era. Warm cream = recently built; coral-red = 1980-2010; amber = 1950-1980; teal = 1920-1950; indigo-blue = before 1920.</div>
+  <div class="def"><strong>Age</strong> — Buildings colored on a warm-to-cool gradient. Bright orange = recently built; darker orange = ~50 years old; mauve/purple = ~100 years; deep purple = 200+ years. Gold-tinted dots indicate individually landmarked buildings. Red flash indicates a recently demolished building.</div>
   <div class="def"><strong>Height</strong> — Buildings colored on a cream-to-crimson gradient based on floor count: pale cream = 1 floor; warm gold = mid-rise; deep crimson = 50+ floors.</div>
   <div class="def"><strong>Type</strong> — Each building class is assigned a distinct color. See Building Use definitions above for the class-to-category mapping.</div>
   <div class="def"><strong>Borough</strong> — Each borough gets a distinct color: Manhattan (amber), Bronx (pink), Brooklyn (blue), Queens (green), Staten Island (yellow).</div>
@@ -726,20 +732,23 @@
   <h3>Other Data</h3>
   <div class="def"><strong>Parks</strong> — Green polygons from NYC Parks Department open data. Shown at all times regardless of filters.</div>
   <div class="def"><strong>Addresses</strong> — Derived from MapPLUTO <code>Address</code> field. Title-cased for display. Some lots have no address recorded.</div>
-  <div class="def"><strong>Building count</strong> — The "Buildings" counter reflects the number of buildings currently visible given the active year and filters (approximated from visible tiles).</div>
+  <div class="def"><strong>Lot size</strong> — Dot radius is proportional to MapPLUTO <code>LotArea</code> (in square feet), clamped to a reasonable range.</div>
+  <div class="def"><strong>Building count</strong> — The "812,036 Buildings" counter reflects the number of buildings currently visible given the active year and filters, not the total in the dataset (857,000).</div>
 
   <h3>Known Limitations</h3>
-  <p>- Construction dates before ~1950 are highly unreliable (see above).<br>
-  - Demolition records only go back to approximately 2000.<br>
-  - Floor counts are self-reported and may be outdated.<br>
-  - Landmark data covers individual designations only, not historic districts.<br>
-  - Under Construction data covers DOB NOW filings only, not the older BIS system; some active construction sites may be missing.<br>
-  - Building class codes are assigned by the Department of Finance for tax purposes and may not perfectly reflect a building's current use.<br>
-  - MapPLUTO is updated quarterly; the data here may lag real-world conditions by several months.</p>
+  <p>• Construction dates before ~1950 are highly unreliable (see above).<br>
+  • Demolition records only go back to approximately 2000.<br>
+  • Floor counts are self-reported and may be outdated.<br>
+  • Landmark data covers individual designations only, not historic districts.<br>
+  • Under Construction data covers DOB NOW filings only, not the older BIS system; some active construction sites may be missing.<br>
+  • Building class codes are assigned by the Department of Finance for tax purposes and may not perfectly reflect a building's current use.<br>
+  • MapPLUTO is updated quarterly; the data here may lag real-world conditions by several months.</p>
 
   <p style="margin-top:12px;font-size:10px;color:#666;">Last updated: March 2026. Data sources: NYC Department of City Planning (MapPLUTO 25v1), NYC Landmarks Preservation Commission, NYC Department of Buildings (DOB NOW: Build), NYC Parks Department.</p>
 </div>
 
+<div id="year-display">2026</div>
+<div id="anim-caveat">Pre-1900 dates are unreliable — fast-forwarding</div>
 
 <div id="mobile-toggles">
   <button class="mobile-tog" id="mob-legend-btn">Legend</button>
@@ -814,11 +823,15 @@
   <div class="filter-section fs-spotlight">
     <div class="section-label">Spotlight</div>
     <div class="section-hint">Dim everything except one category</div>
-    <div class="filter-check"><input type="checkbox" id="hl-landmarks" data-hl="landmarks"><label for="hl-landmarks" style="color:#FFD700">Landmarked</label></div>
+    <div class="filter-check"><input type="checkbox" id="hl-landmarks" data-hl="landmarks"><label for="hl-landmarks" style="color:#FFD700">Landmarks only</label></div>
+    <div class="filter-check"><input type="checkbox" id="hl-demolished" data-hl="demolished"><label for="hl-demolished" style="color:#FF3C3C">Demolished only</label></div>
     <div class="filter-check"><input type="checkbox" id="hl-vacant" data-hl="vacant"><label for="hl-vacant" style="color:#DDE44C">Vacant lots</label></div>
     <div class="filter-check"><input type="checkbox" id="hl-construction"><label for="hl-construction" style="color:#00E5FF">Under construction</label> <span id="construction-status" style="font-size:8px;color:#555;"></span></div>
     <div class="filter-check"><input type="checkbox" id="hl-stalled"><label for="hl-stalled" style="color:#FF6B35">Stalled sites</label> <span id="stalled-status" style="font-size:8px;color:#555;"></span></div>
-    <div class="filter-check"><input type="checkbox" id="hl-scaffolding"><label for="hl-scaffolding" style="color:#C084FC">Scaffolding</label> <span id="scaffolding-status" style="font-size:8px;color:#555;"></span></div>
+  </div>
+
+  <div class="filter-section fs-overlay" style="border-left-color:rgba(100,160,255,0.4);">
+    <div class="section-label">Overlays</div>
     <div class="filter-check"><input type="checkbox" id="show-subway"><label for="show-subway" style="color:#6BAED6">Subway lines</label> <span id="subway-status" style="font-size:8px;color:#555;"></span></div>
   </div>
 </div>
@@ -849,6 +862,41 @@
       </div>
     </div>
   </div>
+  <div id="timeline-row">
+    <button id="play-btn" class="btn" title="Play/Pause animation">&#9654;</button>
+    <span id="play-hint">Watch NYC grow</span>
+    <div style="position:relative;display:inline-block;">
+      <button id="story-btn" class="btn" title="Guided tours">Tours</button>
+      <div id="story-menu">
+        <div class="story-menu-title">Guided Tours</div>
+        <div class="story-option" data-story="growth">Watch NYC Grow<div class="story-desc">Animate 300 years of construction</div></div>
+        <div class="story-option" data-story="bronx">The Bronx Burns and Rebuilds<div class="story-desc">Demolitions and rebirth in the South Bronx</div></div>
+        <div class="story-option" data-story="skyline">Manhattan&rsquo;s Skyline<div class="story-desc">Skyscrapers from downtown to Hudson Yards</div></div>
+        <div class="story-option" data-story="victorian">Brooklyn&rsquo;s Victorian Belt<div class="story-desc">Brownstones from Park Slope to the Heights</div></div>
+        <div class="story-option" data-story="worship">Houses of Worship<div class="story-desc">5,000+ religious buildings across the city</div></div>
+      </div>
+    </div>
+    <span id="year-label-min">1700</span>
+    <div id="scrubber-wrap">
+      <span id="scrubber-marker-label">&#9664; dates approximate</span>
+      <span id="scrubber-marker"></span>
+      <input type="range" id="scrubber" min="1700" max="2026" value="2026" step="1">
+    </div>
+    <span id="year-label-max">2026</span>
+    <div class="btn-group" id="speed-group">
+      <button class="btn speed-btn" data-speed="2">1x</button>
+      <button class="btn speed-btn active" data-speed="5">3x</button>
+      <button class="btn speed-btn" data-speed="15">8x</button>
+      <button class="btn speed-btn" data-speed="40">20x</button>
+    </div>
+    <div class="btn-group">
+      <button class="btn jump-btn" data-year="1850">1850</button>
+      <button class="btn jump-btn" data-year="1900">1900</button>
+      <button class="btn jump-btn" data-year="1950">1950</button>
+      <button class="btn jump-btn" data-year="2000">2000</button>
+      <button class="btn jump-btn active" data-year="2026">Now</button>
+    </div>
+  </div>
   <div id="footer-row">
     <span id="credit">Conceived by Josh Greenman. Built by Claude Code. Data may contain errors — AI, like people, makes mistakes. <a href="#" id="methodology-link">Methodology &amp; Definitions</a></span>
   </div>
@@ -864,13 +912,16 @@
 // CONFIG
 // ============================================================
 const MAPBOX_TOKEN = 'pk.eyJ1IjoieHIyMDA2IiwiYSI6ImNtaTdkdHpyMjA1eTEya3EwbjVkeHh0OHcifQ.63Tlvydk2jod3GrgjFyAKw';
-const RELEASE_BASE = 'https://github.com/joshgreenman1973/nyc-building-age/releases/download/tiles-v1';
-const PMTILES_URL = `${RELEASE_BASE}/buildings.pmtiles`;
-const STATS_URL = `${RELEASE_BASE}/stats.json`;
-const PARKS_URL = `${RELEASE_BASE}/parks.json`;
+const BIN_URL = 'data/processed/buildings.bin';
+const LANDMARKS_URL = 'data/processed/landmarks.json';
+const DEMOLITIONS_URL = 'data/processed/demolitions.json';
+const STATS_URL = 'data/processed/stats.json';
+const PARKS_URL = 'data/processed/parks.json';
+const ADDRESSES_URL = 'data/processed/addresses.txt';
 
 const MIN_YEAR = 1700;
 const MAX_YEAR = 2026;
+const BYTES_PER_RECORD = 24; // ffHBBHHH2sI = 4+4+2+1+1+2+2+2+2+4 = 24
 
 // ============================================================
 // STATE
@@ -880,8 +931,25 @@ const state = {
   playing: false,
   speed: 5,
   lastFrameTime: null,
+  // Binary data arrays (parsed from buildings.bin)
+  positions: null,     // Float32Array [lon, lat, lon, lat, ...]
+  yearBuilt: null,     // Uint16Array
+  boroCode: null,      // Uint8Array
+  numFloors: null,     // Uint8Array
+  landmarkYear: null,  // Uint16Array
+  demoYear: null,      // Uint16Array
+  rebuildYear: null,   // Uint16Array
+  bldgClass: null,     // Array of 2-char strings
+  lotArea: null,       // Uint32Array
+  count: 0,
+  // Lookup tables from sidecar JSONs (for BBLs not in binary)
+  landmarkLookup: {},
+  demoLookup: {},
   stats: null,
+  addresses: null,    // Array of address strings, loaded lazily
+  parks: [],
   colorMode: 'age',
+  deckgl: null,
   map: null,
   loading: true,
   // Filters
@@ -892,16 +960,14 @@ const state = {
     uses: new Set(['residential','mixed','commercial','industrial','institutional','other']),
     subUses: new Set(['1fam','2fam','walkup','elevator','religious','school','health','civic']),
     highlightLandmarks: false,
+    highlightDemolished: false,
     highlightVacant: false,
     highlightConstruction: false,
     highlightStalled: false,
-    highlightScaffolding: false,
   },
   // Search
   searchMarker: null,
   stalledSites: null,
-  constructionSites: null,
-  scaffoldingSites: null,
   subwayLoaded: false,
   showSubway: false,
   // Story
@@ -919,50 +985,25 @@ const CLASS_NAMES = {
   'V': 'Vacant Land', 'W': 'School/Educational', 'Z': 'Miscellaneous',
 };
 
-// Era colors
-const ERA_COLORS = {
-  pre1920:  [160, 50, 10],
-  interwar: [210, 95, 20],
-  postwar:  [240, 150, 50],
-  late20c:  [255, 200, 100],
-  recent:   [255, 235, 180],
-  unknown:  [60, 60, 60],
-};
-
 // Borough colors
-const BORO_COLORS = {
-  1: [255, 144, 32],
-  2: [200, 100, 200],
-  3: [80, 170, 255],
-  4: [120, 210, 100],
-  5: [255, 210, 70],
-};
+const BORO_COLORS = [
+  [0,0,0,0],               // 0 = unused
+  [255, 144, 32, 200],     // 1 = Manhattan - amber
+  [221, 119, 204, 200],    // 2 = Bronx - pink
+  [102, 187, 255, 200],    // 3 = Brooklyn - blue
+  [136, 221, 102, 200],    // 4 = Queens - green
+  [255, 204, 68, 200],     // 5 = Staten Island - yellow
+];
 
-// Class colors — distinct hues per use group
-// 1-2 family residential (A,B) → soft green
-// Multi-family residential (C,D,R) → teal
-// Mixed use (S) → gold
-// Commercial (H,J,K,L,O) → blue
-// Industrial (E,F,G,T,U) → orange
-// Institutional (I,M,N,W) → purple
-// Other (P,Q,V,Z) → gray
-const CC = { A:[120,200,100], B:[120,200,100], C:[60,190,170], D:[60,190,170],
-  E:[230,140,50], F:[230,140,50], G:[230,140,50], H:[80,150,230],
-  I:[170,100,210], J:[80,150,230], K:[80,150,230], L:[80,150,230],
-  M:[170,100,210], N:[170,100,210], O:[80,150,230], P:[90,90,90],
-  Q:[90,90,90], R:[60,190,170], S:[220,195,60], T:[230,140,50],
-  U:[230,140,50], V:[90,90,90], W:[170,100,210], Z:[90,90,90] };
-
-// Use mapping
-const USE_MAP = { A:'residential', B:'residential', C:'residential', D:'residential', R:'residential',
-  S:'mixed',
-  H:'commercial', J:'commercial', K:'commercial', L:'commercial', O:'commercial',
-  E:'industrial', F:'industrial', G:'industrial', T:'industrial', U:'industrial',
-  I:'institutional', M:'institutional', N:'institutional', W:'institutional',
-  P:'other', Q:'other', V:'other', Z:'other' };
-
-const SUB_USE_MAP = { A:'1fam', B:'2fam', C:'walkup', D:'elevator', R:'elevator',
-  M:'religious', W:'school', I:'health', N:'civic' };
+// Building class colors (indexed by charCode - 65)
+const CLASS_COLORS = new Array(26).fill(null);
+const CC = { A:[120,180,80], B:[80,160,120], C:[60,140,180], D:[100,100,200],
+  E:[200,150,60], F:[180,100,60], G:[160,80,80], H:[180,120,60],
+  I:[140,140,80], J:[100,80,160], K:[80,120,80], L:[140,100,100],
+  M:[100,60,140], N:[80,80,80], O:[80,130,200], P:[60,100,60],
+  Q:[80,80,60], R:[120,80,60], S:[100,60,60], T:[80,80,120],
+  U:[80,60,100], V:[60,80,40], W:[60,100,100], Z:[80,80,80] };
+for (const [k,v] of Object.entries(CC)) CLASS_COLORS[k.charCodeAt(0)-65] = [...v, 200];
 
 // Era + height helpers
 function getEra(yb) {
@@ -975,261 +1016,261 @@ function getEra(yb) {
 }
 function getHt(nf) { return nf <= 1 ? 'single' : nf <= 6 ? 'low' : nf <= 20 ? 'mid' : nf <= 49 ? 'high' : 'super'; }
 
+const USE_MAP = { A:'residential', B:'residential', C:'residential', D:'residential', R:'residential',
+  S:'mixed',
+  H:'commercial', J:'commercial', K:'commercial', L:'commercial', O:'commercial',
+  E:'industrial', F:'industrial', G:'industrial', T:'industrial', U:'industrial',
+  I:'institutional', M:'institutional', N:'institutional', W:'institutional',
+  P:'other', Q:'other', V:'other', Z:'other' };
+function getUse(cls) { return USE_MAP[cls.charAt(0).toUpperCase()] || 'other'; }
+
+const SUB_USE_MAP = { A:'1fam', B:'2fam', C:'walkup', D:'elevator', R:'elevator',
+  M:'religious', W:'school', I:'health', N:'civic' };
+function getSubUse(cls) { return SUB_USE_MAP[cls.charAt(0).toUpperCase()] || null; }
+
+// ============================================================
+// BINARY DATA LOADER
+// ============================================================
+async function loadBinaryData() {
+  const statusEl = document.getElementById('loading-status');
+  statusEl.textContent = 'Loading building data...';
+
+  const resp = await fetch(BIN_URL);
+  if (!resp.ok) throw new Error(`Failed to load ${BIN_URL}: ${resp.status}`);
+
+  const buf = await resp.arrayBuffer();
+  const count = Math.floor(buf.byteLength / BYTES_PER_RECORD);
+  console.log(`Loaded ${count} buildings (${(buf.byteLength / 1024 / 1024).toFixed(1)} MB)`);
+
+  statusEl.textContent = 'Processing buildings...';
+
+  const view = new DataView(buf);
+  const positions = new Float32Array(count * 2);
+  const yearBuilt = new Uint16Array(count);
+  const boroCode = new Uint8Array(count);
+  const numFloors = new Uint8Array(count);
+  const landmarkYear = new Uint16Array(count);
+  const demoYear = new Uint16Array(count);
+  const rebuildYear = new Uint16Array(count);
+  const bldgClass = new Array(count);
+  const lotArea = new Uint32Array(count);
+
+  // Parse in chunks to keep UI responsive
+  const CHUNK = 100000;
+  for (let start = 0; start < count; start += CHUNK) {
+    const end = Math.min(start + CHUNK, count);
+    for (let i = start; i < end; i++) {
+      const off = i * BYTES_PER_RECORD;
+      positions[i * 2] = view.getFloat32(off, true);
+      positions[i * 2 + 1] = view.getFloat32(off + 4, true);
+      yearBuilt[i] = view.getUint16(off + 8, true);
+      boroCode[i] = view.getUint8(off + 10);
+      numFloors[i] = view.getUint8(off + 11);
+      landmarkYear[i] = view.getUint16(off + 12, true);
+      demoYear[i] = view.getUint16(off + 14, true);
+      rebuildYear[i] = view.getUint16(off + 16, true);
+      bldgClass[i] = String.fromCharCode(view.getUint8(off + 18), view.getUint8(off + 19));
+      lotArea[i] = view.getUint32(off + 20, true);
+    }
+    // Yield to UI between chunks
+    if (end < count) {
+      statusEl.textContent = `Processing buildings... ${Math.round(end / count * 100)}%`;
+      await new Promise(r => setTimeout(r, 0));
+    }
+  }
+
+  state.positions = positions;
+  state.yearBuilt = yearBuilt;
+  state.boroCode = boroCode;
+  state.numFloors = numFloors;
+  state.landmarkYear = landmarkYear;
+  state.demoYear = demoYear;
+  state.rebuildYear = rebuildYear;
+  state.bldgClass = bldgClass;
+  state.lotArea = lotArea;
+  state.count = count;
+
+  // Build index-based data array for Deck.gl
+  state.dataIndices = Array.from({length: count}, (_, i) => i);
+}
+
+async function loadAddresses() {
+  try {
+    const resp = await fetch(ADDRESSES_URL);
+    if (!resp.ok) { console.warn('Addresses not available'); return; }
+    const text = await resp.text();
+    state.addresses = text.split('\n');
+    console.log(`Loaded ${state.addresses.length} addresses`);
+  } catch (e) {
+    console.warn('Could not load addresses:', e);
+  }
+}
+
+// ============================================================
+// COLOR FUNCTIONS (work on array index, not object)
+// ============================================================
+// Distinct per-era base colors — chosen to be visually separable at city scale
+const ERA_COLORS = {
+  pre1920:  [74, 91, 199],    // deep indigo-blue
+  interwar: [27, 153, 139],   // teal
+  postwar:  [232, 168, 56],   // amber/gold
+  late20c:  [224, 82, 99],    // coral-red
+  recent:   [240, 230, 211],  // warm cream
+  unknown:  [80, 80, 80],     // dim gray
+};
+
+function ageColor(yb) {
+  const era = getEra(yb);
+  return ERA_COLORS[era] || ERA_COLORS.unknown;
+}
+
+// Height-based brightness: taller buildings are more vivid/saturated,
+// shorter buildings are lighter/more washed out.
+// nf=1 → factor ~0.55 (lightest), nf≥40 → factor 1.0 (full color)
+function heightFactor(nf) {
+  if (nf <= 0) nf = 1;
+  // Log scale spreads low-rise variation: 1fl=0, 3fl=0.29, 6fl=0.47, 20fl=0.77, 50fl=1.0
+  const t = Math.min(Math.log(nf) / Math.log(50), 1);
+  return 0.5 + t * 0.5; // range [0.5, 1.0] — visible variation without losing hue
+}
+
+function applyHeight(color, nf) {
+  const f = heightFactor(nf);
+  // Low buildings get dimmer; tall buildings stay at full brightness
+  return [
+    (color[0] * f) | 0,
+    (color[1] * f) | 0,
+    (color[2] * f) | 0,
+    color[3],
+  ];
+}
+
+function isFiltered(i) {
+  const bc = state.boroCode[i];
+  const nf = state.numFloors[i] || 1;
+  const yb = state.yearBuilt[i];
+  const ly = state.landmarkYear[i];
+  const dy = state.demoYear[i];
+  const cls = state.bldgClass[i];
+  if (!state.filters.boroughs.has(bc)) return true;
+  if (!state.filters.eras.has(getEra(yb))) return true;
+  if (!state.filters.heights.has(getHt(nf))) return true;
+  if (!state.filters.uses.has(getUse(cls))) return true;
+  const subUse = getSubUse(cls);
+  if (subUse && !state.filters.subUses.has(subUse)) return true;
+  // Spotlight filters: when active, show ONLY the spotlight items,
+  // bypassing era/height/use/boro filters that might exclude them
+  if (state.filters.highlightLandmarks) return ly === 0;
+  if (state.filters.highlightDemolished) return dy === 0;
+  if (state.filters.highlightVacant) return cls.charAt(0) !== 'V';
+  return false;
+}
+
+function getColor(i, yr) {
+  const yb = state.yearBuilt[i];
+  const bc = state.boroCode[i];
+  const nf = state.numFloors[i] || 1;
+  const ly = state.landmarkYear[i];
+  const dy = state.demoYear[i];
+  const ry = state.rebuildYear[i];
+  const cls = state.bldgClass[i];
+
+  // Filter check
+  if (isFiltered(i)) return [0,0,0,0];
+  if (state.filters.highlightVacant && cls.charAt(0) === 'V') return [221, 228, 76, 210]; // chartreuse
+
+  // Dim all buildings when Construction or Stalled spotlight is active
+  const _dim = (state.filters.highlightConstruction && state.constructionSites) || (state.filters.highlightStalled && state.stalledSites);
+
+  // Not yet built (but allow unknown-year buildings through)
+  if (yb > yr && yb > 0) return [0,0,0,0];
+
+  // Color mode: height — dedicated spectrum from pale to vivid by floor count
+  if (state.colorMode === 'height') {
+    const floors = Math.max(nf, 1);
+    const t = Math.min((floors - 1) / 50, 1); // 1..50+ floors mapped to 0..1
+    // Pale cream → warm gold → deep crimson
+    const a = _dim ? 40 : (160 + (t * 60) | 0);
+    return [
+      200 + (t * 55) | 0,    // 200 → 255
+      200 - (t * 140) | 0,   // 200 → 60
+      180 - (t * 160) | 0,   // 180 → 20
+      a,
+    ];
+  }
+  // Color mode: type
+  if (state.colorMode === 'class') {
+    const ci = cls.charCodeAt(0) - 65;
+    const c = (ci >= 0 && ci < 26 && CLASS_COLORS[ci]) ? CLASS_COLORS[ci] : [80,80,80,160];
+    return _dim ? [c[0], c[1], c[2], 40] : c;
+  }
+  // Color mode: borough
+  if (state.colorMode === 'borough') {
+    const c = BORO_COLORS[bc] || [80,80,80,160];
+    return _dim ? [c[0], c[1], c[2], 40] : c;
+  }
+
+  // Age mode
+  // Unknown year — show as dim gray
+  if (yb <= 0) {
+    const a = _dim ? 40 : 120;
+    return [80, 80, 80, a];
+  }
+  // Demolished?
+  if (dy > 0 && dy <= yr) {
+    if (ry > 0 && ry <= yr) {
+      const ra = yr - ry;
+      if (ra < 5) { const t = 1 - ra/5; const a = _dim ? 40 : 220; return [0, 140+(t*81)|0, 180+(t*75)|0, a]; }
+      const c = ageColor(ry);
+      const a = _dim ? 40 : 200;
+      return [c[0], c[1], c[2], a];
+    }
+    const da = yr - dy;
+    if (da < 2) return _dim ? [255, 60, 60, 40] : [255, 60, 60, 220 - (da*80)|0];
+    return [0,0,0,0];
+  }
+
+  const age = yr - yb;
+
+  // Landmark?
+  if (ly > 0 && ly <= yr) {
+    const a = _dim ? 40 : 210;
+    return [255, 200, 50, a];
+  }
+
+  const c = ageColor(yb);
+  const a = _dim ? 40 : 200;
+  return [c[0], c[1], c[2], a];
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
 function titleCase(s) { return s.replace(/\w\S*/g, w => w[0] + w.slice(1).toLowerCase()); }
 
-// Spotlight definitions
+// Spotlight definitions — single source of truth for all spotlight-related code
 const SPOTLIGHT_DEFS = [
   { name: 'landmarks',    el: 'hl-landmarks',    key: 'highlightLandmarks',    urlCode: 'lm' },
+  { name: 'demolished',   el: 'hl-demolished',   key: 'highlightDemolished',   urlCode: 'dm' },
   { name: 'vacant',       el: 'hl-vacant',       key: 'highlightVacant',       urlCode: 'vc' },
   { name: 'construction', el: 'hl-construction', key: 'highlightConstruction', urlCode: 'cn' },
   { name: 'stalled',      el: 'hl-stalled',      key: 'highlightStalled',      urlCode: 'st' },
-  { name: 'scaffolding',  el: 'hl-scaffolding',  key: 'highlightScaffolding',  urlCode: 'sc' },
 ];
 const SPOTLIGHT_ELS = SPOTLIGHT_DEFS.map(s => s.el);
 const SPOTLIGHT_KEYS = SPOTLIGHT_DEFS.map(s => s.key);
 const SPOTLIGHT_URL_TO_EL = Object.fromEntries(SPOTLIGHT_DEFS.map(s => [s.urlCode, s.el]));
 const SPOTLIGHT_URL_TO_KEY = Object.fromEntries(SPOTLIGHT_DEFS.map(s => [s.urlCode, s.key]));
 
-// ============================================================
-// MAPLIBRE GL STYLE EXPRESSIONS
-// ============================================================
-
-function rgbStr(c) { return `rgb(${c[0]},${c[1]},${c[2]})`; }
-
-function buildColorExpression() {
-  // Spotlight overrides
-  // Spotlights: don't override color — use normal colors but dim via opacity
-  if (state.filters.highlightConstruction || state.filters.highlightStalled) {
-    // These use dot overlays, just dim all buildings
-  } else if (state.filters.highlightLandmarks || state.filters.highlightVacant) {
-    // Fall through to normal color mode below — opacity handles the dimming
-  }
-
-  if (state.colorMode === 'borough') {
-    return [
-      'match', ['coalesce', ['get', 'bc'], 0],
-      1, rgbStr(BORO_COLORS[1]),
-      2, rgbStr(BORO_COLORS[2]),
-      3, rgbStr(BORO_COLORS[3]),
-      4, rgbStr(BORO_COLORS[4]),
-      5, rgbStr(BORO_COLORS[5]),
-      'rgb(80,80,80)',
-    ];
-  }
-
-  if (state.colorMode === 'class') {
-    // Match first char of cls using slice
-    const expr = ['match', ['slice', ['coalesce', ['get', 'cls'], 'Z0'], 0, 1]];
-    for (const [k, c] of Object.entries(CC)) {
-      expr.push(k, rgbStr(c));
-    }
-    expr.push('rgb(80,80,80)');
-    return expr;
-  }
-
-  if (state.colorMode === 'height') {
-    return [
-      'interpolate', ['linear'],
-      ['coalesce', ['get', 'nf'], 1],
-      1, 'rgb(180,210,240)',
-      6, 'rgb(100,160,220)',
-      20, 'rgb(40,100,200)',
-      50, 'rgb(20,40,160)',
-    ];
-  }
-
-  // Age mode
-  return [
-    'case',
-    ['<=', ['coalesce', ['get', 'yb'], 0], 0],
-    rgbStr(ERA_COLORS.unknown),
-    ['<', ['get', 'yb'], 1920],
-    rgbStr(ERA_COLORS.pre1920),
-    ['<', ['get', 'yb'], 1950],
-    rgbStr(ERA_COLORS.interwar),
-    ['<', ['get', 'yb'], 1980],
-    rgbStr(ERA_COLORS.postwar),
-    ['<', ['get', 'yb'], 2010],
-    rgbStr(ERA_COLORS.late20c),
-    rgbStr(ERA_COLORS.recent),
-  ];
-}
-
-function buildOpacityExpression() {
-  // Year-based hiding is handled by filter expression.
-  // Only spotlight dimming applies here.
-  if (state.filters.highlightLandmarks) {
-    return ['case',
-      ['>', ['coalesce', ['get', 'ly'], 0], 0], 0.9,
-      0.15];
-  }
-  if (state.filters.highlightVacant) {
-    return ['match', ['coalesce', ['get', 'cls'], ''],
-      ['V0','V1','V2','V3','V4','V5','V6','V7','V8','V9','VG'], 0.9,
-      0.15
-    ];
-  }
-  if (state.filters.highlightConstruction || state.filters.highlightStalled || state.filters.highlightScaffolding) {
-    return 0.15;
-  }
-
-  return 0.8;
-}
-
-function buildFilterExpression() {
-  const conditions = ['all'];
-
-  // Spotlights: skip other filters — color/opacity expression handles dimming
-  if (state.filters.highlightLandmarks || state.filters.highlightVacant || state.filters.highlightConstruction ||
-      state.filters.highlightStalled || state.filters.highlightScaffolding) {
-    return null;
-  }
-
-  // Era filter
-  const eraChecks = document.querySelectorAll('[data-era]');
-  const activeEras = [...eraChecks].filter(cb => cb.checked).map(cb => cb.dataset.era);
-  if (activeEras.length < 6) {
-    const eraConditions = ['any'];
-    for (const era of activeEras) {
-      switch (era) {
-        case 'pre1920':
-          eraConditions.push(['all', ['>', ['coalesce', ['get', 'yb'], 0], 0], ['<', ['get', 'yb'], 1920]]);
-          break;
-        case 'interwar':
-          eraConditions.push(['all', ['>=', ['get', 'yb'], 1920], ['<', ['get', 'yb'], 1950]]);
-          break;
-        case 'postwar':
-          eraConditions.push(['all', ['>=', ['get', 'yb'], 1950], ['<', ['get', 'yb'], 1980]]);
-          break;
-        case 'late20c':
-          eraConditions.push(['all', ['>=', ['get', 'yb'], 1980], ['<', ['get', 'yb'], 2010]]);
-          break;
-        case 'recent':
-          eraConditions.push(['>=', ['get', 'yb'], 2010]);
-          break;
-        case 'unknown':
-          eraConditions.push(['<=', ['coalesce', ['get', 'yb'], 0], 0]);
-          break;
-      }
-    }
-    if (eraConditions.length > 1) conditions.push(eraConditions);
-  }
-
-  // Borough filter
-  const boroChecks = document.querySelectorAll('[data-boro]');
-  const activeBoros = [...boroChecks].filter(cb => cb.checked).map(cb => Number(cb.dataset.boro));
-  if (activeBoros.length < 5) {
-    conditions.push(['in', ['coalesce', ['get', 'bc'], 0], ['literal', activeBoros]]);
-  }
-
-  // Height filter
-  const htChecks = document.querySelectorAll('[data-ht]');
-  const activeHts = [...htChecks].filter(cb => cb.checked).map(cb => cb.dataset.ht);
-  if (activeHts.length < 5) {
-    const htConditions = ['any'];
-    for (const ht of activeHts) {
-      switch (ht) {
-        case 'single':
-          htConditions.push(['<=', ['coalesce', ['get', 'nf'], 1], 1]);
-          break;
-        case 'low':
-          htConditions.push(['all', ['>=', ['coalesce', ['get', 'nf'], 1], 2], ['<=', ['get', 'nf'], 6]]);
-          break;
-        case 'mid':
-          htConditions.push(['all', ['>=', ['coalesce', ['get', 'nf'], 1], 7], ['<=', ['get', 'nf'], 20]]);
-          break;
-        case 'high':
-          htConditions.push(['all', ['>=', ['coalesce', ['get', 'nf'], 1], 21], ['<=', ['get', 'nf'], 49]]);
-          break;
-        case 'super':
-          htConditions.push(['>=', ['coalesce', ['get', 'nf'], 1], 50]);
-          break;
-      }
-    }
-    if (htConditions.length > 1) conditions.push(htConditions);
-  }
-
-  // Use filter (building class first char)
-  const useChecks = document.querySelectorAll('[data-use]');
-  const subKeys = new Set(['1fam','2fam','walkup','elevator','religious','school','health','civic']);
-  const activeUses = new Set();
-  const activeSubUses = new Set();
-  useChecks.forEach(cb => {
-    if (!cb.checked) return;
-    const u = cb.dataset.use;
-    if (subKeys.has(u)) activeSubUses.add(u);
-    else activeUses.add(u);
-  });
-
-  // Build list of allowed first chars based on parent + sub filters
-  const ALL_USES = ['residential','mixed','commercial','industrial','institutional','other'];
-  const ALL_SUB_USES = ['1fam','2fam','walkup','elevator','religious','school','health','civic'];
-  if (activeUses.size < ALL_USES.length || activeSubUses.size < ALL_SUB_USES.length) {
-    const allowedChars = new Set();
-
-    // Residential sub-types
-    if (activeUses.has('residential')) {
-      if (activeSubUses.has('1fam')) allowedChars.add('A');
-      if (activeSubUses.has('2fam')) allowedChars.add('B');
-      if (activeSubUses.has('walkup')) allowedChars.add('C');
-      if (activeSubUses.has('elevator')) { allowedChars.add('D'); allowedChars.add('R'); }
-    }
-    // Mixed
-    if (activeUses.has('mixed')) allowedChars.add('S');
-    // Commercial
-    if (activeUses.has('commercial')) { 'HJKLO'.split('').forEach(c => allowedChars.add(c)); }
-    // Industrial
-    if (activeUses.has('industrial')) { 'EFGTU'.split('').forEach(c => allowedChars.add(c)); }
-    // Institutional sub-types
-    if (activeUses.has('institutional')) {
-      if (activeSubUses.has('religious')) allowedChars.add('M');
-      if (activeSubUses.has('school')) allowedChars.add('W');
-      if (activeSubUses.has('health')) allowedChars.add('I');
-      if (activeSubUses.has('civic')) allowedChars.add('N');
-    }
-    // Other
-    if (activeUses.has('other')) { 'PQVZ'.split('').forEach(c => allowedChars.add(c)); }
-
-    if (allowedChars.size < 26) {
-      const charArray = [...allowedChars];
-      conditions.push(['in', ['slice', ['coalesce', ['get', 'cls'], 'Z0'], 0, 1], ['literal', charArray]]);
-    }
-  }
-
-  return conditions.length > 1 ? conditions : null;
-}
-
-// ============================================================
-// MAP STYLE UPDATE
-// ============================================================
-function updateMapStyle() {
-  if (!state.map || !state.map.getLayer('buildings-fill')) return;
-
-  const colorExpr = buildColorExpression();
-  const opacityExpr = buildOpacityExpression();
-  const filter = buildFilterExpression();
-
-  state.map.setPaintProperty('buildings-fill', 'fill-color', colorExpr);
-  state.map.setPaintProperty('buildings-fill', 'fill-opacity', opacityExpr);
-
-  if (filter) {
-    state.map.setFilter('buildings-fill', filter);
-    state.map.setFilter('buildings-outline', filter);
-  } else {
-    state.map.setFilter('buildings-fill', null);
-    state.map.setFilter('buildings-outline', null);
-  }
-
-  updateLegend();
-  updateStats();
-}
-
 function refreshMap() {
-  updateMapStyle();
+  _filterVersion++;
+  _cachedFilterVersion = -1; // Force filter cache invalidation
+  updateLayers();
+  updateStats();
   updateFilterWarnings();
 }
 
 function updateFilterWarnings() {
+  // Highlight sections where nothing is checked
   const sections = [
     { selector: '[data-era]', sectionClass: 'fs-era' },
     { selector: '[data-ht]', sectionClass: 'fs-height' },
@@ -1245,102 +1286,22 @@ function updateFilterWarnings() {
       if (!anyChecked) anyEmpty = true;
     }
   }
+  // Show empty-state overlay on map when no buildings visible
   const emptyEl = document.getElementById('empty-state');
   if (emptyEl) {
-    emptyEl.classList.toggle('show', anyEmpty);
+    const count = getFilteredData().length;
+    emptyEl.classList.toggle('show', count === 0 && anyEmpty);
   }
 }
 
-// ============================================================
-// STATS
-// ============================================================
-function updateStats() {
-  if (!state.stats) return;
-  const s = state.stats;
-
-  document.getElementById('stat-buildings').textContent = (s.total_lots || 857000).toLocaleString();
-  document.getElementById('stat-landmarks').textContent = (s.total_landmarks || 0).toLocaleString();
-  document.getElementById('stat-demolished').textContent = (s.total_demolitions || 0).toLocaleString();
-  document.getElementById('stat-rebuilt').textContent = (s.total_rebuilds || 0).toLocaleString();
+function forceRepaint() {
+  _cachedFilterVersion = -1;
+  updateLayers();
+  if (state.deckgl._deck) state.deckgl._deck.redraw(true);
+  state.map.triggerRepaint();
 }
 
-// ============================================================
-// ANIMATION
-// ============================================================
-function animate(timestamp) {
-  if (!state.playing) return;
-  if (state.lastFrameTime === null) state.lastFrameTime = timestamp;
-
-  const rawDelta = (timestamp - state.lastFrameTime) / 1000;
-  const delta = Math.min(rawDelta, 0.1);
-  state.lastFrameTime = timestamp;
-
-  const speedMult = state.currentYear < 1900 ? 5 : 1;
-  state.currentYear += state.speed * speedMult * delta;
-
-  if (state.currentYear >= MAX_YEAR) {
-    state.currentYear = MAX_YEAR;
-    state.playing = false;
-    updatePlayButton();
-  }
-
-  const yearInt = Math.floor(state.currentYear);
-  document.getElementById('year-display').textContent = yearInt;
-  document.getElementById('scrubber').value = yearInt;
-
-  const caveatBanner = document.getElementById('anim-caveat');
-  if (caveatBanner) {
-    caveatBanner.style.display = (state.playing && yearInt < 1900) ? 'block' : 'none';
-  }
-
-  // Update filter each frame with current year - only update when year changes
-  if (yearInt !== state._lastAnimYear) {
-    state._lastAnimYear = yearInt;
-    const filter = buildFilterExpression();
-    state.map.setFilter('buildings-fill', filter);
-    if (state.map.getLayer('buildings-outline')) {
-      state.map.setFilter('buildings-outline', filter);
-    }
-  }
-
-  // Update stats less frequently
-  if (yearInt % 5 === 0) updateStats();
-
-  if (state.playing) requestAnimationFrame(animate);
-}
-
-function togglePlay() {
-  state.playing = !state.playing;
-  const hint = document.getElementById('play-hint');
-  if (hint) hint.classList.add('hidden');
-  if (state.playing) {
-    if (state.currentYear >= MAX_YEAR) state.currentYear = MIN_YEAR;
-    state.lastFrameTime = null;
-    const yearInt = Math.floor(state.currentYear);
-    document.getElementById('year-display').textContent = yearInt;
-    document.getElementById('scrubber').value = yearInt;
-    const caveat = document.getElementById('anim-caveat');
-    if (caveat) caveat.style.display = yearInt < 1900 ? 'block' : 'none';
-    state.map.setPaintProperty('buildings-fill', 'fill-opacity', buildOpacityExpression());
-    state.map.triggerRepaint();
-    updateStats();
-    requestAnimationFrame(animate);
-  } else {
-    const caveat = document.getElementById('anim-caveat');
-    if (caveat) caveat.style.display = 'none';
-  }
-  updatePlayButton();
-}
-
-function updatePlayButton() {
-  const btn = document.getElementById('play-btn');
-  btn.innerHTML = state.playing ? '&#9646;&#9646;' : '&#9654;';
-  btn.classList.toggle('playing', state.playing);
-}
-
-// ============================================================
-// SUBWAY OVERLAY
-// ============================================================
+// MTA official subway line colors by route
 const MTA_COLORS = {
   '1':'#EE352E','2':'#EE352E','3':'#EE352E',
   '4':'#00933C','5':'#00933C','5 Peak':'#00933C','6':'#00933C','6 Express':'#00933C',
@@ -1353,11 +1314,16 @@ const MTA_COLORS = {
   'N':'#FCCC0A','Q':'#FCCC0A','R':'#FCCC0A','W':'#FCCC0A',
   'S':'#808183','SF':'#808183','SR':'#808183','ST':'#808183','SIR':'#808183',
 };
+function hexToRgb(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
 
 async function loadSubwayData() {
   const statusEl = document.getElementById('subway-status');
   statusEl.textContent = 'loading...';
   try {
+    // Fetch subway lines from MTA/NY Open Data
     const linesUrl = 'https://data.ny.gov/resource/s692-irgq.json?$limit=100';
     const linesResp = await fetch(linesUrl);
     const linesData = await linesResp.json();
@@ -1365,20 +1331,23 @@ async function loadSubwayData() {
     const routeFeatures = [];
     for (const line of linesData) {
       if (!line.geometry) continue;
+      const geom = line.geometry;
       const service = line.service || '';
       const color = MTA_COLORS[service] || '#808183';
       routeFeatures.push({
         type: 'Feature',
         properties: { service, color },
-        geometry: line.geometry,
+        geometry: geom,
       });
     }
 
+    // Add as a single GeoJSON source
     state.map.addSource('subway-lines', {
       type: 'geojson',
       data: { type: 'FeatureCollection', features: routeFeatures },
     });
 
+    // Outer casing for visibility on dark background
     state.map.addLayer({
       id: 'subway-lines-casing',
       type: 'line',
@@ -1391,6 +1360,7 @@ async function loadSubwayData() {
       },
     });
 
+    // Colored lines
     state.map.addLayer({
       id: 'subway-lines-color',
       type: 'line',
@@ -1403,6 +1373,7 @@ async function loadSubwayData() {
       },
     });
 
+    // Fetch stations
     const stationsUrl = 'https://data.ny.gov/resource/39hk-dx4f.json?$limit=500&$select=stop_name,daytime_routes,gtfs_latitude,gtfs_longitude';
     const stationsResp = await fetch(stationsUrl);
     const stationsData = await stationsResp.json();
@@ -1437,6 +1408,7 @@ async function loadSubwayData() {
       },
     });
 
+    // Station labels at higher zoom
     state.map.addLayer({
       id: 'subway-station-labels',
       type: 'symbol',
@@ -1472,159 +1444,181 @@ function toggleSubwayVisibility(visible) {
 }
 
 // ============================================================
-// PARKS LAYER
+// DECK.GL LAYER
 // ============================================================
-async function loadParksLayer() {
-  try {
-    const resp = await fetch(PARKS_URL);
-    if (!resp.ok) return;
-    const parks = await resp.json();
+let _filterVersion = 0;
+let _cachedFilterVersion = -1;
+let _filteredData = null;
 
-    // Convert parks data to GeoJSON
-    const features = parks.map(park => {
-      // park.p is array of polygons, each polygon is array of rings
-      // Each ring is array of [lng, lat] coords
-      const polygons = park.p || [];
-      if (polygons.length === 0) return null;
+// Rebuild all filter Sets from DOM checkboxes — single source of truth
+function syncFiltersFromDOM() {
+  state.filters.eras = new Set();
+  document.querySelectorAll('[data-era]:checked').forEach(cb => state.filters.eras.add(cb.dataset.era));
+  state.filters.heights = new Set();
+  document.querySelectorAll('[data-ht]:checked').forEach(cb => state.filters.heights.add(cb.dataset.ht));
+  state.filters.boroughs = new Set();
+  document.querySelectorAll('[data-boro]:checked').forEach(cb => state.filters.boroughs.add(parseInt(cb.dataset.boro)));
+  // Uses: separate parents from subs
+  // Note: can't use :checked selector because indeterminate parent checkboxes
+  // have .checked=true but don't match :checked in CSS
+  state.filters.uses = new Set();
+  state.filters.subUses = new Set();
+  const subKeys = new Set(['1fam','2fam','walkup','elevator','religious','school','health','civic']);
+  document.querySelectorAll('[data-use]').forEach(cb => {
+    if (!cb.checked) return;
+    const u = cb.dataset.use;
+    if (subKeys.has(u)) state.filters.subUses.add(u);
+    else state.filters.uses.add(u);
+  });
+}
 
-      let geometry;
-      if (polygons.length === 1) {
-        geometry = { type: 'Polygon', coordinates: polygons[0] };
-      } else {
-        geometry = { type: 'MultiPolygon', coordinates: polygons.map(p => p) };
+function getFilteredData() {
+  if (_cachedFilterVersion !== _filterVersion || !_filteredData) {
+    syncFiltersFromDOM();
+    _filteredData = state.dataIndices.filter(i => !isFiltered(i));
+    _cachedFilterVersion = _filterVersion;
+  }
+  return _filteredData;
+}
+
+function updateLayers() {
+  if (!state.deckgl || !state.count) return;
+
+  const yr = Math.floor(state.currentYear);
+
+  const filteredData = getFilteredData();
+  const layer = new deck.ScatterplotLayer({
+    id: 'buildings',
+    data: filteredData,
+    getPosition: i => [state.positions[i*2], state.positions[i*2+1]],
+    getFillColor: i => getColor(i, yr),
+    getRadius: i => {
+      const la = state.lotArea[i];
+      if (la > 0) return Math.max(4, Math.min(40, Math.sqrt(la) * 0.3));
+      return 6;
+    },
+    radiusUnits: 'meters',
+    radiusMinPixels: 1,
+    radiusMaxPixels: 20,
+    pickable: true,
+    pickingRadius: 3,
+    onHover: onHover,
+    updateTriggers: {
+      getFillColor: `${yr}_${state.colorMode}_${_filterVersion}_${SPOTLIGHT_KEYS.map(k => state.filters[k]).join('_')}`,
+      getRadius: `${_filterVersion}`,
+    },
+  });
+
+  // Parks polygon layer — green polygons that appear by acquisition year
+  const parksLayer = new deck.SolidPolygonLayer({
+    id: 'parks',
+    data: state.parks,
+    getPolygon: d => d.p[0], // outer ring of first polygon
+    getFillColor: d => {
+      const acquired = d.y === 0 || d.y <= yr;
+      if (!acquired) return [0, 0, 0, 0];
+      // Fade in: bright green when new, settle to darker green
+      const age = d.y > 0 ? yr - d.y : 100;
+      const t = Math.min(age / 80, 1);
+      return [20 + (t * 15) | 0, 160 - (t * 40) | 0, 50 + (t * 28) | 0, 140 + (t * 30) | 0];
+    },
+    pickable: true,
+    onHover: info => {
+      if (info.object) {
+        const tt = document.getElementById('tooltip');
+        tt.querySelector('.tt-address').textContent = info.object.n || 'Park';
+        const details = [];
+        if (info.object.a) details.push(`${info.object.a} acres`);
+        if (info.object.y) details.push(`Acquired ${info.object.y}`);
+        tt.querySelector('.tt-details').textContent = details.join(' · ');
+        tt.style.display = 'block';
+        tt.style.left = (info.x + 12) + 'px';
+        tt.style.top = (info.y - 12) + 'px';
       }
+    },
+    updateTriggers: { getFillColor: [yr] },
+  });
 
-      return {
-        type: 'Feature',
-        properties: { name: park.n || 'Park', acres: park.a || 0, year: park.y || 0 },
-        geometry,
-      };
-    }).filter(Boolean);
+  const layers = [parksLayer, layer];
 
-    state.map.addSource('parks', {
-      type: 'geojson',
-      data: { type: 'FeatureCollection', features },
-    });
-
-    state.map.addLayer({
-      id: 'parks-fill',
-      type: 'fill',
-      source: 'parks',
-      paint: {
-        'fill-color': 'rgb(30,140,60)',
-        'fill-opacity': 0.5,
-      },
-    }, 'buildings-fill'); // Insert below buildings
-  } catch (e) {
-    console.warn('Parks load failed:', e);
+  // Overlay dot layers (construction, stalled) — glow ring + core dot + tooltip
+  function addOverlayDots(id, data, color, glowRadius, coreRadius, onHoverFn, pulse) {
+    const r = pulse || 1;
+    const a = typeof pulse === 'number' ? (100 + ((Math.sin(Date.now() / 400) + 1) / 2) * 120) : color[3];
+    layers.push(new deck.ScatterplotLayer({
+      id: id + '-glow', data, getPosition: d => d.pos,
+      getFillColor: [color[0], color[1], color[2], a * 0.3],
+      getRadius: glowRadius * r, radiusUnits: 'meters', radiusMinPixels: 6, radiusMaxPixels: 24, pickable: false,
+    }));
+    layers.push(new deck.ScatterplotLayer({
+      id, data, getPosition: d => d.pos,
+      getFillColor: [color[0], color[1], color[2], a],
+      getLineColor: [255, 255, 255, a * 0.5],
+      getRadius: coreRadius * r, radiusUnits: 'meters', radiusMinPixels: 3, radiusMaxPixels: 16,
+      stroked: true, lineWidthMinPixels: 1, pickable: true, onHover: onHoverFn,
+    }));
   }
-}
 
-// ============================================================
-// CONSTRUCTION / STALLED OVERLAYS
-// ============================================================
-function updateConstructionLayer() {
-  if (!state.constructionSites || state.constructionSites.length === 0) return;
+  function showTooltip(info, html) {
+    const tt = document.getElementById('tooltip');
+    tt.innerHTML = html;
+    tt.style.display = 'block';
+    tt.style.left = (info.x + 12) + 'px';
+    tt.style.top = (info.y + 12) + 'px';
+  }
 
-  const features = state.constructionSites.map(d => ({
-    type: 'Feature',
-    properties: { addr: d.addr, borough: d.borough, stories: d.stories },
-    geometry: { type: 'Point', coordinates: d.pos },
-  }));
+  // Construction overlay — pulsating cyan dots
+  if (state.filters.highlightConstruction && state.constructionSites && state.constructionSites.length > 0) {
+    const p = (Math.sin(Date.now() / 400) + 1) / 2;
+    addOverlayDots('construction', state.constructionSites, [0, 229, 255, 200], 40, 20, info => {
+      if (!info.object) return;
+      const d = info.object;
+      showTooltip(info, `<div class="tt-address">${titleCase(d.addr) || 'Construction Site'}</div>
+        <div class="tt-row"><span>Status</span><span style="color:#00E5FF">Under Construction</span></div>
+        ${d.stories !== '?' ? `<div class="tt-row"><span>Proposed floors</span><span>${d.stories}</span></div>` : ''}
+        ${d.borough ? `<div class="tt-row"><span>Borough</span><span>${titleCase(d.borough)}</span></div>` : ''}
+        <div style="font-size:8px;color:#666;margin-top:4px;">Source: DOB NOW</div>`);
+    }, 0.7 + p * 0.6);
+  }
 
-  if (state.map.getSource('construction-sites')) {
-    state.map.getSource('construction-sites').setData({ type: 'FeatureCollection', features });
-  } else {
-    state.map.addSource('construction-sites', {
-      type: 'geojson',
-      data: { type: 'FeatureCollection', features },
-    });
-    state.map.addLayer({
-      id: 'construction-glow',
-      type: 'circle',
-      source: 'construction-sites',
-      paint: {
-        'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 4, 14, 10, 16, 16],
-        'circle-color': 'rgba(0,229,255,0.2)',
-        'circle-blur': 0.5,
-      },
-    });
-    state.map.addLayer({
-      id: 'construction-dots',
-      type: 'circle',
-      source: 'construction-sites',
-      paint: {
-        'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 2, 14, 5, 16, 8],
-        'circle-color': 'rgb(0,229,255)',
-        'circle-stroke-width': 1,
-        'circle-stroke-color': 'rgba(255,255,255,0.5)',
-      },
+  // Stalled construction overlay — orange dots
+  if (state.filters.highlightStalled && state.stalledSites && state.stalledSites.length > 0) {
+    addOverlayDots('stalled', state.stalledSites, [255, 107, 53, 220], 50, 25, info => {
+      if (!info.object) return;
+      const d = info.object;
+      const filed = d.dateFiled ? new Date(d.dateFiled).toLocaleDateString('en-US', {year:'numeric', month:'short', day:'numeric'}) : 'Unknown';
+      const yearsStalled = d.yearFiled ? (2026 - d.yearFiled) : null;
+      showTooltip(info, `<div class="tt-address">${titleCase(d.addr) || 'Stalled Site'}</div>
+        <div class="tt-row"><span>Status</span><span style="color:#FF6B35">Stalled construction</span></div>
+        <div class="tt-row"><span>Complaint filed</span><span>${filed}</span></div>
+        ${yearsStalled ? `<div class="tt-row"><span>Years stalled</span><span>${yearsStalled}+</span></div>` : ''}
+        ${d.borough ? `<div class="tt-row"><span>Borough</span><span>${d.borough}</span></div>` : ''}
+        <div style="font-size:8px;color:#666;margin-top:4px;">Source: DOB stalled sites database</div>`);
     });
   }
 
-  const vis = state.filters.highlightConstruction ? 'visible' : 'none';
-  state.map.setLayoutProperty('construction-glow', 'visibility', vis);
-  state.map.setLayoutProperty('construction-dots', 'visibility', vis);
-}
-
-function updateStalledLayer() {
-  if (!state.stalledSites || state.stalledSites.length === 0) return;
-
-  const features = state.stalledSites.map(d => ({
-    type: 'Feature',
-    properties: { addr: d.addr, borough: d.borough, dateFiled: d.dateFiled, yearFiled: d.yearFiled },
-    geometry: { type: 'Point', coordinates: d.pos },
-  }));
-
-  if (state.map.getSource('stalled-sites')) {
-    state.map.getSource('stalled-sites').setData({ type: 'FeatureCollection', features });
-  } else {
-    state.map.addSource('stalled-sites', {
-      type: 'geojson',
-      data: { type: 'FeatureCollection', features },
-    });
-    state.map.addLayer({
-      id: 'stalled-glow',
-      type: 'circle',
-      source: 'stalled-sites',
-      paint: {
-        'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 5, 14, 12, 16, 20],
-        'circle-color': 'rgba(255,107,53,0.2)',
-        'circle-blur': 0.5,
-      },
-    });
-    state.map.addLayer({
-      id: 'stalled-dots',
-      type: 'circle',
-      source: 'stalled-sites',
-      paint: {
-        'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 3, 14, 6, 16, 10],
-        'circle-color': 'rgb(255,107,53)',
-        'circle-stroke-width': 1,
-        'circle-stroke-color': 'rgba(255,255,255,0.5)',
-      },
-    });
+  state.deckgl.setProps({ layers });
+  // Force deck.gl to redraw — belt-and-suspenders approach because
+  // MapboxOverlay integration frequently skips repaints on data changes
+  if (state.deckgl._deck) {
+    state.deckgl._deck.redraw(true);
   }
-
-  const vis = state.filters.highlightStalled ? 'visible' : 'none';
-  state.map.setLayoutProperty('stalled-glow', 'visibility', vis);
-  state.map.setLayoutProperty('stalled-dots', 'visibility', vis);
+  state.map.triggerRepaint();
+  // Schedule a second forced repaint on the next frame as a fallback
+  requestAnimationFrame(() => {
+    if (state.deckgl._deck) state.deckgl._deck.redraw(true);
+    state.map.triggerRepaint();
+  });
 }
 
-// Pulse animation for construction dots
+// Construction pulse animation
 let _pulseRAF = null;
-let _pulsePhase = 0;
 function pulseConstruction() {
   if (!state.filters.highlightConstruction || !state.constructionSites) {
     _pulseRAF = null;
     return;
   }
-  _pulsePhase += 0.05;
-  const scale = 0.7 + (Math.sin(_pulsePhase) + 1) / 2 * 0.6;
-  if (state.map.getLayer('construction-glow')) {
-    state.map.setPaintProperty('construction-glow', 'circle-radius',
-      ['interpolate', ['linear'], ['zoom'], 10, 4 * scale, 14, 10 * scale, 16, 16 * scale]);
-  }
+  updateLayers();
   _pulseRAF = requestAnimationFrame(pulseConstruction);
 }
 function startPulse() {
@@ -1635,196 +1629,159 @@ function stopPulse() {
 }
 
 // ============================================================
-// SCAFFOLDING / SIDEWALK SHED OVERLAY
+// ANIMATION
 // ============================================================
-function updateScaffoldingLayer() {
-  if (!state.scaffoldingSites || state.scaffoldingSites.length === 0) return;
+function animate(timestamp) {
+  if (!state.playing) return;
+  if (state.lastFrameTime === null) state.lastFrameTime = timestamp;
 
-  const features = state.scaffoldingSites.map(d => ({
-    type: 'Feature',
-    properties: { addr: d.addr, borough: d.borough, age: d.age, permitDate: d.permitDate },
-    geometry: { type: 'Point', coordinates: d.pos },
-  }));
+  const rawDelta = (timestamp - state.lastFrameTime) / 1000;
+  const delta = Math.min(rawDelta, 0.1); // cap at 100ms to prevent jumps
+  state.lastFrameTime = timestamp;
 
-  if (state.map.getSource('scaffolding-sites')) {
-    state.map.getSource('scaffolding-sites').setData({ type: 'FeatureCollection', features });
-  } else {
-    state.map.addSource('scaffolding-sites', {
-      type: 'geojson',
-      data: { type: 'FeatureCollection', features },
-    });
-    state.map.addLayer({
-      id: 'scaffolding-glow',
-      type: 'circle',
-      source: 'scaffolding-sites',
-      paint: {
-        'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 4, 14, 10, 16, 16],
-        'circle-color': 'rgba(192,132,252,0.2)',
-        'circle-blur': 0.5,
-      },
-    });
-    state.map.addLayer({
-      id: 'scaffolding-dots',
-      type: 'circle',
-      source: 'scaffolding-sites',
-      paint: {
-        'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 2, 14, 5, 16, 8],
-        'circle-color': 'rgb(192,132,252)',
-        'circle-stroke-width': 1,
-        'circle-stroke-color': 'rgba(255,255,255,0.5)',
-      },
-    });
+  // Pre-1900: run 5x faster since dates are unreliable
+  const speedMult = state.currentYear < 1900 ? 5 : 1;
+  state.currentYear += state.speed * speedMult * delta;
+
+  if (state.currentYear >= MAX_YEAR) {
+    state.currentYear = MAX_YEAR;
+    state.playing = false;
+    updatePlayButton();
   }
 
-  const vis = state.filters.highlightScaffolding ? 'visible' : 'none';
-  state.map.setLayoutProperty('scaffolding-glow', 'visibility', vis);
-  state.map.setLayoutProperty('scaffolding-dots', 'visibility', vis);
+  const yearInt = Math.floor(state.currentYear);
+  document.getElementById('year-display').textContent = yearInt;
+  document.getElementById('scrubber').value = yearInt;
+
+  // Show/hide pre-1900 caveat banner
+  const caveatBanner = document.getElementById('anim-caveat');
+  if (caveatBanner) {
+    caveatBanner.style.display = (state.playing && yearInt < 1900) ? 'block' : 'none';
+  }
+
+  updateLayers();
+  // Update stats less frequently (every ~10 frames)
+  if (yearInt % 2 === 0) updateStats();
+
+  if (state.playing) requestAnimationFrame(animate);
+}
+
+function togglePlay() {
+  state.playing = !state.playing;
+  // Hide the "Watch NYC grow" hint once they've discovered the feature
+  const hint = document.getElementById('play-hint');
+  if (hint) hint.classList.add('hidden');
+  if (state.playing) {
+    if (state.currentYear >= MAX_YEAR) state.currentYear = MIN_YEAR;
+    state.lastFrameTime = null;
+    const yearInt = Math.floor(state.currentYear);
+    document.getElementById('year-display').textContent = yearInt;
+    document.getElementById('scrubber').value = yearInt;
+    const caveat = document.getElementById('anim-caveat');
+    if (caveat) caveat.style.display = yearInt < 1900 ? 'block' : 'none';
+    updateLayers();
+    updateStats();
+    requestAnimationFrame(animate);
+  } else {
+    const caveat = document.getElementById('anim-caveat');
+    if (caveat) caveat.style.display = 'none';
+  }
+  updatePlayButton();
+}
+
+function updatePlayButton() {
+  const btn = document.getElementById('play-btn');
+  btn.innerHTML = state.playing ? '&#9646;&#9646;' : '&#9654;';
+  btn.classList.toggle('playing', state.playing);
 }
 
 // ============================================================
-// TOOLTIP (hover)
+// STATS
 // ============================================================
-const _addrCache = {};
-let _addrDebounce = null;
+function updateStats() {
+  const yr = Math.floor(state.currentYear);
+  let buildings = 0, landmarks = 0, demolished = 0, rebuilt = 0;
+  const n = state.count;
+  const yb = state.yearBuilt;
+  const ly = state.landmarkYear;
+  const dy = state.demoYear;
+  const ry = state.rebuildYear;
 
-function setupTooltip() {
+  for (let i = 0; i < n; i++) {
+    const y = yb[i];
+    if (y > 0 && y <= yr) {
+      const d = dy[i];
+      if (d > 0 && d <= yr) {
+        demolished++;
+        if (ry[i] > 0 && ry[i] <= yr) { rebuilt++; buildings++; }
+      } else {
+        buildings++;
+      }
+    }
+    if (ly[i] > 0 && ly[i] <= yr) landmarks++;
+  }
+
+  const filtered = getFilteredData();
+  let shown = 0;
+  for (const i of filtered) {
+    const y = yb[i];
+    if (y > 0 && y <= yr) {
+      const d = dy[i];
+      if (d > 0 && d <= yr) {
+        if (ry[i] > 0 && ry[i] <= yr) shown++;
+      } else {
+        shown++;
+      }
+    }
+  }
+  document.getElementById('stat-buildings').textContent = shown.toLocaleString();
+  document.getElementById('stat-landmarks').textContent = landmarks.toLocaleString();
+  document.getElementById('stat-demolished').textContent = demolished.toLocaleString();
+  document.getElementById('stat-rebuilt').textContent = rebuilt.toLocaleString();
+}
+
+// ============================================================
+// TOOLTIP
+// ============================================================
+function onHover(info) {
   const tooltip = document.getElementById('tooltip');
+  if (!info.object && info.object !== 0) {
+    tooltip.style.display = 'none';
+    return;
+  }
+
+  const i = info.object; // data items are original building indices
+  const yb = state.yearBuilt[i];
+  const nf = state.numFloors[i];
+  const cls = state.bldgClass[i].trim();
+  const ly = state.landmarkYear[i];
+  const dy = state.demoYear[i];
+  const ry = state.rebuildYear[i];
+
+  let html = '';
+  const addrRaw = state.addresses && state.addresses[i] ? state.addresses[i].trim() : '';
+  const addr = addrRaw ? titleCase(addrRaw) : '';
+  html += `<div class="tt-address">${addr || 'Building ' + (i + 1)}</div>`;
+
+  if (yb > 0) html += `<div class="tt-row"><span>Built</span><span>${yb}</span></div>`;
+  if (nf > 0) html += `<div class="tt-row"><span>Floors</span><span>${nf}</span></div>`;
+  if (cls) {
+    const classKey = cls.charAt(0).toUpperCase();
+    const className = CLASS_NAMES[classKey] || cls;
+    html += `<div class="tt-row"><span>Type</span><span>${className}</span></div>`;
+  }
+  if (dy > 0) html += `<div class="tt-row"><span>Demolished</span><span style="color:#FF3C3C">${dy}</span></div>`;
+  if (ry > 0) html += `<div class="tt-row"><span>Rebuilt</span><span style="color:#00DDFF">${ry}</span></div>`;
+  if (ly > 0) html += `<div class="tt-landmark">&#9733; Landmark (${ly})</div>`;
+
   const boroughs = ['','Manhattan','Bronx','Brooklyn','Queens','Staten Island'];
+  const bc = state.boroCode[i];
+  if (bc > 0 && bc <= 5) html += `<div class="tt-row"><span>Borough</span><span>${boroughs[bc]}</span></div>`;
 
-  state.map.on('mousemove', 'buildings-fill', (e) => {
-    if (!e.features || !e.features.length) return;
-    state.map.getCanvas().style.cursor = 'pointer';
-    const p = e.features[0].properties;
-
-    const yb = Number(p.yb) || 0;
-    const nf = Number(p.nf) || 0;
-    const bc = Number(p.bc) || 0;
-    const cls = String(p.cls || '');
-    const ly = Number(p.ly) || 0;
-    const dy = Number(p.dy) || 0;
-    const ry = Number(p.ry) || 0;
-    const hr = Number(p.hr) || 0;
-
-    // Build tooltip rows (address resolved async below)
-    const rows = [];
-    if (yb > 0) rows.push(`<div class="tt-row"><span>Built</span><span>${yb}</span></div>`);
-    if (nf > 0) rows.push(`<div class="tt-row"><span>Floors</span><span>${nf}</span></div>`);
-    if (hr > 0) rows.push(`<div class="tt-row"><span>Height</span><span>${hr} ft</span></div>`);
-    if (cls) {
-      const classKey = cls.charAt(0).toUpperCase();
-      const className = CLASS_NAMES[classKey] || cls;
-      rows.push(`<div class="tt-row"><span>Type</span><span>${className}</span></div>`);
-    }
-    if (bc > 0 && bc <= 5) rows.push(`<div class="tt-row"><span>Borough</span><span>${boroughs[bc]}</span></div>`);
-    if (dy > 0) rows.push(`<div class="tt-row"><span>Demolished</span><span style="color:#FF3C3C">${dy}</span></div>`);
-    if (ry > 0) rows.push(`<div class="tt-row"><span>Rebuilt</span><span style="color:#00DDFF">${ry}</span></div>`);
-    if (ly > 0) rows.push(`<div class="tt-landmark">&#9733; Landmark (${ly})</div>`);
-
-    // Show tooltip immediately with "Building", then resolve address
-    const lngLat = e.lngLat;
-    const coordKey = `${lngLat.lng.toFixed(5)},${lngLat.lat.toFixed(5)}`;
-    const cached = _addrCache[coordKey];
-    const addrLabel = cached || 'Building';
-    tooltip.innerHTML = `<div class="tt-address">${addrLabel}</div>` + rows.join('');
-
-    // Reverse geocode for address (debounced, cached)
-    if (!cached && state.map.getZoom() >= 14) {
-      clearTimeout(_addrDebounce);
-      _addrDebounce = setTimeout(async () => {
-        try {
-          const resp = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${lngLat.lng},${lngLat.lat}.json?access_token=${MAPBOX_TOKEN}&types=address&limit=1`);
-          const data = await resp.json();
-          if (data.features && data.features.length > 0) {
-            const addr = data.features[0].text || data.features[0].place_name || '';
-            const num = data.features[0].address || '';
-            const full = num ? `${num} ${addr}` : addr;
-            _addrCache[coordKey] = titleCase(full);
-            // Update tooltip if still visible at same location
-            const addrEl = tooltip.querySelector('.tt-address');
-            if (addrEl && tooltip.style.display === 'block') {
-              addrEl.textContent = _addrCache[coordKey];
-            }
-          }
-        } catch (e) { /* ignore geocode errors */ }
-      }, 150);
-    }
-    tooltip.style.display = 'block';
-    tooltip.style.left = (e.point.x + 12) + 'px';
-    tooltip.style.top = (e.point.y + 12) + 'px';
-  });
-
-  state.map.on('mouseleave', 'buildings-fill', () => {
-    state.map.getCanvas().style.cursor = '';
-    tooltip.style.display = 'none';
-  });
-
-  // Construction tooltip
-  state.map.on('mousemove', 'construction-dots', (e) => {
-    if (!e.features || !e.features.length) return;
-    state.map.getCanvas().style.cursor = 'pointer';
-    const p = e.features[0].properties;
-    let html = `<div class="tt-address">${titleCase(p.addr) || 'Construction Site'}</div>`;
-    html += `<div class="tt-row"><span>Status</span><span style="color:#00E5FF">Under Construction</span></div>`;
-    if (p.stories && p.stories !== '?') html += `<div class="tt-row"><span>Proposed floors</span><span>${p.stories}</span></div>`;
-    if (p.borough) html += `<div class="tt-row"><span>Borough</span><span>${titleCase(p.borough)}</span></div>`;
-    html += '<div style="font-size:8px;color:#666;margin-top:4px;">Source: DOB NOW</div>';
-    tooltip.innerHTML = html;
-    tooltip.style.display = 'block';
-    tooltip.style.left = (e.point.x + 12) + 'px';
-    tooltip.style.top = (e.point.y + 12) + 'px';
-  });
-
-  state.map.on('mouseleave', 'construction-dots', () => {
-    state.map.getCanvas().style.cursor = '';
-    tooltip.style.display = 'none';
-  });
-
-  // Stalled tooltip
-  state.map.on('mousemove', 'stalled-dots', (e) => {
-    if (!e.features || !e.features.length) return;
-    state.map.getCanvas().style.cursor = 'pointer';
-    const p = e.features[0].properties;
-    const filed = p.dateFiled ? new Date(p.dateFiled).toLocaleDateString('en-US', {year:'numeric', month:'short', day:'numeric'}) : 'Unknown';
-    const yearsStalled = p.yearFiled ? (2026 - Number(p.yearFiled)) : null;
-    let html = `<div class="tt-address">${titleCase(p.addr) || 'Stalled Site'}</div>`;
-    html += `<div class="tt-row"><span>Status</span><span style="color:#FF6B35">Stalled construction</span></div>`;
-    html += `<div class="tt-row"><span>Complaint filed</span><span>${filed}</span></div>`;
-    if (yearsStalled) html += `<div class="tt-row"><span>Years stalled</span><span>${yearsStalled}+</span></div>`;
-    if (p.borough) html += `<div class="tt-row"><span>Borough</span><span>${p.borough}</span></div>`;
-    html += '<div style="font-size:8px;color:#666;margin-top:4px;">Source: DOB stalled sites database</div>';
-    tooltip.innerHTML = html;
-    tooltip.style.display = 'block';
-    tooltip.style.left = (e.point.x + 12) + 'px';
-    tooltip.style.top = (e.point.y + 12) + 'px';
-  });
-
-  state.map.on('mouseleave', 'stalled-dots', () => {
-    state.map.getCanvas().style.cursor = '';
-    tooltip.style.display = 'none';
-  });
-
-  // Scaffolding tooltip
-  state.map.on('mousemove', 'scaffolding-dots', (e) => {
-    if (!e.features || !e.features.length) return;
-    state.map.getCanvas().style.cursor = 'pointer';
-    const p = e.features[0].properties;
-    const ageYears = p.age ? Math.round(Number(p.age) / 365) : null;
-    let html = `<div class="tt-address">${titleCase(p.addr) || 'Scaffolding site'}</div>`;
-    html += `<div class="tt-row"><span>Status</span><span style="color:#C084FC">Active sidewalk shed</span></div>`;
-    if (p.permitDate) html += `<div class="tt-row"><span>First permit</span><span>${p.permitDate}</span></div>`;
-    if (ageYears !== null) html += `<div class="tt-row"><span>Age</span><span>${ageYears > 0 ? ageYears + ' year' + (ageYears !== 1 ? 's' : '') : p.age + ' days'}</span></div>`;
-    if (p.borough) html += `<div class="tt-row"><span>Borough</span><span>${titleCase(p.borough)}</span></div>`;
-    html += '<div style="font-size:8px;color:#666;margin-top:4px;">Source: NYC DOB active shed permits</div>';
-    tooltip.innerHTML = html;
-    tooltip.style.display = 'block';
-    tooltip.style.left = (e.point.x + 12) + 'px';
-    tooltip.style.top = (e.point.y + 12) + 'px';
-  });
-
-  state.map.on('mouseleave', 'scaffolding-dots', () => {
-    state.map.getCanvas().style.cursor = '';
-    tooltip.style.display = 'none';
-  });
+  tooltip.innerHTML = html;
+  tooltip.style.display = 'block';
+  tooltip.style.left = (info.x + 12) + 'px';
+  tooltip.style.top = (info.y + 12) + 'px';
 }
 
 // ============================================================
@@ -1841,24 +1798,6 @@ const DEFAULTS = {
 const MODE_MAP = { age: 'a', height: 'h', class: 'c', borough: 'b' };
 const MODE_MAP_R = { a: 'age', h: 'height', c: 'class', b: 'borough' };
 
-function syncFiltersFromDOM() {
-  state.filters.eras = new Set();
-  document.querySelectorAll('[data-era]:checked').forEach(cb => state.filters.eras.add(cb.dataset.era));
-  state.filters.heights = new Set();
-  document.querySelectorAll('[data-ht]:checked').forEach(cb => state.filters.heights.add(cb.dataset.ht));
-  state.filters.boroughs = new Set();
-  document.querySelectorAll('[data-boro]:checked').forEach(cb => state.filters.boroughs.add(parseInt(cb.dataset.boro)));
-  state.filters.uses = new Set();
-  state.filters.subUses = new Set();
-  const subKeys = new Set(['1fam','2fam','walkup','elevator','religious','school','health','civic']);
-  document.querySelectorAll('[data-use]').forEach(cb => {
-    if (!cb.checked) return;
-    const u = cb.dataset.use;
-    if (subKeys.has(u)) state.filters.subUses.add(u);
-    else state.filters.uses.add(u);
-  });
-}
-
 function encodeState() {
   const c = state.map.getCenter();
   const parts = [];
@@ -1866,6 +1805,7 @@ function encodeState() {
   parts.push(`z=${state.map.getZoom().toFixed(1)}`);
   if (Math.floor(state.currentYear) !== MAX_YEAR) parts.push(`y=${Math.floor(state.currentYear)}`);
   if (state.colorMode !== 'age') parts.push(`m=${MODE_MAP[state.colorMode]}`);
+  // Filters — only encode if not all selected
   syncFiltersFromDOM();
   const eras = [...state.filters.eras];
   if (eras.length < DEFAULTS.eras.length) parts.push(`e=${eras.join(',')}`);
@@ -1877,6 +1817,7 @@ function encodeState() {
   if (uses.length < DEFAULTS.uses.length) parts.push(`u=${uses.join(',')}`);
   const subUses = [...state.filters.subUses];
   if (subUses.length < DEFAULTS.subUses.length) parts.push(`su=${subUses.join(',')}`);
+  // Spotlights
   const activeSpot = SPOTLIGHT_DEFS.find(s => state.filters[s.key]);
   if (activeSpot) parts.push('hl=' + activeSpot.urlCode);
   return '#' + parts.join('&');
@@ -1889,6 +1830,7 @@ function restoreFromHash() {
     const [k, v] = p.split('=');
     if (k && v) params[k] = v;
   });
+  // Center + zoom
   if (params.c) {
     const [lng, lat] = params.c.split(',').map(Number);
     if (!isNaN(lng) && !isNaN(lat)) state.map.jumpTo({ center: [lng, lat] });
@@ -1897,17 +1839,21 @@ function restoreFromHash() {
     const z = parseFloat(params.z);
     if (!isNaN(z)) state.map.jumpTo({ zoom: z });
   }
+  // Year
   if (params.y) {
     state.currentYear = parseInt(params.y);
     document.getElementById('year-display').textContent = Math.floor(state.currentYear);
     document.getElementById('scrubber').value = Math.floor(state.currentYear);
   }
+  // Color mode
   if (params.m && MODE_MAP_R[params.m]) {
     state.colorMode = MODE_MAP_R[params.m];
     document.querySelectorAll('.mode-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.mode === state.colorMode);
     });
+    updateLegend();
   }
+  // Filters — set checkboxes, then syncFiltersFromDOM will handle the rest
   if (params.e) {
     const eraSet = new Set(params.e.split(','));
     document.querySelectorAll('[data-era]').forEach(cb => { cb.checked = eraSet.has(cb.dataset.era); });
@@ -1930,10 +1876,12 @@ function restoreFromHash() {
       else cb.checked = useSet.has(u);
     });
   }
+  // Spotlight
   if (params.hl && SPOTLIGHT_URL_TO_EL[params.hl]) {
     document.getElementById(SPOTLIGHT_URL_TO_EL[params.hl]).checked = true;
     state.filters[SPOTLIGHT_URL_TO_KEY[params.hl]] = true;
   }
+  _filterVersion++;
   return true;
 }
 
@@ -2017,10 +1965,12 @@ function selectResult(idx) {
   if (!f) return;
   const [lng, lat] = f.center;
   state.map.flyTo({ center: [lng, lat], zoom: 16, duration: 1500 });
+  // Drop marker
   if (state.searchMarker) state.searchMarker.remove();
   const el = document.createElement('div');
   el.style.cssText = 'width:16px;height:16px;border-radius:50%;background:#FF9020;border:2px solid #fff;animation:search-pulse 1.5s ease-in-out infinite;';
-  state.searchMarker = new maplibregl.Marker({ element: el }).setLngLat([lng, lat]).addTo(state.map);
+  state.searchMarker = new mapboxgl.Marker({ element: el }).setLngLat([lng, lat]).addTo(state.map);
+  // Update input
   document.getElementById('search-input').value = f.place_name.split(',')[0];
   document.getElementById('search-results').style.display = 'none';
   document.getElementById('search-clear').style.display = 'block';
@@ -2054,7 +2004,7 @@ const STORIES = {
     title: 'The Bronx Burns and Rebuilds',
     steps: [
       { center: [-73.91, 40.82], zoom: 14, year: 1970, mode: 'age', caption: 'The South Bronx in 1970 — a dense neighborhood of prewar walk-ups and tenements. The Cross Bronx Expressway has already carved through, but the worst is yet to come.', duration: 5000 },
-      { center: [-73.91, 40.82], zoom: 14, year: 1985, mode: 'age', caption: 'Arson, disinvestment, and abandonment devastate the South Bronx. Thousands of buildings are demolished. "The Bronx is burning" becomes shorthand for urban crisis.', duration: 6000 },
+      { center: [-73.91, 40.82], zoom: 14, year: 1985, mode: 'age', spotlight: 'demolished', caption: 'Arson, disinvestment, and abandonment devastate the South Bronx. Thousands of buildings are demolished. \u201cThe Bronx is burning\u201d becomes shorthand for urban crisis.', duration: 6000 },
       { center: [-73.91, 40.82], zoom: 14, year: 2010, mode: 'age', caption: 'Rebuilding begins. New affordable housing rises on the cleared lots. Community organizations lead the recovery. The neighborhood slowly comes back.', duration: 5000 },
       { center: [-73.91, 40.82], zoom: 13, year: 2026, mode: 'age', caption: 'Today the South Bronx is a patchwork — prewar survivors alongside modern construction, empty lots next to new development. The rebuilding continues.', duration: 6000 },
     ],
@@ -2109,23 +2059,29 @@ function restoreStoryState(saved) {
   document.getElementById('scrubber').value = Math.floor(saved.year);
   state.colorMode = saved.mode;
   document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === saved.mode));
+  updateLegend();
+  // Restore checkboxes
   for (const [id, s] of Object.entries(saved.checkboxes)) {
     const el = document.getElementById(id);
     if (el) { el.checked = s.checked; el.indeterminate = s.indeterminate; }
   }
+  // Restore spotlights
   const sp = saved.spotlights || {};
   SPOTLIGHT_DEFS.forEach(s => {
     const val = sp[s.key] || false;
     state.filters[s.key] = val;
     document.getElementById(s.el).checked = val;
   });
+  _filterVersion++;
   syncFiltersFromDOM();
-  updateMapStyle();
+  updateLayers();
+  updateStats();
 }
 
 function applyStoryFilters(step) {
   if (!step.filters) return;
   const f = step.filters;
+  // If specific filters given, deselect all first, then select only specified
   if (f.eras) {
     const eraSet = new Set(f.eras);
     document.querySelectorAll('[data-era]').forEach(cb => { cb.checked = eraSet.has(cb.dataset.era); });
@@ -2148,6 +2104,7 @@ function applyStoryFilters(step) {
       else cb.checked = useSet.has(u);
       cb.indeterminate = false;
     });
+    // Fix parent indeterminate state
     const PARENT_SUBS = { residential: ['1fam','2fam','walkup','elevator'], institutional: ['religious','school','health','civic'] };
     for (const [parent, subs] of Object.entries(PARENT_SUBS)) {
       const parentEl = document.getElementById('use-' + parent);
@@ -2170,16 +2127,16 @@ function applyStoryFilters(step) {
 function startStory(storyId) {
   const story = STORIES[storyId];
   if (!story) return;
+  // Stop animation if playing
   if (state.playing) togglePlay();
+  // Save current state
   state.story.savedState = saveStoryState();
   state.story.active = true;
   state.story.id = storyId;
   state.story.stepIndex = 0;
+  // Clear spotlights
   SPOTLIGHT_DEFS.forEach(s => { document.getElementById(s.el).checked = false; state.filters[s.key] = false; });
-  // Reset all filter checkboxes to checked so tour has a clean slate
-  document.querySelectorAll('[data-era],[data-ht],[data-use],[data-boro]').forEach(cb => {
-    cb.checked = true; cb.indeterminate = false;
-  });
+  // Show overlay, hide menu
   document.getElementById('story-menu').classList.remove('show');
   document.getElementById('story-overlay').classList.add('show');
   playStep(0);
@@ -2210,9 +2167,11 @@ function playStep(index) {
   if (index < 0) index = 0;
   state.story.stepIndex = index;
   const step = story.steps[index];
+  // Update caption
   document.getElementById('story-title').textContent = story.title;
   document.getElementById('story-caption').textContent = step.caption;
   document.getElementById('story-step-label').textContent = `${index + 1} / ${story.steps.length}`;
+  // Progress bar
   const bar = document.getElementById('story-progress-bar');
   bar.style.transition = 'none';
   bar.style.width = '0%';
@@ -2220,7 +2179,7 @@ function playStep(index) {
     bar.style.transition = `width ${step.duration}ms linear`;
     bar.style.width = '100%';
   });
-  // Year flash
+  // Show year flash for time-travel stories
   const yearFlash = document.getElementById('story-year-flash');
   const filterFlash = document.getElementById('story-filter-flash');
   const prevStep = index > 0 ? story.steps[index - 1] : null;
@@ -2231,6 +2190,7 @@ function playStep(index) {
     setTimeout(() => { yearFlash.className = 'fade'; }, 800);
     setTimeout(() => { yearFlash.className = ''; }, 1500);
   }
+  // Show filter flash for filter-based stories
   const filterLabel = _getStepFilterLabel(step);
   if (filterLabel) {
     filterFlash.textContent = filterLabel;
@@ -2243,10 +2203,26 @@ function playStep(index) {
   // Apply view
   if (step.center && step.zoom != null) {
     state.map.flyTo({ center: step.center, zoom: step.zoom, duration: 1500 });
+    // Force a re-render when flyTo animation completes
+    state.map.once('moveend', () => {
+      if (state.story.active) {
+        _filterVersion++;
+        _cachedFilterVersion = -1;
+        updateLayers();
+        if (state.deckgl._deck) state.deckgl._deck.redraw(true);
+        state.map.triggerRepaint();
+      }
+    });
   }
   if (step.mode) {
     state.colorMode = step.mode;
     document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === step.mode));
+    updateLegend();
+  }
+  if (step.year != null) {
+    state.currentYear = step.year;
+    document.getElementById('year-display').textContent = Math.floor(step.year);
+    document.getElementById('scrubber').value = Math.floor(step.year);
   }
   // Spotlights
   SPOTLIGHT_DEFS.forEach(s => {
@@ -2256,20 +2232,22 @@ function playStep(index) {
   });
   // Filters
   applyStoryFilters(step);
-
-  // Set year directly (no tween — keeps things simple)
-  if (step.year != null) {
-    state.currentYear = step.year;
-    document.getElementById('year-display').textContent = Math.floor(step.year);
-    document.getElementById('scrubber').value = Math.floor(step.year);
-  }
-
-  updateMapStyle();
+  _filterVersion++;
+  _cachedFilterVersion = -1; // Force cache invalidation
+  updateLayers();
+  updateStats();
+  // Force deck.gl repaint
+  if (state.deckgl._deck) { state.deckgl._deck.redraw(true); }
   state.map.triggerRepaint();
-  // Apply view (flyTo after setting state)
-  // (already done above)
-
-  // Auto-advance
+  // Schedule a delayed forced re-render as safety fallback
+  setTimeout(() => {
+    if (state.story.active && state.story.stepIndex === index) {
+      _cachedFilterVersion = -1;
+      updateLayers();
+      if (state.deckgl._deck) state.deckgl._deck.redraw(true);
+    }
+  }, 300);
+  // Auto-advance timer
   clearTimeout(state.story.timer);
   state.story.timer = setTimeout(() => {
     if (state.story.active) playStep(index + 1);
@@ -2278,11 +2256,11 @@ function playStep(index) {
 
 function endStory() {
   clearTimeout(state.story.timer);
-  if (state.story.yearRAF) { cancelAnimationFrame(state.story.yearRAF); state.story.yearRAF = null; }
   state.story.active = false;
   document.getElementById('story-overlay').classList.remove('show');
   document.getElementById('story-year-flash').className = '';
   document.getElementById('story-filter-flash').className = '';
+  // Restore previous state, or reset to defaults if restore fails
   if (state.story.savedState) {
     restoreStoryState(state.story.savedState);
     state.story.savedState = null;
@@ -2297,12 +2275,17 @@ function resetToDefaults() {
   document.getElementById('scrubber').value = MAX_YEAR;
   state.colorMode = 'age';
   document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === 'age'));
+  updateLegend();
+  // Check all filter checkboxes
   document.querySelectorAll('[data-era],[data-ht],[data-boro]').forEach(cb => { cb.checked = true; });
   document.querySelectorAll('[data-use]').forEach(cb => { cb.checked = true; cb.indeterminate = false; });
+  // Clear spotlights
   SPOTLIGHT_DEFS.forEach(s => { document.getElementById(s.el).checked = false; state.filters[s.key] = false; });
   state.map.jumpTo({ center: [-73.98, 40.75], zoom: 11 });
+  _filterVersion++;
   syncFiltersFromDOM();
-  updateMapStyle();
+  updateLayers();
+  updateStats();
 }
 
 function setupStories() {
@@ -2330,65 +2313,207 @@ function setupStories() {
 }
 
 // ============================================================
-// LEGEND
+// INIT
 // ============================================================
+async function init() {
+  document.getElementById('loading-status').textContent = 'Initializing map...';
+  mapboxgl.accessToken = MAPBOX_TOKEN;
+
+  state.map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/mapbox/dark-v11',
+    center: [-73.98, 40.75],
+    zoom: 11,
+    pitch: 0,
+    bearing: 0,
+    antialias: true,
+  });
+
+  await new Promise(resolve => {
+    state.map.on('load', resolve);
+    // Fallback: proceed after 10s even if load event doesn't fire (headless browsers)
+    setTimeout(resolve, 10000);
+  });
+
+  // Hide default buildings
+  for (const layer of state.map.getStyle().layers) {
+    if (layer.id.includes('building')) {
+      state.map.setLayoutProperty(layer.id, 'visibility', 'none');
+    }
+  }
+
+  document.getElementById('loading-status').textContent = 'Creating overlay...';
+  state.deckgl = new deck.MapboxOverlay({
+    interleaved: true,
+    layers: [],
+    getCursor: ({isDragging, isHovering}) => isDragging ? 'grabbing' : isHovering ? 'pointer' : 'default',
+  });
+  state.map.addControl(state.deckgl);
+  state.map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'bottom-right');
+
+  // Force cursor back to default after any map interaction (drag, zoom)
+  // Mapbox sets cursor asynchronously, so we need multiple frames to override
+  const canvas = state.map.getCanvas();
+  function resetCursor() {
+    canvas.style.cursor = '';
+    requestAnimationFrame(() => {
+      canvas.style.cursor = '';
+      requestAnimationFrame(() => { canvas.style.cursor = ''; });
+    });
+  }
+  state.map.on('dragend', resetCursor);
+  state.map.on('zoomend', resetCursor);
+  state.map.on('moveend', resetCursor);
+  state.map.on('idle', resetCursor);
+  // Also reset on mouseup — catches drags that don't trigger dragend
+  canvas.addEventListener('mouseup', resetCursor);
+
+  // Load critical data in parallel (binary + landmarks needed for initial render)
+  document.getElementById('loading-status').textContent = 'Loading data...';
+  await Promise.all([
+    loadBinaryData(),
+    fetch(LANDMARKS_URL).then(r => r.ok ? r.json() : {}).then(d => { state.landmarkLookup = d; }),
+    fetch(STATS_URL).then(r => r.ok ? r.json() : null).then(d => { state.stats = d; }),
+  ]);
+
+  // Non-critical data: parks (decorative) and demolitions (spotlight only) — load after first render
+  fetch(DEMOLITIONS_URL).then(r => r.ok ? r.json() : {}).then(d => { state.demoLookup = d; });
+  fetch(PARKS_URL).then(r => r.ok ? r.json() : []).then(d => { state.parks = d; updateLayers(); });
+
+  console.log(`Loaded: ${state.count} buildings, ${Object.keys(state.landmarkLookup).length} landmarks`);
+
+  // Restore state from URL hash if present
+  restoreFromHash();
+
+  // Initial render at current year
+  updateLayers();
+  updateStats();
+
+  // Remove loading screen
+  document.getElementById('loading').classList.add('hidden');
+
+  setupControls();
+  setupSearch();
+  setupStories();
+
+  // Update hash on map movement
+  state.map.on('moveend', updateHash);
+
+  // Share button
+  document.getElementById('share-btn').addEventListener('click', () => {
+    history.replaceState(null, '', encodeState());
+    navigator.clipboard.writeText(location.href).then(() => {
+      const toast = document.getElementById('share-toast');
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2000);
+    });
+  });
+
+  // Lazy-load addresses in background (not critical for initial render)
+  loadAddresses();
+
+  console.log('Every Building app initialized');
+}
+
 function updateLegend() {
   const legend = document.getElementById('legend');
   const mode = state.colorMode;
   let html = '';
 
   if (mode === 'age') {
-    html = `<div class="legend-title">Color: Building age</div>
-      <div style="font-size:9px;color:#777;margin-bottom:6px;">Darker = older, lighter = newer</div>
-      <div class="legend-item"><div class="legend-swatch" style="background:rgb(160,50,10)"></div> Before 1920*</div>
-      <div class="legend-item"><div class="legend-swatch" style="background:rgb(210,95,20)"></div> 1920-1950</div>
-      <div class="legend-item"><div class="legend-swatch" style="background:rgb(240,150,50)"></div> 1950-1980</div>
-      <div class="legend-item"><div class="legend-swatch" style="background:rgb(255,200,100)"></div> 1980-2010</div>
-      <div class="legend-item"><div class="legend-swatch" style="background:rgb(255,235,180)"></div> Since 2010</div>
+    html = `<div class="legend-title">Color: Building Age</div>
+      <div style="font-size:9px;color:#777;margin-bottom:6px;">Each era has a distinct color</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(240,230,211)"></div> Since 2010</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(224,82,99)"></div> 1980-2010</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(232,168,56)"></div> 1950-1980</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(27,153,139)"></div> 1920-1950</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(74,91,199)"></div> Before 1920*</div>
       <div style="font-size:8px;color:#666;margin:4px 0 0 18px;line-height:1.3;">*Dates before ~1950 are highly unreliable (<a href="https://www.reddit.com/r/centuryhomes/comments/1ggn7u3/how_accurate_are_date_built_records/" target="_blank" style="color:#888;text-decoration:underline;">why?</a>)</div>`;
   } else if (mode === 'height') {
-    html = `<div class="legend-title">Color: Building height</div>
-      <div style="font-size:9px;color:#777;margin-bottom:6px;">Darker blue = taller</div>
-      <div class="legend-item"><div class="legend-swatch" style="background:rgb(180,210,240)"></div> 1 floor</div>
-      <div class="legend-item"><div class="legend-swatch" style="background:rgb(100,160,220)"></div> 2-6 floors</div>
-      <div class="legend-item"><div class="legend-swatch" style="background:rgb(40,100,200)"></div> 7-20 floors</div>
-      <div class="legend-item"><div class="legend-swatch" style="background:rgb(20,40,160)"></div> 50+ floors</div>`;
+    html = `<div class="legend-title">Color: Building Height</div>
+      <div style="font-size:9px;color:#777;margin-bottom:6px;">Redder = taller building</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(190,190,170)"></div> 1 floor</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(200,200,180)"></div> 2-6 floors</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(230,150,100)"></div> 10 floors</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(245,100,50)"></div> 25 floors</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(255,60,20)"></div> 50+ floors</div>`;
   } else if (mode === 'class') {
-    html = `<div class="legend-title">Color: Building type</div>
+    html = `<div class="legend-title">Color: Building Type</div>
       <div style="font-size:9px;color:#777;margin-bottom:6px;">Each use category has its own color</div>
-      <div class="legend-item"><div class="legend-swatch" style="background:rgb(120,200,100)"></div> 1-2 family homes</div>
-      <div class="legend-item"><div class="legend-swatch" style="background:rgb(60,190,170)"></div> Multi-family residential</div>
-      <div class="legend-item"><div class="legend-swatch" style="background:rgb(220,195,60)"></div> Mixed use</div>
-      <div class="legend-item"><div class="legend-swatch" style="background:rgb(80,150,230)"></div> Commercial/office</div>
-      <div class="legend-item"><div class="legend-swatch" style="background:rgb(230,140,50)"></div> Industrial</div>
-      <div class="legend-item"><div class="legend-swatch" style="background:rgb(170,100,210)"></div> Institutional</div>`;
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(120,180,80)"></div> One-Family Home</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(60,140,180)"></div> Walk-Up Apt</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(100,100,200)"></div> Elevator Apt</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(80,130,200)"></div> Office</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(80,120,80)"></div> Retail</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(200,150,60)"></div> Warehouse</div>`;
   } else if (mode === 'borough') {
     html = `<div class="legend-title">Color: Borough</div>
       <div style="font-size:9px;color:#777;margin-bottom:6px;">Each borough has its own color</div>
       <div class="legend-item"><div class="legend-swatch" style="background:rgb(255,144,32)"></div> Manhattan</div>
-      <div class="legend-item"><div class="legend-swatch" style="background:rgb(80,170,255)"></div> Brooklyn</div>
-      <div class="legend-item"><div class="legend-swatch" style="background:rgb(120,210,100)"></div> Queens</div>
-      <div class="legend-item"><div class="legend-swatch" style="background:rgb(200,100,200)"></div> Bronx</div>
-      <div class="legend-item"><div class="legend-swatch" style="background:rgb(255,210,70)"></div> Staten Island</div>`;
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(102,187,255)"></div> Brooklyn</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(136,221,102)"></div> Queens</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(221,119,204)"></div> Bronx</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(255,204,68)"></div> Staten Island</div>`;
   }
+
+  // Common items — always visible regardless of mode
+  html += `<div style="border-top:1px solid rgba(255,255,255,0.1);margin:8px 0 6px;"></div>
+    <div style="font-size:9px;color:#777;margin-bottom:4px;">Always shown:</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#2D8C4E"></div> Park</div>
+    <div class="legend-item"><div class="legend-swatch outline"></div> Landmark</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#FF3C3C"></div> Demolished (DOB filings)</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#00DDFF"></div> Rebuilt</div>`;
 
   legend.innerHTML = html;
 }
 
-// ============================================================
-// CONTROLS
-// ============================================================
 function setupControls() {
+  document.getElementById('play-btn').addEventListener('click', togglePlay);
+  document.getElementById('play-hint').addEventListener('click', togglePlay);
+
+  const scrubber = document.getElementById('scrubber');
+  scrubber.addEventListener('input', (e) => {
+    state.currentYear = parseInt(e.target.value);
+    document.getElementById('year-display').textContent = Math.floor(state.currentYear);
+    updateLayers();
+    updateStats();
+  });
+
+  document.querySelectorAll('.speed-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.speed = parseInt(btn.dataset.speed);
+    });
+  });
+
+  // Jump-to-year buttons (static view shortcuts)
+  document.querySelectorAll('.jump-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const yr = parseInt(btn.dataset.year);
+      state.currentYear = yr;
+      // Stop animation if playing
+      if (state.playing) togglePlay();
+      document.getElementById('year-display').textContent = yr;
+      document.getElementById('scrubber').value = yr;
+      document.querySelectorAll('.jump-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      updateLayers();
+      updateStats();
+    });
+  });
+
   document.querySelectorAll('.mode-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       state.colorMode = btn.dataset.mode;
-      updateMapStyle();
+      updateLegend();
+      updateLayers();
     });
   });
 
-  // Parent -> subtype mappings
+  // Parent → subtype mappings for use filter
   const PARENT_SUBS = {
     residential: ['1fam','2fam','walkup','elevator'],
     institutional: ['religious','school','health','civic'],
@@ -2398,6 +2523,9 @@ function setupControls() {
     for (const s of subs) SUB_TO_PARENT[s] = p;
   }
 
+  // All filter checkboxes: just sync parent/child visuals, then refreshMap.
+  // syncFiltersFromDOM() (called inside getFilteredData) rebuilds all Sets
+  // from DOM state — no manual Set manipulation needed.
   document.querySelectorAll('[data-boro],[data-era],[data-ht]').forEach(cb => {
     cb.addEventListener('change', () => refreshMap());
   });
@@ -2407,8 +2535,10 @@ function setupControls() {
       const use = cb.dataset.use;
       const subs = PARENT_SUBS[use];
       if (subs) {
+        // Parent toggle: sync all sub-checkboxes to match
         subs.forEach(s => { document.getElementById('use-' + s).checked = cb.checked; });
       } else if (SUB_TO_PARENT[use]) {
+        // Sub-checkbox: update parent visual (checked/indeterminate)
         const parent = SUB_TO_PARENT[use];
         const parentSubs = PARENT_SUBS[parent];
         const parentEl = document.getElementById('use-' + parent);
@@ -2428,73 +2558,47 @@ function setupControls() {
         state.filters[s.key] = false;
       }
     }
-    // Hide construction dots if not the active spotlight
-    if (except !== 'construction') {
-      stopPulse();
-      if (state.map.getLayer('construction-glow')) {
-        state.map.setLayoutProperty('construction-glow', 'visibility', 'none');
-        state.map.setLayoutProperty('construction-dots', 'visibility', 'none');
-      }
-    }
-    // Hide stalled dots if not the active spotlight
-    if (except !== 'stalled') {
-      if (state.map.getLayer('stalled-glow')) {
-        state.map.setLayoutProperty('stalled-glow', 'visibility', 'none');
-        state.map.setLayoutProperty('stalled-dots', 'visibility', 'none');
-      }
-    }
-    // Hide scaffolding dots if not the active spotlight
-    if (except !== 'scaffolding') {
-      if (state.map.getLayer('scaffolding-glow')) {
-        state.map.setLayoutProperty('scaffolding-glow', 'visibility', 'none');
-        state.map.setLayoutProperty('scaffolding-dots', 'visibility', 'none');
-      }
-    }
   }
 
   document.getElementById('hl-landmarks').addEventListener('change', (e) => {
-    if (e.target.checked) {
-      clearOtherSpotlights('landmarks');
-      state.filters.highlightLandmarks = true;
-    } else {
-      state.filters.highlightLandmarks = false;
-    }
+    state.filters.highlightLandmarks = e.target.checked;
+    if (e.target.checked) clearOtherSpotlights('landmarks');
+    refreshMap();
+  });
+  document.getElementById('hl-demolished').addEventListener('change', (e) => {
+    state.filters.highlightDemolished = e.target.checked;
+    if (e.target.checked) clearOtherSpotlights('demolished');
     refreshMap();
   });
   document.getElementById('hl-vacant').addEventListener('change', (e) => {
-    if (e.target.checked) {
-      clearOtherSpotlights('vacant');
-      state.filters.highlightVacant = true;
-    } else {
-      state.filters.highlightVacant = false;
-    }
+    state.filters.highlightVacant = e.target.checked;
+    if (e.target.checked) clearOtherSpotlights('vacant');
     refreshMap();
   });
   document.getElementById('hl-construction').addEventListener('change', async (e) => {
     state.filters.highlightConstruction = e.target.checked;
     if (e.target.checked) {
       clearOtherSpotlights('construction');
+      // Fetch construction data on first use
       if (!state.constructionSites) {
         const statusEl = document.getElementById('construction-status');
         statusEl.textContent = 'loading...';
         try {
-          const baseUrl = "https://data.cityofnewyork.us/resource/rbx6-tga4.json";
-          const where = encodeURIComponent("work_type='General Construction' AND permit_status='Permit Issued' AND latitude IS NOT NULL AND (upper(job_description) like '%ERECT A NEW%' OR upper(job_description) like '%NEW BUILDING%' OR upper(job_description) like '%NEW%STORY%BUILDING%')");
-          const fields = "house_no,street_name,borough,latitude,longitude";
-          const resp = await fetch(`${baseUrl}?$where=${where}&$select=${fields}&$limit=10000`);
+          // Fetch all new building permits (Permit Entire + Permit Issued) filed since 2023
+          const baseUrl = "https://data.cityofnewyork.us/resource/w9ak-ipjd.json";
+          const where = encodeURIComponent("(job_type='New Building' OR job_type='ALT-CO - New Building with Existing Elements to Remain') AND (filing_status='Permit Entire' OR filing_status='Permit Issued') AND filing_date>'2023-01-01T00:00:00'");
+          const fields = "bbl,house_no,street_name,borough,proposed_no_of_stories,latitude,longitude";
+          // Paginate (API max 50K per request, we expect ~9K)
+          const resp = await fetch(`${baseUrl}?$where=${where}&$select=${fields}&$limit=15000`);
           const data = await resp.json();
           state.constructionSites = [];
-          const seen = new Set();
           for (const d of data) {
             if (d.latitude && d.longitude) {
-              const key = `${d.latitude},${d.longitude}`;
-              if (seen.has(key)) continue;
-              seen.add(key);
               state.constructionSites.push({
                 pos: [parseFloat(d.longitude), parseFloat(d.latitude)],
                 addr: ((d.house_no || '') + ' ' + (d.street_name || '')).trim(),
                 borough: d.borough || '',
-                stories: '?',
+                stories: d.proposed_no_of_stories || '?',
               });
             }
           }
@@ -2504,16 +2608,9 @@ function setupControls() {
           console.error('Construction data fetch failed:', err);
         }
       }
-      updateConstructionLayer();
-      startPulse();
-    } else {
-      stopPulse();
-      if (state.map.getLayer('construction-glow')) {
-        state.map.setLayoutProperty('construction-glow', 'visibility', 'none');
-        state.map.setLayoutProperty('construction-dots', 'visibility', 'none');
-      }
     }
     refreshMap();
+    if (e.target.checked) startPulse(); else stopPulse();
   });
 
   document.getElementById('hl-stalled').addEventListener('change', async (e) => {
@@ -2524,6 +2621,7 @@ function setupControls() {
       if (!state.stalledSites || state.stalledSites.length === 0) {
         const statusEl = document.getElementById('stalled-status');
         statusEl.textContent = 'loading...';
+        // Don't dim yet — wait until data arrives
         state.filters.highlightStalled = false;
         refreshMap();
         try {
@@ -2537,6 +2635,7 @@ function setupControls() {
           const data = await resp.json();
           statusEl.textContent = `geocoding ${data.length} sites...`;
 
+          // Geocode in batches of 10 to avoid hammering the API
           const sites = [];
           for (let i = 0; i < data.length; i += 10) {
             const batch = data.slice(i, i + 10);
@@ -2561,99 +2660,22 @@ function setupControls() {
           }
           state.stalledSites = sites;
           statusEl.textContent = `(${sites.length} sites)`;
+          // NOW enable the dim + dots
           if (document.getElementById('hl-stalled').checked) {
             state.filters.highlightStalled = true;
-            updateStalledLayer();
             refreshMap();
           }
         } catch (err) {
           statusEl.textContent = 'fetch failed';
           console.error('Stalled sites fetch failed:', err);
         }
-        return;
-      }
-      updateStalledLayer();
-    } else {
-      if (state.map.getLayer('stalled-glow')) {
-        state.map.setLayoutProperty('stalled-glow', 'visibility', 'none');
-        state.map.setLayoutProperty('stalled-dots', 'visibility', 'none');
+        return; // already called updateLayers above
       }
     }
     refreshMap();
   });
 
-  // Scaffolding / sidewalk sheds
-  document.getElementById('hl-scaffolding').addEventListener('change', async (e) => {
-    state.filters.highlightScaffolding = e.target.checked;
-    if (e.target.checked) {
-      clearOtherSpotlights('scaffolding');
-      stopPulse();
-      if (!state.scaffoldingSites) {
-        const statusEl = document.getElementById('scaffolding-status');
-        statusEl.textContent = 'loading...';
-        try {
-          const resp = await fetch('https://nycdob.github.io/ActiveShedPermits/data/Active_Sheds2.csv');
-          const text = await resp.text();
-          const lines = text.trim().split('\n');
-          const header = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
-          const col = name => header.findIndex(h => h.toLowerCase().includes(name));
-          const latIdx = col('latitude');
-          const lngIdx = col('longitude');
-          const houseIdx = col('house number');
-          const streetIdx = col('street name');
-          const permitIdx = col('first permit');
-          const ageIdx = col('age');
-          const boroIdx = col('borough');
-
-          // Simple CSV parse that handles empty fields
-          function parseCSVLine(line) {
-            const fields = [];
-            let i = 0;
-            while (i <= line.length) {
-              if (i === line.length) { fields.push(''); break; }
-              if (line[i] === '"') {
-                const end = line.indexOf('"', i + 1);
-                fields.push(end >= 0 ? line.slice(i + 1, end) : line.slice(i + 1));
-                i = end >= 0 ? end + 2 : line.length;
-              } else {
-                const end = line.indexOf(',', i);
-                fields.push(end >= 0 ? line.slice(i, end) : line.slice(i));
-                i = end >= 0 ? end + 1 : line.length + 1;
-              }
-            }
-            return fields;
-          }
-
-          const sites = [];
-          for (let i = 1; i < lines.length; i++) {
-            const row = parseCSVLine(lines[i]);
-            const lat = parseFloat(row[latIdx] || '');
-            const lng = parseFloat(row[lngIdx] || '');
-            if (!lat || !lng || lat < 40 || lat > 41 || lng < -75 || lng > -73) continue;
-            const addr = ((row[houseIdx] || '') + ' ' + (row[streetIdx] || '')).trim();
-            const borough = boroIdx >= 0 ? (row[boroIdx] || '') : '';
-            const permitDate = permitIdx >= 0 ? (row[permitIdx] || '') : '';
-            const age = ageIdx >= 0 ? parseInt(row[ageIdx]) || 0 : 0;
-            sites.push({ pos: [lng, lat], addr, borough, permitDate, age });
-          }
-          state.scaffoldingSites = sites;
-          statusEl.textContent = `(${sites.length.toLocaleString()} sheds)`;
-        } catch (err) {
-          statusEl.textContent = 'fetch failed';
-          console.error('Scaffolding data fetch failed:', err);
-        }
-      }
-      updateScaffoldingLayer();
-    } else {
-      if (state.map.getLayer('scaffolding-glow')) {
-        state.map.setLayoutProperty('scaffolding-glow', 'visibility', 'none');
-        state.map.setLayoutProperty('scaffolding-dots', 'visibility', 'none');
-      }
-    }
-    refreshMap();
-  });
-
-  // Subway overlay
+  // Subway overlay toggle
   document.getElementById('show-subway').addEventListener('change', async (e) => {
     state.showSubway = e.target.checked;
     if (e.target.checked && !state.subwayLoaded) {
@@ -2670,6 +2692,7 @@ function setupControls() {
     toggle.querySelector('.none').addEventListener('click', () => selectSection(toggle.dataset.section, false));
   });
 
+  // selectSection: just set checkboxes, syncFiltersFromDOM handles the rest
   function selectSection(section, checked) {
     const selectors = { era: '[data-era]', height: '[data-ht]', boro: '[data-boro]', use: '[data-use]' };
     document.querySelectorAll(selectors[section]).forEach(cb => {
@@ -2686,7 +2709,7 @@ function setupControls() {
     ['era', 'use', 'height', 'boro'].forEach(s => selectSection(s, checked));
   });
 
-  // Info overlay
+  // Info overlay — auto-show on load, fade after 5s
   const infoOverlay = document.getElementById('info-overlay');
   let infoAutoFadeTimer = null;
   function showInfo() {
@@ -2697,10 +2720,12 @@ function setupControls() {
     infoOverlay.classList.add('fade-out');
     setTimeout(() => { infoOverlay.classList.remove('show', 'fade-out'); }, 800);
   }
+  // Auto-show on load
   setTimeout(() => {
     showInfo();
     infoAutoFadeTimer = setTimeout(hideInfo, 5000);
   }, 600);
+  // Hover keeps it open
   infoOverlay.addEventListener('mouseenter', () => {
     if (infoAutoFadeTimer) { clearTimeout(infoAutoFadeTimer); infoAutoFadeTimer = null; }
   });
@@ -2736,7 +2761,7 @@ function setupControls() {
     methBackdrop.classList.remove('show');
   });
 
-  // Mobile toggle buttons
+  // Mobile toggle buttons for legend/filters
   document.getElementById('mob-legend-btn').addEventListener('click', () => {
     const legend = document.getElementById('legend');
     const panel = document.getElementById('filter-panel');
@@ -2760,152 +2785,36 @@ function setupControls() {
     }
   });
 
-  // Keyboard shortcuts
   document.addEventListener('keydown', (e) => {
+    // Don't intercept keys when typing in search
     if (document.activeElement === document.getElementById('search-input')) return;
+    if (e.code === 'Escape' && state.story.active) { endStory(); return; }
     if (e.code === 'Escape') { clearSearch(); return; }
+    if (state.story.active) {
+      if (e.code === 'ArrowRight') { e.preventDefault(); playStep(state.story.stepIndex + 1); return; }
+      if (e.code === 'ArrowLeft') { e.preventDefault(); playStep(state.story.stepIndex - 1); return; }
+      return;
+    }
+    if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
+    if (e.code === 'ArrowRight') {
+      state.currentYear = Math.min(state.currentYear + 5, MAX_YEAR);
+      scrubber.value = Math.floor(state.currentYear);
+      document.getElementById('year-display').textContent = Math.floor(state.currentYear);
+      updateLayers(); updateStats();
+    }
+    if (e.code === 'ArrowLeft') {
+      state.currentYear = Math.max(state.currentYear - 5, MIN_YEAR);
+      scrubber.value = Math.floor(state.currentYear);
+      document.getElementById('year-display').textContent = Math.floor(state.currentYear);
+      updateLayers(); updateStats();
+    }
   });
 }
 
-// ============================================================
-// INIT
-// ============================================================
-async function init() {
-  document.getElementById('loading-status').textContent = 'Initializing map...';
-
-  // Register PMTiles protocol
-  const protocol = new pmtiles.Protocol();
-  maplibregl.addProtocol('pmtiles', protocol.tile);
-
-  state.map = new maplibregl.Map({
-    container: 'map',
-    style: {
-      version: 8,
-      sources: {},
-      layers: [{
-        id: 'background',
-        type: 'background',
-        paint: { 'background-color': '#0a0a0a' },
-      }],
-    },
-    center: [-73.98, 40.75],
-    zoom: 11,
-    pitch: 0,
-    bearing: 0,
-    antialias: true,
-  });
-
-  state.map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right');
-
-  state.map.on('error', (e) => { console.error('Map error:', e.error || e); });
-
-  // Wait for style to be ready, then add all layers
-  function addLayers() {
-    console.log('Adding layers...');
-    document.getElementById('loading-status').textContent = 'Loading building tiles...';
-
-    // Add CARTO dark basemap
-    state.map.addSource('carto-dark', {
-      type: 'raster',
-      tiles: ['https://a.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}@2x.png'],
-      tileSize: 256,
-      attribution: '&copy; CARTO &copy; OpenStreetMap contributors',
-    });
-    state.map.addLayer({
-      id: 'carto-dark',
-      type: 'raster',
-      source: 'carto-dark',
-      minzoom: 0,
-      maxzoom: 20,
-    });
-
-    // Add PMTiles source
-    state.map.addSource('buildings', {
-      type: 'vector',
-      url: `pmtiles://${PMTILES_URL}`,
-    });
-
-    // Fill layer
-    state.map.addLayer({
-      id: 'buildings-fill',
-      type: 'fill',
-      source: 'buildings',
-      'source-layer': 'buildings',
-      paint: {
-        'fill-color': buildColorExpression(),
-        'fill-opacity': buildOpacityExpression(),
-      },
-    });
-
-    // Outline layer (higher zooms only)
-    state.map.addLayer({
-      id: 'buildings-outline',
-      type: 'line',
-      source: 'buildings',
-      'source-layer': 'buildings',
-      minzoom: 14,
-      paint: {
-        'line-color': 'rgba(0,0,0,0.3)',
-        'line-width': 0.5,
-      },
-    });
-
-    // Load stats (non-blocking)
-    fetch(STATS_URL).then(r => r.ok ? r.json() : null).then(s => {
-      if (s) { state.stats = s; updateStats(); }
-    }).catch(() => {});
-
-    // Initial style update
-    updateMapStyle();
-
-    // Remove loading screen
-    document.getElementById('loading').classList.add('hidden');
-
-    setupControls();
-    setupTooltip();
-    setupSearch();
-
-    // Update hash on map movement
-    state.map.on('moveend', updateHash);
-
-    // Stats from pre-computed file
-    updateStats();
-
-    // Share button
-    document.getElementById('share-btn').addEventListener('click', () => {
-      history.replaceState(null, '', encodeState());
-      navigator.clipboard.writeText(location.href).then(() => {
-        const toast = document.getElementById('share-toast');
-        toast.classList.add('show');
-        setTimeout(() => toast.classList.remove('show'), 2000);
-      });
-    });
-
-    // Parks overlay — disabled: too many polygons crash Chrome when combined with buildings
-    // loadParksLayer();
-
-    // Restore state from URL hash
-    restoreFromHash();
-
-    console.log('Every Building (PMTiles) initialized');
-  }
-
-  // Try multiple ways to detect when map is ready
-  if (state.map.isStyleLoaded()) {
-    addLayers();
-  } else {
-    state.map.once('load', addLayers);
-    // Fallback: poll for style loaded
-    const poll = setInterval(() => {
-      if (state.map.isStyleLoaded() && !state.map.getSource('buildings')) {
-        clearInterval(poll);
-        addLayers();
-      }
-    }, 200);
-  }
-}
-
-init();
+init().catch(err => {
+  console.error('Init failed:', err);
+  document.getElementById('loading-status').textContent = 'Error: ' + err.message;
+});
 </script>
 </body>
 </html>
