@@ -1,8 +1,5 @@
 {
   "rewrites": [
-    {
-      "source": "/tiles/:file",
-      "destination": "https://github.com/joshgreenman1973/nyc-building-age/releases/download/tiles-v1/:file"
-    }
+    { "source": "/tiles/:file", "destination": "/api/tiles/:file" }
   ]
 }
