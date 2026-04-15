@@ -52,7 +52,7 @@
   }
   #info-btn:hover { background: rgba(255,255,255,0.18); color: #fff; }
   #info-overlay {
-    display: none; position: absolute; top: 100px; left: 24px;
+    display: none; position: absolute; top: 100px; left: 220px;
     width: 270px; max-height: 55vh; overflow-y: auto;
     background: rgba(10,10,10,0.92); backdrop-filter: blur(16px);
     border: 1px solid rgba(255,255,255,0.08); border-radius: 6px;
@@ -284,8 +284,8 @@
 
   /* Address search */
   #search-bar {
-    position: absolute; top: 80px; left: 24px;
-    width: 260px; z-index: 20; pointer-events: auto;
+    position: absolute; top: 68px; left: 16px;
+    width: 180px; z-index: 20; pointer-events: auto;
   }
   #search-input {
     width: 100%; padding: 8px 30px 8px 10px;
@@ -425,7 +425,7 @@
 
   /* Filter panel (right side) */
   #filter-panel {
-    position: absolute; top: 100px; right: 16px; bottom: 95px;
+    position: absolute; top: 100px; left: 16px; bottom: 95px;
     background: rgba(10,10,10,0.88); border: 1px solid rgba(255,255,255,0.08);
     border-radius: 6px; padding: 12px 14px; z-index: 15;
     font-size: 11px; min-width: 170px; overflow-y: auto;
@@ -544,7 +544,7 @@
 
   /* Legend */
   #legend {
-    position: absolute; bottom: 110px; left: 24px;
+    position: absolute; bottom: 110px; right: 16px;
     background: rgba(10,10,10,0.85); border: 1px solid rgba(255,255,255,0.08);
     border-radius: 6px; padding: 12px 16px; z-index: 15;
     font-size: 11px;
@@ -1111,12 +1111,12 @@ async function loadAddresses() {
 // ============================================================
 // Distinct per-era base colors — chosen to be visually separable at city scale
 const ERA_COLORS = {
-  pre1920:  [74, 91, 199],    // deep indigo-blue
-  interwar: [27, 153, 139],   // teal
-  postwar:  [232, 168, 56],   // amber/gold
-  late20c:  [224, 82, 99],    // coral-red
-  recent:   [240, 230, 211],  // warm cream
-  unknown:  [80, 80, 80],     // dim gray
+  pre1920:  [160, 50, 10],    // deep rust (oldest)
+  interwar: [210, 95, 20],    // burnt orange
+  postwar:  [240, 150, 50],   // amber
+  late20c:  [255, 200, 100],  // warm gold
+  recent:   [255, 235, 180],  // pale cream (newest)
+  unknown:  [60, 60, 60],     // dim gray
 };
 
 function ageColor(yb) {
@@ -1185,16 +1185,16 @@ function getColor(i, yr) {
   // Not yet built (but allow unknown-year buildings through)
   if (yb > yr && yb > 0) return [0,0,0,0];
 
-  // Color mode: height — dedicated spectrum from pale to vivid by floor count
+  // Color mode: height — blue gradient from pale sky to deep navy
   if (state.colorMode === 'height') {
     const floors = Math.max(nf, 1);
     const t = Math.min((floors - 1) / 50, 1); // 1..50+ floors mapped to 0..1
-    // Pale cream → warm gold → deep crimson
+    // Pale sky blue → medium blue → deep navy
     const a = _dim ? 40 : (160 + (t * 60) | 0);
     return [
-      200 + (t * 55) | 0,    // 200 → 255
-      200 - (t * 140) | 0,   // 200 → 60
       180 - (t * 160) | 0,   // 180 → 20
+      210 - (t * 170) | 0,   // 210 → 40
+      240 - (t * 80) | 0,    // 240 → 160
       a,
     ];
   }
@@ -2421,22 +2421,22 @@ function updateLegend() {
   let html = '';
 
   if (mode === 'age') {
-    html = `<div class="legend-title">Color: Building Age</div>
-      <div style="font-size:9px;color:#777;margin-bottom:6px;">Each era has a distinct color</div>
-      <div class="legend-item"><div class="legend-swatch" style="background:rgb(240,230,211)"></div> Since 2010</div>
-      <div class="legend-item"><div class="legend-swatch" style="background:rgb(224,82,99)"></div> 1980-2010</div>
-      <div class="legend-item"><div class="legend-swatch" style="background:rgb(232,168,56)"></div> 1950-1980</div>
-      <div class="legend-item"><div class="legend-swatch" style="background:rgb(27,153,139)"></div> 1920-1950</div>
-      <div class="legend-item"><div class="legend-swatch" style="background:rgb(74,91,199)"></div> Before 1920*</div>
+    html = `<div class="legend-title">Color: Building age</div>
+      <div style="font-size:9px;color:#777;margin-bottom:6px;">Darker = older, lighter = newer</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(160,50,10)"></div> Before 1920*</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(210,95,20)"></div> 1920-1950</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(240,150,50)"></div> 1950-1980</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(255,200,100)"></div> 1980-2010</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(255,235,180)"></div> Since 2010</div>
       <div style="font-size:8px;color:#666;margin:4px 0 0 18px;line-height:1.3;">*Dates before ~1950 are highly unreliable (<a href="https://www.reddit.com/r/centuryhomes/comments/1ggn7u3/how_accurate_are_date_built_records/" target="_blank" style="color:#888;text-decoration:underline;">why?</a>)</div>`;
   } else if (mode === 'height') {
-    html = `<div class="legend-title">Color: Building Height</div>
-      <div style="font-size:9px;color:#777;margin-bottom:6px;">Redder = taller building</div>
-      <div class="legend-item"><div class="legend-swatch" style="background:rgb(190,190,170)"></div> 1 floor</div>
-      <div class="legend-item"><div class="legend-swatch" style="background:rgb(200,200,180)"></div> 2-6 floors</div>
-      <div class="legend-item"><div class="legend-swatch" style="background:rgb(230,150,100)"></div> 10 floors</div>
-      <div class="legend-item"><div class="legend-swatch" style="background:rgb(245,100,50)"></div> 25 floors</div>
-      <div class="legend-item"><div class="legend-swatch" style="background:rgb(255,60,20)"></div> 50+ floors</div>`;
+    html = `<div class="legend-title">Color: Building height</div>
+      <div style="font-size:9px;color:#777;margin-bottom:6px;">Lighter = shorter, darker = taller</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(180,210,240)"></div> 1 floor</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(130,170,220)"></div> 2-6 floors</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(80,130,200)"></div> 10 floors</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(40,85,180)"></div> 25 floors</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(20,40,160)"></div> 50+ floors</div>`;
   } else if (mode === 'class') {
     html = `<div class="legend-title">Color: Building Type</div>
       <div style="font-size:9px;color:#777;margin-bottom:6px;">Each use category has its own color</div>
