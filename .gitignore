@@ -1,4 +1,12 @@
 data/processed/buildings.fgb
+data/processed/buildings.pmtiles
+data/processed/buildings_poly.geojson.nl
+data/processed/addresses.json
 data/raw/
 __pycache__/
 .DS_Store
+.claude/
+index-pmtiles.html
+index-pmtiles-full.html
+prototype-pmtiles.html
+serve.py
