@@ -864,10 +864,10 @@
 // CONFIG
 // ============================================================
 const MAPBOX_TOKEN = 'pk.eyJ1IjoieHIyMDA2IiwiYSI6ImNtaTdkdHpyMjA1eTEya3EwbjVkeHh0OHcifQ.63Tlvydk2jod3GrgjFyAKw';
-const RELEASE_BASE = 'https://github.com/joshgreenman1973/nyc-building-age/releases/download/tiles-v1';
-const PMTILES_URL = `${RELEASE_BASE}/buildings.pmtiles`;
-const STATS_URL = `${RELEASE_BASE}/stats.json`;
-const PARKS_URL = `${RELEASE_BASE}/parks.json`;
+// Served via Vercel rewrite proxy to github.com releases (same-origin = no CORS issues)
+const PMTILES_URL = '/tiles/buildings.pmtiles';
+const STATS_URL = '/tiles/stats.json';
+const PARKS_URL = '/tiles/parks.json';
 
 const MIN_YEAR = 1700;
 const MAX_YEAR = 2026;
@@ -2819,10 +2819,10 @@ async function init() {
       maxzoom: 20,
     });
 
-    // Add PMTiles source
+    // Add PMTiles source (absolute URL via same-origin proxy)
     state.map.addSource('buildings', {
       type: 'vector',
-      url: `pmtiles://${PMTILES_URL}`,
+      url: `pmtiles://${window.location.origin}${PMTILES_URL}`,
     });
 
     // Fill layer
