@@ -918,6 +918,13 @@ const DEMOLITIONS_URL = 'data/processed/demolitions.json';
 const STATS_URL = 'data/processed/stats.json';
 const PARKS_URL = 'data/processed/parks.json';
 const ADDRESSES_URL = 'data/processed/addresses.txt';
+// Polygon footprints, hosted on GitHub Releases via Vercel proxy. Loads after dots.
+const POLYGONS_URL = '/tiles/buildings_poly.bin';
+// NYC bbox used to scale polygon coords back to lon/lat (must match build_polygons.py)
+const POLY_LON_MIN = -74.27, POLY_LON_MAX = -73.69;
+const POLY_LAT_MIN = 40.49, POLY_LAT_MAX = 40.92;
+// Buildings render as polygons at zoom >= this; dots otherwise.
+const POLYGON_MIN_ZOOM = 13;
 
 const MIN_YEAR = 1700;
 const MAX_YEAR = 2026;
@@ -1094,6 +1101,81 @@ async function loadBinaryData() {
   state.dataIndices = Array.from({length: count}, (_, i) => i);
 }
 
+// Load self-contained polygon binary (1.08M building footprints).
+// Format defined in data/build_polygons.py. Loads in background after dots
+// are visible — failure is non-fatal (dots stay as the rendering).
+async function loadPolygonData() {
+  try {
+    const resp = await fetch(POLYGONS_URL);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const buf = await resp.arrayBuffer();
+    const view = new DataView(buf);
+
+    const featureCount = view.getUint32(0, true);
+    const vertexCount = view.getUint32(4, true);
+    // header is 12 bytes
+    const featuresStart = 12;
+    const RECORD_BYTES = 24;
+    const verticesStart = featuresStart + featureCount * RECORD_BYTES;
+    if (verticesStart + vertexCount * 4 > buf.byteLength) {
+      throw new Error('Polygon binary truncated');
+    }
+
+    const polyYearBuilt = new Uint16Array(featureCount);
+    const polyLandmarkYear = new Uint16Array(featureCount);
+    const polyDemoYear = new Uint16Array(featureCount);
+    const polyRebuildYear = new Uint16Array(featureCount);
+    const polyBoroCode = new Uint8Array(featureCount);
+    const polyNumFloors = new Uint8Array(featureCount);
+    const polyBldgClass = new Array(featureCount);
+    const polyLotArea = new Uint32Array(featureCount);
+    const polyVertexOffset = new Uint32Array(featureCount);
+    const polyVertexCount = new Uint16Array(featureCount);
+
+    for (let i = 0; i < featureCount; i++) {
+      const off = featuresStart + i * RECORD_BYTES;
+      polyYearBuilt[i] = view.getUint16(off, true);
+      polyLandmarkYear[i] = view.getUint16(off + 2, true);
+      polyDemoYear[i] = view.getUint16(off + 4, true);
+      polyRebuildYear[i] = view.getUint16(off + 6, true);
+      polyBoroCode[i] = view.getUint8(off + 8);
+      polyNumFloors[i] = view.getUint8(off + 9);
+      polyBldgClass[i] = String.fromCharCode(view.getUint8(off + 10), view.getUint8(off + 11));
+      polyLotArea[i] = view.getUint32(off + 12, true);
+      polyVertexOffset[i] = view.getUint32(off + 16, true);
+      polyVertexCount[i] = view.getUint16(off + 20, true);
+    }
+
+    // Decode vertex pool to lon/lat Float32Array (interleaved)
+    const polyVerts = new Float32Array(vertexCount * 2);
+    const lonRange = POLY_LON_MAX - POLY_LON_MIN;
+    const latRange = POLY_LAT_MAX - POLY_LAT_MIN;
+    for (let v = 0; v < vertexCount; v++) {
+      const off = verticesStart + v * 4;
+      polyVerts[v * 2] = POLY_LON_MIN + (view.getUint16(off, true) / 65535) * lonRange;
+      polyVerts[v * 2 + 1] = POLY_LAT_MIN + (view.getUint16(off + 2, true) / 65535) * latRange;
+    }
+
+    state.polyCount = featureCount;
+    state.polyYearBuilt = polyYearBuilt;
+    state.polyLandmarkYear = polyLandmarkYear;
+    state.polyDemoYear = polyDemoYear;
+    state.polyRebuildYear = polyRebuildYear;
+    state.polyBoroCode = polyBoroCode;
+    state.polyNumFloors = polyNumFloors;
+    state.polyBldgClass = polyBldgClass;
+    state.polyLotArea = polyLotArea;
+    state.polyVertexOffset = polyVertexOffset;
+    state.polyVertexCount = polyVertexCount;
+    state.polyVerts = polyVerts;
+    state.polyDataIndices = Array.from({length: featureCount}, (_, i) => i);
+    console.log(`Loaded polygons: ${featureCount} features, ${vertexCount} vertices (${(buf.byteLength / 1024 / 1024).toFixed(1)} MB)`);
+    if (typeof updateLayers === 'function') updateLayers();
+  } catch (err) {
+    console.warn('Polygon load failed (will use dots):', err);
+  }
+}
+
 async function loadAddresses() {
   try {
     const resp = await fetch(ADDRESSES_URL);
@@ -1145,13 +1227,7 @@ function applyHeight(color, nf) {
   ];
 }
 
-function isFiltered(i) {
-  const bc = state.boroCode[i];
-  const nf = state.numFloors[i] || 1;
-  const yb = state.yearBuilt[i];
-  const ly = state.landmarkYear[i];
-  const dy = state.demoYear[i];
-  const cls = state.bldgClass[i];
+function _isFilteredFields(yb, bc, nf, ly, dy, cls) {
   if (!state.filters.boroughs.has(bc)) return true;
   if (!state.filters.eras.has(getEra(yb))) return true;
   if (!state.filters.heights.has(getHt(nf))) return true;
@@ -1166,17 +1242,31 @@ function isFiltered(i) {
   return false;
 }
 
-function getColor(i, yr) {
-  const yb = state.yearBuilt[i];
-  const bc = state.boroCode[i];
-  const nf = state.numFloors[i] || 1;
-  const ly = state.landmarkYear[i];
-  const dy = state.demoYear[i];
-  const ry = state.rebuildYear[i];
-  const cls = state.bldgClass[i];
+function isFiltered(i) {
+  return _isFilteredFields(
+    state.yearBuilt[i],
+    state.boroCode[i],
+    state.numFloors[i] || 1,
+    state.landmarkYear[i],
+    state.demoYear[i],
+    state.bldgClass[i]
+  );
+}
 
-  // Filter check
-  if (isFiltered(i)) return [0,0,0,0];
+function isPolyFiltered(i) {
+  return _isFilteredFields(
+    state.polyYearBuilt[i],
+    state.polyBoroCode[i],
+    state.polyNumFloors[i] || 1,
+    state.polyLandmarkYear[i],
+    state.polyDemoYear[i],
+    state.polyBldgClass[i]
+  );
+}
+
+// Core color logic — operates on raw fields so both dots and polygons can call it.
+function _getColorFromFields(yb, bc, nf, ly, dy, ry, cls, yr, filtered) {
+  if (filtered) return [0,0,0,0];
   if (state.filters.highlightVacant && cls.charAt(0) === 'V') return [221, 228, 76, 210]; // chartreuse
 
   // Dim all buildings when Construction or Stalled spotlight is active
@@ -1241,6 +1331,34 @@ function getColor(i, yr) {
   const c = ageColor(yb);
   const a = _dim ? 40 : 200;
   return [c[0], c[1], c[2], a];
+}
+
+function getColor(i, yr) {
+  return _getColorFromFields(
+    state.yearBuilt[i],
+    state.boroCode[i],
+    state.numFloors[i] || 1,
+    state.landmarkYear[i],
+    state.demoYear[i],
+    state.rebuildYear[i],
+    state.bldgClass[i],
+    yr,
+    isFiltered(i)
+  );
+}
+
+function getPolyColor(i, yr) {
+  return _getColorFromFields(
+    state.polyYearBuilt[i],
+    state.polyBoroCode[i],
+    state.polyNumFloors[i] || 1,
+    state.polyLandmarkYear[i],
+    state.polyDemoYear[i],
+    state.polyRebuildYear[i],
+    state.polyBldgClass[i],
+    yr,
+    isPolyFiltered(i)
+  );
 }
 
 // ============================================================
@@ -1486,10 +1604,17 @@ function updateLayers() {
 
   const yr = Math.floor(state.currentYear);
 
+  // Decide whether polygons are showing. When yes, hide dots so they don't
+  // double-render. When polygons aren't loaded yet, fall back to dots only.
+  const zoom = state.map ? state.map.getZoom() : 11;
+  const polyReady = !!state.polyVerts && state.polyCount > 0;
+  const polygonsActive = polyReady && zoom >= POLYGON_MIN_ZOOM;
+
   const filteredData = getFilteredData();
   const layer = new deck.ScatterplotLayer({
     id: 'buildings',
     data: filteredData,
+    visible: !polygonsActive,
     getPosition: i => [state.positions[i*2], state.positions[i*2+1]],
     getFillColor: i => getColor(i, yr),
     getRadius: i => {
@@ -1539,7 +1664,54 @@ function updateLayers() {
     updateTriggers: { getFillColor: [yr] },
   });
 
-  const layers = [parksLayer, layer];
+  // Buildings polygon layer — only used at close zoom, only if data is loaded.
+  let polyLayer = null;
+  if (polyReady) {
+    const polyVerts = state.polyVerts;
+    const polyOff = state.polyVertexOffset;
+    const polyCnt = state.polyVertexCount;
+    polyLayer = new deck.SolidPolygonLayer({
+      id: 'buildings-poly',
+      data: state.polyDataIndices,
+      visible: polygonsActive,
+      getPolygon: i => {
+        const off = polyOff[i];
+        const n = polyCnt[i];
+        const ring = new Array(n);
+        for (let v = 0; v < n; v++) {
+          ring[v] = [polyVerts[(off + v) * 2], polyVerts[(off + v) * 2 + 1]];
+        }
+        return ring;
+      },
+      getFillColor: i => getPolyColor(i, yr),
+      pickable: true,
+      onHover: info => {
+        const idx = info.index;
+        if (idx == null || idx < 0) return;
+        const tt = document.getElementById('tooltip');
+        if (!info.object && info.object !== 0) { tt.style.display = 'none'; return; }
+        const yb = state.polyYearBuilt[idx];
+        const nf = state.polyNumFloors[idx];
+        const cls = state.polyBldgClass[idx].trim();
+        tt.querySelector('.tt-address').textContent = 'Building';
+        const details = [];
+        if (yb > 0) details.push(`Built ${yb}`);
+        if (nf > 0) details.push(`${nf} fl`);
+        if (cls) details.push(cls);
+        tt.querySelector('.tt-details').textContent = details.join(' · ');
+        tt.style.display = 'block';
+        tt.style.left = (info.x + 12) + 'px';
+        tt.style.top = (info.y - 12) + 'px';
+      },
+      updateTriggers: {
+        getFillColor: `${yr}_${state.colorMode}_${_filterVersion}_${SPOTLIGHT_KEYS.map(k => state.filters[k]).join('_')}`,
+      },
+    });
+  }
+
+  const layers = polyLayer
+    ? [parksLayer, layer, polyLayer]
+    : [parksLayer, layer];
 
   // Overlay dot layers (construction, stalled) — glow ring + core dot + tooltip
   function addOverlayDots(id, data, color, glowRadius, coreRadius, onHoverFn, pulse) {
@@ -2365,6 +2537,16 @@ async function init() {
   state.map.on('zoomend', resetCursor);
   state.map.on('moveend', resetCursor);
   state.map.on('idle', resetCursor);
+
+  // Swap between dots and polygon rendering at the zoom threshold.
+  let _lastPolyZoomState = null;
+  state.map.on('zoom', () => {
+    const above = state.map.getZoom() >= POLYGON_MIN_ZOOM;
+    if (above !== _lastPolyZoomState) {
+      _lastPolyZoomState = above;
+      if (state.polyVerts) updateLayers();
+    }
+  });
   // Also reset on mouseup — catches drags that don't trigger dragend
   canvas.addEventListener('mouseup', resetCursor);
 
@@ -2411,6 +2593,9 @@ async function init() {
 
   // Lazy-load addresses in background (not critical for initial render)
   loadAddresses();
+
+  // Lazy-load polygon footprints (~57 MB). Only used at zoom >= 13.
+  loadPolygonData();
 
   console.log('Every Building app initialized');
 }

@@ -1,0 +1,5 @@
+{
+  "rewrites": [
+    { "source": "/tiles/:file", "destination": "/api/tiles/:file" }
+  ]
+}
