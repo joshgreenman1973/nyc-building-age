@@ -1685,24 +1685,7 @@ function updateLayers() {
       },
       getFillColor: i => getPolyColor(i, yr),
       pickable: true,
-      onHover: info => {
-        const idx = info.index;
-        if (idx == null || idx < 0) return;
-        const tt = document.getElementById('tooltip');
-        if (!info.object && info.object !== 0) { tt.style.display = 'none'; return; }
-        const yb = state.polyYearBuilt[idx];
-        const nf = state.polyNumFloors[idx];
-        const cls = state.polyBldgClass[idx].trim();
-        tt.querySelector('.tt-address').textContent = 'Building';
-        const details = [];
-        if (yb > 0) details.push(`Built ${yb}`);
-        if (nf > 0) details.push(`${nf} fl`);
-        if (cls) details.push(cls);
-        tt.querySelector('.tt-details').textContent = details.join(' · ');
-        tt.style.display = 'block';
-        tt.style.left = (info.x + 12) + 'px';
-        tt.style.top = (info.y - 12) + 'px';
-      },
+      onHover: onPolyHover,
       updateTriggers: {
         getFillColor: `${yr}_${state.colorMode}_${_filterVersion}_${SPOTLIGHT_KEYS.map(k => state.filters[k]).join('_')}`,
       },
@@ -1915,6 +1898,45 @@ function updateStats() {
 // ============================================================
 // TOOLTIP
 // ============================================================
+function onPolyHover(info) {
+  const tooltip = document.getElementById('tooltip');
+  if (!info.object && info.object !== 0) {
+    tooltip.style.display = 'none';
+    return;
+  }
+
+  const i = info.object; // polygon data item is its index
+  const yb = state.polyYearBuilt[i];
+  const nf = state.polyNumFloors[i];
+  const cls = state.polyBldgClass[i].trim();
+  const ly = state.polyLandmarkYear[i];
+  const dy = state.polyDemoYear[i];
+  const ry = state.polyRebuildYear[i];
+  const bc = state.polyBoroCode[i];
+
+  let html = '';
+  html += `<div class="tt-address">Building</div>`;
+
+  if (yb > 0) html += `<div class="tt-row"><span>Built</span><span>${yb}</span></div>`;
+  if (nf > 0) html += `<div class="tt-row"><span>Floors</span><span>${nf}</span></div>`;
+  if (cls) {
+    const classKey = cls.charAt(0).toUpperCase();
+    const className = CLASS_NAMES[classKey] || cls;
+    html += `<div class="tt-row"><span>Type</span><span>${className}</span></div>`;
+  }
+  if (dy > 0) html += `<div class="tt-row"><span>Demolished</span><span style="color:#FF3C3C">${dy}</span></div>`;
+  if (ry > 0) html += `<div class="tt-row"><span>Rebuilt</span><span style="color:#00DDFF">${ry}</span></div>`;
+  if (ly > 0) html += `<div class="tt-landmark">&#9733; Landmark (${ly})</div>`;
+
+  const boroughs = ['','Manhattan','Bronx','Brooklyn','Queens','Staten Island'];
+  if (bc > 0 && bc <= 5) html += `<div class="tt-row"><span>Borough</span><span>${boroughs[bc]}</span></div>`;
+
+  tooltip.innerHTML = html;
+  tooltip.style.display = 'block';
+  tooltip.style.left = (info.x + 12) + 'px';
+  tooltip.style.top = (info.y + 12) + 'px';
+}
+
 function onHover(info) {
   const tooltip = document.getElementById('tooltip');
   if (!info.object && info.object !== 0) {
