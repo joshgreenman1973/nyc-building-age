@@ -1442,6 +1442,14 @@ const CITYLAND_CATS = {
   3: { name: 'Other active use',    color: [154, 140, 122] },
   4: { name: 'Parks & recreation',  color: [78, 157, 108] },
 };
+function cityLandZone(z){
+  if(!z) return 'No zoning on record';
+  const Z=z.trim().toUpperCase();
+  if(Z.startsWith('PARK')) return z+' — Mapped parkland';
+  if(Z.startsWith('BPC')) return z+' — Battery Park City';
+  const c=Z.charAt(0), name={R:'Residential',C:'Commercial',M:'Manufacturing'}[c];
+  return name ? z+' — '+name : z;
+}
 async function loadCityLandData() {
   const statusEl = document.getElementById('cityland-status');
   try {
@@ -1812,7 +1820,7 @@ function updateLayers() {
         const rows = [`<div class="tt-row"><span>Status</span><span style="color:rgb(${cat.color.join(',')})">${cat.name}</span></div>`];
         if (d.ag) rows.push(`<div class="tt-row"><span>Agency</span><span>${d.ag}</span></div>`);
         if (d.ar) rows.push(`<div class="tt-row"><span>Lot size</span><span>${d.ar.toLocaleString()} sq ft</span></div>`);
-        if (d.z) rows.push(`<div class="tt-row"><span>Zoning</span><span>${d.z}</span></div>`);
+        rows.push(`<div class="tt-row"><span>Zoning</span><span>${cityLandZone(d.z)}</span></div>`);
         if (d.eu) rows.push(`<div class="tt-row"><span>Homes as-of-right</span><span>~${d.eu.toLocaleString()}</span></div>`);
         showTooltip(info, `<div class="tt-address">${titleCase((d.n || 'City parcel').toLowerCase())}</div>${rows.join('')}<div style="font-size:8px;color:#666;margin-top:4px;">City-owned land · DCP COLP · categories after NYU Furman Center</div>`);
       },
