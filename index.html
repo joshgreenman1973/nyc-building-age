@@ -735,6 +735,9 @@
   <div class="def"><strong>Lot size</strong> — Dot radius is proportional to MapPLUTO <code>LotArea</code> (in square feet), clamped to a reasonable range.</div>
   <div class="def"><strong>Building count</strong> — The "812,036 Buildings" counter reflects the number of buildings currently visible given the active year and filters, not the total in the dataset (857,000).</div>
 
+  <h3>City-Owned Land</h3>
+  <p>The optional <strong>City-owned land</strong> overlay plots every parcel the city owns or leases, drawn from the NYC Department of City Planning's <a href="https://data.cityofnewyork.us/dataset/fn4k-qyk2" target="_blank">City Owned and Leased Properties (COLP)</a> dataset and joined to MapPLUTO for lot size and zoning. Parcels are sorted into four housing-readiness categories &mdash; no current use, already residential, other active use, and parks &amp; recreation &mdash; following the framing of the <a href="https://www.furmancenter.org/publication/what-new-interactive-maps-reveal-about-the-development-potential-of-new-york-citys-city-owned-land/" target="_blank">NYU Furman Center's interactive maps of city-owned land</a>. For no-use parcels, the tooltip shows a rough as-of-right housing capacity (lot area &times; residential FAR &divide; 1,000 sq ft) &mdash; a back-of-envelope figure, not a project estimate. A fuller version lives at the standalone <a href="https://joshgreenman1973.github.io/nyc-city-land-map/" target="_blank">city-owned land map</a>.</p>
+
   <h3>Known Limitations</h3>
   <p>• Construction dates before ~1950 are highly unreliable (see above).<br>
   • Demolition records only go back to approximately 2000.<br>
@@ -744,7 +747,7 @@
   • Building class codes are assigned by the Department of Finance for tax purposes and may not perfectly reflect a building's current use.<br>
   • MapPLUTO is updated quarterly; the data here may lag real-world conditions by several months.</p>
 
-  <p style="margin-top:12px;font-size:10px;color:#666;">Last updated: March 2026. Data sources: NYC Department of City Planning (MapPLUTO 25v1), NYC Landmarks Preservation Commission, NYC Department of Buildings (DOB NOW: Build), NYC Parks Department.</p>
+  <p style="margin-top:12px;font-size:10px;color:#666;">Last updated: July 2026. Data sources: NYC Department of City Planning (MapPLUTO 25v1, City Owned and Leased Properties), NYC Landmarks Preservation Commission, NYC Department of Buildings (DOB NOW: Build), NYC Parks Department. City-owned land categories after the NYU Furman Center.</p>
 </div>
 
 <div id="year-display">2026</div>
@@ -833,6 +836,14 @@
   <div class="filter-section fs-overlay" style="border-left-color:rgba(100,160,255,0.4);">
     <div class="section-label">Overlays</div>
     <div class="filter-check"><input type="checkbox" id="show-subway"><label for="show-subway" style="color:#6BAED6">Subway lines</label> <span id="subway-status" style="font-size:8px;color:#555;"></span></div>
+    <div class="filter-check"><input type="checkbox" id="show-cityland"><label for="show-cityland" style="color:#e0533a">City-owned land</label> <span id="cityland-status" style="font-size:8px;color:#555;"></span></div>
+    <div id="cityland-legend" style="display:none;margin:4px 0 2px 19px;font-size:9px;line-height:1.6;">
+      <div><span style="color:#e0533a">&#9679;</span> No current use</div>
+      <div><span style="color:#3f6fb0">&#9679;</span> Already residential</div>
+      <div><span style="color:#9a8c7a">&#9679;</span> Other active use</div>
+      <div><span style="color:#4e9d6c">&#9679;</span> Parks &amp; recreation</div>
+      <div style="color:#666;margin-top:3px;font-style:italic;">Every parcel the city owns or leases (DCP COLP), sorted by housing readiness after the <a href="https://www.furmancenter.org/publication/what-new-interactive-maps-reveal-about-the-development-potential-of-new-york-citys-city-owned-land/" target="_blank" style="color:#888;text-decoration:underline;">NYU Furman Center</a>.</div>
+    </div>
   </div>
 </div>
 
@@ -977,6 +988,9 @@ const state = {
   stalledSites: null,
   subwayLoaded: false,
   showSubway: false,
+  cityLand: null,
+  cityLandLoaded: false,
+  showCityLand: false,
   // Story
   story: { active: false, id: null, stepIndex: 0, timer: null, savedState: null },
 };
@@ -1419,6 +1433,31 @@ function forceRepaint() {
   state.map.triggerRepaint();
 }
 
+// City-owned & leased land (DCP COLP), categorized by housing readiness after
+// the NYU Furman Center's interactive maps of city-owned land.
+const CITYLAND_URL = 'data/processed/city_land.json';
+const CITYLAND_CATS = {
+  1: { name: 'No current use',      color: [224, 83, 58] },
+  2: { name: 'Already residential', color: [63, 111, 176] },
+  3: { name: 'Other active use',    color: [154, 140, 122] },
+  4: { name: 'Parks & recreation',  color: [78, 157, 108] },
+};
+async function loadCityLandData() {
+  const statusEl = document.getElementById('cityland-status');
+  try {
+    if (statusEl) statusEl.textContent = 'loading…';
+    const resp = await fetch(CITYLAND_URL);
+    if (!resp.ok) throw new Error(resp.status);
+    state.cityLand = await resp.json();
+    state.cityLandLoaded = true;
+    if (statusEl) statusEl.textContent = `(${state.cityLand.length.toLocaleString()})`;
+    console.log(`Loaded ${state.cityLand.length} city-owned parcels`);
+  } catch (e) {
+    if (statusEl) statusEl.textContent = 'failed';
+    console.error('City-owned land load failed:', e);
+  }
+}
+
 // MTA official subway line colors by route
 const MTA_COLORS = {
   '1':'#EE352E','2':'#EE352E','3':'#EE352E',
@@ -1750,6 +1789,34 @@ function updateLayers() {
         ${d.borough ? `<div class="tt-row"><span>Borough</span><span>${d.borough}</span></div>` : ''}
         <div style="font-size:8px;color:#666;margin-top:4px;">Source: DOB stalled sites database</div>`);
     });
+  }
+
+  // City-owned land overlay — parcels colored by housing-readiness category
+  if (state.showCityLand && state.cityLand && state.cityLand.length) {
+    layers.push(new deck.ScatterplotLayer({
+      id: 'cityland',
+      data: state.cityLand,
+      getPosition: d => d.p,
+      getFillColor: d => {
+        const c = CITYLAND_CATS[d.c].color;
+        return [c[0], c[1], c[2], d.c === 1 ? 235 : 160];
+      },
+      getLineColor: [255, 255, 255, 140],
+      getRadius: d => d.c === 1 ? 9 : 6,
+      radiusUnits: 'meters', radiusMinPixels: 2.5, radiusMaxPixels: 11,
+      stroked: true, lineWidthMinPixels: 0.4,
+      pickable: true,
+      onHover: info => {
+        if (!info.object) { document.getElementById('tooltip').style.display = 'none'; return; }
+        const d = info.object; const cat = CITYLAND_CATS[d.c];
+        const rows = [`<div class="tt-row"><span>Status</span><span style="color:rgb(${cat.color.join(',')})">${cat.name}</span></div>`];
+        if (d.ag) rows.push(`<div class="tt-row"><span>Agency</span><span>${d.ag}</span></div>`);
+        if (d.ar) rows.push(`<div class="tt-row"><span>Lot size</span><span>${d.ar.toLocaleString()} sq ft</span></div>`);
+        if (d.z) rows.push(`<div class="tt-row"><span>Zoning</span><span>${d.z}</span></div>`);
+        if (d.eu) rows.push(`<div class="tt-row"><span>Homes as-of-right</span><span>~${d.eu.toLocaleString()}</span></div>`);
+        showTooltip(info, `<div class="tt-address">${titleCase((d.n || 'City parcel').toLowerCase())}</div>${rows.join('')}<div style="font-size:8px;color:#666;margin-top:4px;">City-owned land · DCP COLP · categories after NYU Furman Center</div>`);
+      },
+    }));
   }
 
   state.deckgl.setProps({ layers });
@@ -2891,6 +2958,16 @@ function setupControls() {
     if (state.subwayLoaded) {
       toggleSubwayVisibility(e.target.checked);
     }
+  });
+
+  // City-owned land overlay toggle
+  document.getElementById('show-cityland').addEventListener('change', async (e) => {
+    state.showCityLand = e.target.checked;
+    document.getElementById('cityland-legend').style.display = e.target.checked ? 'block' : 'none';
+    if (e.target.checked && !state.cityLandLoaded) {
+      await loadCityLandData();
+    }
+    refreshMap();
   });
 
   // All/None toggles per section
