@@ -738,9 +738,12 @@
   <h3>City-Owned Land</h3>
   <p>The optional <strong>City-owned land</strong> overlay plots every parcel the city owns or leases, drawn from the NYC Department of City Planning's <a href="https://data.cityofnewyork.us/dataset/fn4k-qyk2" target="_blank">City Owned and Leased Properties (COLP)</a> dataset and joined to MapPLUTO for lot size and zoning. Parcels are sorted into four housing-readiness categories &mdash; no current use, already residential, other active use, and parks &amp; recreation &mdash; following the framing of the <a href="https://www.furmancenter.org/publication/what-new-interactive-maps-reveal-about-the-development-potential-of-new-york-citys-city-owned-land/" target="_blank">NYU Furman Center's interactive maps of city-owned land</a>. For no-use parcels, the tooltip shows a rough as-of-right housing capacity (lot area &times; residential FAR &divide; 1,000 sq ft) &mdash; a back-of-envelope figure, not a project estimate. A fuller version lives at the standalone <a href="https://joshgreenman1973.github.io/nyc-city-land-map/" target="_blank">city-owned land map</a>.</p>
 
+  <h3>Ghost Buildings</h3>
+  <p>The optional <strong>Ghost buildings</strong> overlay draws the footprints of roughly 40,000 demolished buildings from the city's <a href="https://data.cityofnewyork.us/Housing-Development/Building-Footprints-Historic-/ipkp-snf6" target="_blank">Building Footprints Historic</a> dataset, the companion file to the Building Footprints data that supplies this map's building shapes. The overlay is tied to the timeline: each demolished building renders solid (colored by its construction year) while it stood, then fades to a pale outline once the timeline passes its demolition year. Records are deduplicated by building identification number, keeping the most recently edited footprint version. Where a record lacks a demolition year (fewer than 1 percent), the year it was last edited is used instead. <span style="color:#FF9020">Important caveat:</span> the city only began maintaining digital footprints in the mid-1990s, so this overlay captures demolitions from 1996 onward &mdash; it is a record of the recent past, not of everything New York City has ever torn down. Construction years are unknown for about a quarter of these buildings; they are shown as standing from the start of the timeline until their demolition.</p>
+
   <h3>Known Limitations</h3>
   <p>• Construction dates before ~1950 are highly unreliable (see above).<br>
-  • Demolition records only go back to approximately 2000.<br>
+  • Demolition records only go back to approximately 2000 (DOB permits) and 1996 (ghost buildings overlay).<br>
   • Floor counts are self-reported and may be outdated.<br>
   • Landmark data covers individual designations only, not historic districts.<br>
   • Under Construction data covers DOB NOW filings only, not the older BIS system; some active construction sites may be missing.<br>
@@ -844,6 +847,10 @@
       <div><span style="color:#4e9d6c">&#9679;</span> Parks &amp; natural areas</div>
       <div style="color:#666;margin-top:3px;font-style:italic;">Every parcel the city owns or leases (DCP COLP), sorted by housing readiness after the <a href="https://www.furmancenter.org/publication/what-new-interactive-maps-reveal-about-the-development-potential-of-new-york-citys-city-owned-land/" target="_blank" style="color:#888;text-decoration:underline;">NYU Furman Center</a>.</div>
     </div>
+    <div class="filter-check"><input type="checkbox" id="show-ghosts"><label for="show-ghosts" style="color:#8fb4d9">Ghost buildings</label> <span id="ghosts-status" style="font-size:8px;color:#555;"></span></div>
+    <div id="ghosts-legend" style="display:none;margin:4px 0 2px 19px;font-size:9px;line-height:1.6;color:#666;font-style:italic;">
+      Footprints of buildings demolished since 1996, from the city's historic footprints file. Scrub the timeline: each one stands (solid) until its demolition year, then lingers as a pale outline. Zoom in to see shapes.
+    </div>
   </div>
 </div>
 
@@ -931,6 +938,8 @@ const PARKS_URL = 'data/processed/parks.json';
 const ADDRESSES_URL = 'data/processed/addresses.txt';
 // Polygon footprints, hosted on GitHub Releases via Vercel proxy. Loads after dots.
 const POLYGONS_URL = '/tiles/buildings_poly.bin';
+// Demolished-building footprints (Building Footprints Historic), small enough to live in the repo.
+const GHOSTS_URL = 'data/processed/ghosts.bin';
 // NYC bbox used to scale polygon coords back to lon/lat (must match build_polygons.py)
 const POLY_LON_MIN = -74.27, POLY_LON_MAX = -73.69;
 const POLY_LAT_MIN = 40.49, POLY_LAT_MAX = 40.92;
@@ -991,6 +1000,9 @@ const state = {
   cityLand: null,
   cityLandLoaded: false,
   showCityLand: false,
+  ghosts: null,        // parsed ghosts.bin typed arrays
+  ghostsLoaded: false,
+  showGhosts: false,
   // Story
   story: { active: false, id: null, stepIndex: 0, timer: null, savedState: null },
 };
@@ -1466,6 +1478,60 @@ async function loadCityLandData() {
   }
 }
 
+// Ghost buildings — demolished footprints from Building Footprints Historic.
+// Binary format defined in data/build_ghosts.py (same vertex scheme as buildings_poly.bin).
+async function loadGhostsData() {
+  const statusEl = document.getElementById('ghosts-status');
+  try {
+    if (statusEl) statusEl.textContent = 'loading…';
+    const resp = await fetch(GHOSTS_URL);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const buf = await resp.arrayBuffer();
+    const view = new DataView(buf);
+
+    const featureCount = view.getUint32(0, true);
+    const vertexCount = view.getUint32(4, true);
+    const featuresStart = 12;
+    const RECORD_BYTES = 12;
+    const verticesStart = featuresStart + featureCount * RECORD_BYTES;
+    if (verticesStart + vertexCount * 4 > buf.byteLength) throw new Error('ghosts.bin truncated');
+
+    const cy = new Uint16Array(featureCount);
+    const dy = new Uint16Array(featureCount);
+    const bc = new Uint8Array(featureCount);
+    const vOff = new Uint32Array(featureCount);
+    const vCnt = new Uint16Array(featureCount);
+    for (let i = 0; i < featureCount; i++) {
+      const off = featuresStart + i * RECORD_BYTES;
+      cy[i] = view.getUint16(off, true);
+      dy[i] = view.getUint16(off + 2, true);
+      bc[i] = view.getUint8(off + 4);
+      vOff[i] = view.getUint32(off + 6, true);
+      vCnt[i] = view.getUint16(off + 10, true);
+    }
+
+    const verts = new Float32Array(vertexCount * 2);
+    const lonRange = POLY_LON_MAX - POLY_LON_MIN;
+    const latRange = POLY_LAT_MAX - POLY_LAT_MIN;
+    for (let v = 0; v < vertexCount; v++) {
+      const off = verticesStart + v * 4;
+      verts[v * 2] = POLY_LON_MIN + (view.getUint16(off, true) / 65535) * lonRange;
+      verts[v * 2 + 1] = POLY_LAT_MIN + (view.getUint16(off + 2, true) / 65535) * latRange;
+    }
+
+    state.ghosts = {
+      count: featureCount, cy, dy, bc, vOff, vCnt, verts,
+      indices: Array.from({ length: featureCount }, (_, i) => i),
+    };
+    state.ghostsLoaded = true;
+    if (statusEl) statusEl.textContent = `(${featureCount.toLocaleString()})`;
+    console.log(`Loaded ${featureCount} ghost buildings (${(buf.byteLength / 1024 / 1024).toFixed(1)} MB)`);
+  } catch (e) {
+    if (statusEl) statusEl.textContent = 'failed';
+    console.error('Ghost buildings load failed:', e);
+  }
+}
+
 // MTA official subway line colors by route
 const MTA_COLORS = {
   '1':'#EE352E','2':'#EE352E','3':'#EE352E',
@@ -1823,6 +1889,67 @@ function updateLayers() {
         rows.push(`<div class="tt-row"><span>Zoning</span><span>${cityLandZone(d.z)}</span></div>`);
         if (d.eu) rows.push(`<div class="tt-row"><span>Homes as-of-right</span><span>~${d.eu.toLocaleString()}</span></div>`);
         showTooltip(info, `<div class="tt-address">${titleCase((d.n || 'City parcel').toLowerCase())}</div>${rows.join('')}<div style="font-size:8px;color:#666;margin-top:4px;">City-owned land · DCP COLP · categories after NYU Furman Center</div>`);
+      },
+    }));
+  }
+
+  // Ghost buildings overlay — demolished footprints. Time-aware: a building
+  // renders solid while it stood (construction year through demolition year)
+  // and as a pale outline once the timeline passes its demolition.
+  if (state.showGhosts && state.ghostsLoaded && state.ghosts) {
+    const g = state.ghosts;
+    const GHOST_RGB = [143, 180, 217];
+    layers.push(new deck.PolygonLayer({
+      id: 'ghosts',
+      data: g.indices,
+      getPolygon: i => {
+        const off = g.vOff[i];
+        const n = g.vCnt[i];
+        const ring = new Array(n);
+        for (let v = 0; v < n; v++) {
+          ring[v] = [g.verts[(off + v) * 2], g.verts[(off + v) * 2 + 1]];
+        }
+        return ring;
+      },
+      getFillColor: i => {
+        if (g.cy[i] > 0 && g.cy[i] > yr) return [0, 0, 0, 0];      // not built yet
+        if (g.dy[i] > yr) {                                         // still standing
+          const c = ageColor(g.cy[i]);
+          return [c[0], c[1], c[2], 210];
+        }
+        return [GHOST_RGB[0], GHOST_RGB[1], GHOST_RGB[2], 22];      // demolished: pale ghost
+      },
+      getLineColor: i => {
+        if (g.cy[i] > 0 && g.cy[i] > yr) return [0, 0, 0, 0];
+        if (g.dy[i] > yr) return [255, 255, 255, 60];
+        return [GHOST_RGB[0], GHOST_RGB[1], GHOST_RGB[2], 160];
+      },
+      stroked: true,
+      filled: true,
+      lineWidthUnits: 'pixels',
+      getLineWidth: 1,
+      pickable: true,
+      onHover: info => {
+        const tt = document.getElementById('tooltip');
+        if (info.index == null || info.index < 0) { tt.style.display = 'none'; return; }
+        const i = info.index;
+        if (g.cy[i] > 0 && g.cy[i] > yr) { tt.style.display = 'none'; return; }
+        const boro = ['', 'Manhattan', 'Bronx', 'Brooklyn', 'Queens', 'Staten Island'][g.bc[i]] || '';
+        const standing = g.dy[i] > yr;
+        const built = g.cy[i] > 0 ? g.cy[i] : 'Unknown';
+        tt.innerHTML = `<div class="tt-address">Ghost building</div>
+          <div class="tt-row"><span>Status</span><span style="color:#8fb4d9">${standing ? 'Standing in ' + yr + ', later demolished' : 'Demolished ' + g.dy[i]}</span></div>
+          <div class="tt-row"><span>Built</span><span>${built}</span></div>
+          <div class="tt-row"><span>Demolished</span><span>${g.dy[i]}</span></div>
+          ${boro ? `<div class="tt-row"><span>Borough</span><span>${boro}</span></div>` : ''}
+          <div style="font-size:8px;color:#666;margin-top:4px;">Source: NYC Building Footprints Historic</div>`;
+        tt.style.display = 'block';
+        tt.style.left = (info.x + 12) + 'px';
+        tt.style.top = (info.y + 12) + 'px';
+      },
+      updateTriggers: {
+        getFillColor: yr,
+        getLineColor: yr,
       },
     }));
   }
@@ -2974,6 +3101,16 @@ function setupControls() {
     document.getElementById('cityland-legend').style.display = e.target.checked ? 'block' : 'none';
     if (e.target.checked && !state.cityLandLoaded) {
       await loadCityLandData();
+    }
+    refreshMap();
+  });
+
+  // Ghost buildings overlay toggle
+  document.getElementById('show-ghosts').addEventListener('change', async (e) => {
+    state.showGhosts = e.target.checked;
+    document.getElementById('ghosts-legend').style.display = e.target.checked ? 'block' : 'none';
+    if (e.target.checked && !state.ghostsLoaded) {
+      await loadGhostsData();
     }
     refreshMap();
   });
