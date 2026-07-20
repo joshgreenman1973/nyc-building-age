@@ -1940,7 +1940,7 @@ function updateLayers() {
         tt.innerHTML = `<div class="tt-address">Ghost building</div>
           <div class="tt-row"><span>Status</span><span style="color:#8fb4d9">${standing ? 'Standing in ' + yr + ', later demolished' : 'Demolished ' + g.dy[i]}</span></div>
           <div class="tt-row"><span>Built</span><span>${built}</span></div>
-          <div class="tt-row"><span>Demolished</span><span>${g.dy[i]}</span></div>
+          ${standing ? `<div class="tt-row"><span>Demolished</span><span>${g.dy[i]}</span></div>` : ''}
           ${boro ? `<div class="tt-row"><span>Borough</span><span>${boro}</span></div>` : ''}
           <div style="font-size:8px;color:#666;margin-top:4px;">Source: NYC Building Footprints Historic</div>`;
         tt.style.display = 'block';
