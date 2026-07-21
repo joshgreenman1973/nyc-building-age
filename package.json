@@ -1,0 +1,7 @@
+{
+  "name": "nyc-building-age",
+  "private": true,
+  "dependencies": {
+    "pmtiles": "^3.2.0"
+  }
+}
