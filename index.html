@@ -1806,7 +1806,7 @@ function updateLayers() {
     id: 'buildings-poly',
     // ?v= must change whenever the tiles release changes — tiles are CDN-cached
     // for a year, and the version query is what busts that cache.
-    data: '/api/bt/{z}/{x}/{y}?v=2',
+    data: '/api/bt/{z}/{x}/{y}?v=3',
     minZoom: 10,
     maxZoom: 16,
     visible: polygonsActive,
@@ -2217,7 +2217,8 @@ function onPolyHover(info) {
   const bc = p.bc || 0;
 
   let html = '';
-  html += `<div class="tt-address">Building</div>`;
+  const addr = (p.addr || '').trim();
+  html += `<div class="tt-address">${addr ? titleCase(addr) : 'Building'}</div>`;
 
   if (yb > 0) html += `<div class="tt-row"><span>Built</span><span>${yb}</span></div>`;
   if (nf > 0) html += `<div class="tt-row"><span>Floors</span><span>${nf}</span></div>`;

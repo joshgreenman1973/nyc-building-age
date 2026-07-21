@@ -7,7 +7,7 @@ export const config = { runtime: 'edge' };
 import { PMTiles } from "../../../_lib/pmtiles.js";
 
 const ARCHIVE_URL =
-  'https://github.com/joshgreenman1973/nyc-building-age/releases/download/tiles-v2/buildings.pmtiles';
+  'https://github.com/joshgreenman1973/nyc-building-age/releases/download/tiles-v3/buildings.pmtiles';
 
 let archive = null;
 

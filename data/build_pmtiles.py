@@ -200,6 +200,7 @@ def join_and_export():
                 "ly": landmarks.get(bbl, 0),
                 "dy": demos.get(bbl, 0),
                 "ry": rebuilds.get(bbl, 0),
+                "addr": pluto_attrs.get("addr", ""),
             }
 
             # Strip zero/empty values to save tile space
