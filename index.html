@@ -1784,7 +1784,9 @@ function updateLayers() {
   // view are fetched, so this works at close zoom without the old 57MB binary.
   const polyLayer = new MapSyncedMVTLayer({
     id: 'buildings-poly',
-    data: '/api/bt/{z}/{x}/{y}',
+    // ?v= must change whenever the tiles release changes — tiles are CDN-cached
+    // for a year, and the version query is what busts that cache.
+    data: '/api/bt/{z}/{x}/{y}?v=2',
     minZoom: 10,
     maxZoom: 16,
     visible: polygonsActive,
