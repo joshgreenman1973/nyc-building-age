@@ -10,6 +10,9 @@
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.js"></script>
 
 <!-- Deck.gl -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/deck.gl@9.0.16/dist.min.js"></script>
 
 <!-- No FlatGeobuf needed — using compact binary format for speed -->
@@ -29,8 +32,9 @@
     pointer-events: none; z-index: 10;
   }
   #title-bar h1 {
-    font-size: 28px; font-weight: 700; letter-spacing: 1.5px;
-    color: #fff; margin: 0;
+    font-family: 'Anton', 'Helvetica Neue', sans-serif;
+    font-size: 30px; font-weight: 400; letter-spacing: 1.5px;
+    text-transform: uppercase; color: #fff; margin: 0;
   }
   #title-bar h1 .dingbat {
     font-size: 18px; letter-spacing: 0; opacity: 0.45;
@@ -40,6 +44,8 @@
     font-size: 12px; color: #999; margin-top: 2px;
   }
   /* Info button + overlay */
+  #title-bar h1 #info-btn { font-family: Georgia, serif; font-style: italic; text-transform: none; }
+  #title-bar h1 #share-btn { font-family: 'Helvetica Neue', Arial, sans-serif; }
   #info-btn {
     display: inline-flex; align-items: center; justify-content: center;
     pointer-events: auto; cursor: pointer;
@@ -99,18 +105,19 @@
   #info-close:hover { color: #fff; }
 
   #infographic-top-link {
-    display: inline-block; margin-top: 10px; pointer-events: auto;
-    font-size: 13px; font-weight: 600; color: #000;
+    display: inline-block; margin-top: 8px; pointer-events: auto;
+    font-size: 11px; font-weight: 600; color: #000;
     background: #FF9020; text-decoration: none;
-    padding: 6px 14px; border-radius: 4px;
+    padding: 4px 10px; border-radius: 4px;
     transition: background 0.2s;
   }
   #infographic-top-link:hover { background: #ffaa44; }
 
   /* Year display */
   #year-display {
-    position: absolute; top: 16px; right: 24px;
-    font-size: 24px; font-weight: 500; color: rgba(255,255,255,0.45);
+    position: absolute; top: 14px; right: 24px;
+    font-family: 'Anton', 'Helvetica Neue', sans-serif;
+    font-size: 34px; font-weight: 400; color: rgba(255,255,255,0.55);
     z-index: 10; pointer-events: none;
     font-variant-numeric: tabular-nums;
     text-shadow: 0 2px 8px rgba(0,0,0,0.8);
@@ -185,21 +192,21 @@
     pointer-events: none;
   }
   #scrubber {
-    width: 100%; height: 2px;
+    width: 100%; height: 5px;
     -webkit-appearance: none; appearance: none;
     background: #2a2a2a; border-radius: 1px; cursor: pointer;
     outline: none; position: relative; z-index: 2;
   }
   #scrubber::-webkit-slider-thumb {
     -webkit-appearance: none; appearance: none;
-    width: 10px; height: 10px; border-radius: 50%;
-    background: #888; cursor: pointer;
-    border: 1px solid #555;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: #FF9020; cursor: pointer;
+    border: 2px solid #1a1a1a;
   }
   #scrubber::-moz-range-thumb {
-    width: 10px; height: 10px; border-radius: 50%;
-    background: #888; cursor: pointer;
-    border: 1px solid #555;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: #FF9020; cursor: pointer;
+    border: 2px solid #1a1a1a;
   }
 
   /* Playback controls */
@@ -218,18 +225,19 @@
   .btn.active { background: rgba(255,144,32,0.25); color: #FF9020; border-color: rgba(255,144,32,0.4); }
 
   #play-btn {
-    width: 24px; height: 24px; border-radius: 50%;
+    width: 38px; height: 38px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    font-size: 10px; padding: 0;
-    background: rgba(255,144,32,0.15); border-color: rgba(255,144,32,0.3); color: #FF9020;
+    font-size: 15px; padding: 0;
+    background: rgba(255,144,32,0.2); border: 1px solid rgba(255,144,32,0.55); color: #FF9020;
+    box-shadow: 0 0 12px rgba(255,144,32,0.25);
   }
   #play-btn:hover { background: rgba(255,255,255,0.2); color: #fff; }
   #play-btn.playing { background: #FF9020; border-color: #FF9020; color: #000; }
 
   /* Stats counters */
   #stats-row {
-    display: flex; gap: 18px; align-items: center;
-    margin-left: auto;
+    display: flex; gap: 18px; row-gap: 2px; align-items: center;
+    margin-left: auto; flex-wrap: wrap; justify-content: flex-end;
   }
   .stat {
     display: flex; align-items: baseline; gap: 6px;
@@ -284,8 +292,8 @@
 
   /* Address search */
   #search-bar {
-    position: absolute; top: 68px; left: 16px;
-    width: 180px; z-index: 20; pointer-events: auto;
+    position: absolute; top: 118px; left: 16px;
+    width: 200px; z-index: 20; pointer-events: auto;
   }
   #search-input {
     width: 100%; padding: 8px 30px 8px 10px;
@@ -425,7 +433,8 @@
 
   /* Filter panel (right side) */
   #filter-panel {
-    position: absolute; top: 100px; left: 16px; bottom: 95px;
+    position: absolute; top: 162px; left: 16px;
+    max-height: calc(100vh - 270px);
     background: rgba(10,10,10,0.88); border: 1px solid rgba(255,255,255,0.08);
     border-radius: 6px; padding: 12px 14px; z-index: 15;
     font-size: 11px; min-width: 170px; max-width: 270px; overflow-y: auto;
@@ -457,7 +466,16 @@
   .filter-section .section-label {
     font-size: 10px; color: #888; text-transform: uppercase;
     letter-spacing: 0.5px; margin-bottom: 2px; font-weight: 600;
+    cursor: pointer; user-select: none;
   }
+  .filter-section > .section-label::before {
+    content: '\25B8'; display: inline-block; margin-right: 5px; color: #666;
+    transition: transform 0.15s;
+  }
+  .filter-section.open > .section-label::before { transform: rotate(90deg); }
+  .filter-section:not(.open) .select-toggle,
+  .filter-section:not(.open) .era-info { display: none; }
+  .filter-section:not(.open) > *:not(.section-label) { display: none; }
   .filter-section .section-hint {
     font-size: 8px; color: #555; margin-bottom: 5px; line-height: 1.3;
     font-style: italic;
@@ -551,7 +569,7 @@
 
   /* Legend */
   #legend {
-    position: absolute; bottom: 110px; right: 16px;
+    position: absolute; bottom: 110px; right: 64px;
     background: rgba(10,10,10,0.85); border: 1px solid rgba(255,255,255,0.08);
     border-radius: 6px; padding: 12px 16px; z-index: 15;
     font-size: 11px;
@@ -606,6 +624,9 @@
 
     /* Compact footer */
     #footer-row { margin-top: 4px; padding-top: 4px; }
+    #stats-row { gap: 10px; row-gap: 0; justify-content: flex-start; margin-left: 0; width: 100%; }
+    .stat-value { font-size: 11px; }
+    .stat-label { font-size: 8px; }
     #credit { font-size: 9px; }
 
     /* Mobile toggle buttons for legend/filters */
@@ -673,11 +694,10 @@
 <div id="info-overlay">
   <span id="info-close">&times;</span>
   <h2>About this map</h2>
-  <p>This map shows <strong>857,000 buildings</strong> across all five boroughs of New York City. Press play to watch them appear in the year they were built, aging from bright amber to cool blue-gray over time.</p>
-  <p>Use the filters on the right to show or hide buildings by borough, construction era, or height. The color mode buttons at the bottom switch between different ways of seeing the city.</p>
+  <p>This map shows <strong>857,000 buildings</strong> across the five boroughs, colored by age. Press play to watch New York build itself, from the 1600s to today.</p>
+  <p>Filters, spotlights and overlays live in the left panel; the color buttons at the bottom switch between age, height, type and borough.</p>
   <p class="caveat-label">A note on accuracy</p>
-  <p><strong>Construction dates before roughly 1950 are highly unreliable.</strong> The city's building records (MapPLUTO YearBuilt) were not designed as a historical archive — they come from DOB permit filings, which only go back so far. Much of New York was built in the 1800s, but you'll see surprisingly few buildings tagged before 1900. That's a gap in the data, not in history. (<a href="https://www.reddit.com/r/centuryhomes/comments/1ggn7u3/how_accurate_are_date_built_records/" target="_blank" style="color:#aaa;text-decoration:underline;">More on this</a>, <a href="https://www.reddit.com/r/AskNYC/comments/12uaoao/can_you_reliably_find_the_yeardecade_of/" target="_blank" style="color:#aaa;text-decoration:underline;">and this</a>)</p>
-  <p>Dates after ~1950 are more trustworthy but still imperfect. About 39,000 lots have no recorded year at all. Demolition tracking only begins around 2000. Floor counts are self-reported. Landmark designations cover individual buildings only, not historic districts.</p>
+  <p><strong>Construction dates before roughly 1950 are highly unreliable</strong> — the city's records were never meant as a historical archive. Full caveats under Methodology &amp; Definitions below.</p>
 </div>
 
 <div id="methodology-backdrop"></div>
@@ -686,7 +706,7 @@
   <h2>Methodology &amp; Definitions</h2>
 
   <h3>Data Source</h3>
-  <p>Building data comes from <a href="https://www.nyc.gov/site/planning/data-maps/open-data/dwn-pluto-mappluto.page" target="_blank">MapPLUTO</a> (Primary Land Use Tax Lot Output), published by the NYC Department of City Planning. MapPLUTO merges tax lot data from the Department of Finance with building and zoning information from the Department of Buildings and City Planning. The dataset used here is version 25v1 (January 2025) and contains approximately 857,000 building records.</p>
+  <p>Building data comes from <a href="https://www.nyc.gov/site/planning/data-maps/open-data/dwn-pluto-mappluto.page" target="_blank">MapPLUTO</a> (Primary Land Use Tax Lot Output), published by the NYC Department of City Planning. MapPLUTO merges tax lot data from the Department of Finance with building and zoning information from the Department of Buildings and City Planning. The data is pulled from the live MapPLUTO API and was last refreshed July 21, 2026; it contains approximately 857,000 building records.</p>
 
   <h3>Construction Era</h3>
   <div class="def"><strong>Before 1920</strong> — MapPLUTO <code>YearBuilt</code> before 1920. Includes colonial, 19th-century, and early 20th-century construction. Dates this old are highly unreliable; the city's DOB permit records do not go back this far, so many buildings are tagged with later dates or have no date at all.</div>
@@ -890,7 +910,7 @@
     <button id="play-btn" class="btn" title="Play/Pause animation">&#9654;</button>
     <span id="play-hint">Watch NYC grow</span>
     <div style="position:relative;display:inline-block;">
-      <button id="story-btn" class="btn" title="Guided tours">Tours</button>
+      <button id="story-btn" class="btn" title="Guided tours">Guided tours</button>
       <div id="story-menu">
         <div class="story-menu-title">Guided Tours</div>
         <div class="story-option" data-story="growth">Watch NYC Grow<div class="story-desc">Animate 300 years of construction</div></div>
@@ -1347,7 +1367,7 @@ function updateFilterWarnings() {
     const el = document.querySelector('.' + s.sectionClass);
     if (el) {
       el.classList.toggle('section-empty', !anyChecked);
-      if (!anyChecked) anyEmpty = true;
+      if (!anyChecked) { anyEmpty = true; el.classList.add('open'); }
     }
   }
   // Show empty-state overlay on map when no buildings visible
@@ -2908,6 +2928,17 @@ async function init() {
   // Lazy-load addresses in background (not critical for initial render)
   loadAddresses();
 
+  updateLegend();
+
+  // Collapsible filter sections — closed by default; All/None and the era
+  // info icon keep their own click behavior
+  document.querySelectorAll('#filter-panel .filter-section > .section-label').forEach(lbl => {
+    lbl.addEventListener('click', (e) => {
+      if (e.target.closest('.select-toggle') || e.target.closest('.era-info')) return;
+      lbl.parentElement.classList.toggle('open');
+    });
+  });
+
   console.log('Every Building app initialized');
 }
 
@@ -3249,11 +3280,16 @@ function setupControls() {
     infoOverlay.classList.add('fade-out');
     setTimeout(() => { infoOverlay.classList.remove('show', 'fade-out'); }, 800);
   }
-  // Auto-show on load
-  setTimeout(() => {
-    showInfo();
-    infoAutoFadeTimer = setTimeout(hideInfo, 5000);
-  }, 600);
+  // Auto-show on first visit only; the i button brings it back any time
+  let seenIntro = false;
+  try { seenIntro = !!localStorage.getItem('eb_intro_seen'); } catch (e) { /* private mode */ }
+  if (!seenIntro) {
+    setTimeout(() => {
+      showInfo();
+      infoAutoFadeTimer = setTimeout(hideInfo, 6000);
+      try { localStorage.setItem('eb_intro_seen', '1'); } catch (e) { /* fine */ }
+    }, 600);
+  }
   // Hover keeps it open
   infoOverlay.addEventListener('mouseenter', () => {
     if (infoAutoFadeTimer) { clearTimeout(infoAutoFadeTimer); infoAutoFadeTimer = null; }
