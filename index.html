@@ -975,6 +975,7 @@ const state = {
   parks: [],
   colorMode: 'age',
   deckgl: null,
+  deckglTop: null,
   map: null,
   loading: true,
   // Filters
@@ -1677,7 +1678,7 @@ function updateLayers() {
   // Buildings polygon layer — vector tiles cut from the same footprints data,
   // served per-tile from the PMTiles archive via /api/bt. Only the tiles in
   // view are fetched, so this works at close zoom without the old 57MB binary.
-  const polyLayer = new deck.MVTLayer({
+  const polyLayer = new MapSyncedMVTLayer({
     id: 'buildings-poly',
     data: '/api/bt/{z}/{x}/{y}',
     minZoom: 10,
@@ -1699,18 +1700,20 @@ function updateLayers() {
     },
   });
 
-  const layers = [parksLayer, layer, polyLayer];
+  // Base canvas (interleaved: labels above); top canvas (footprints + overlays).
+  const layers = [parksLayer, layer];
+  const topLayers = [polyLayer];
 
   // Overlay dot layers (construction, stalled) — glow ring + core dot + tooltip
   function addOverlayDots(id, data, color, glowRadius, coreRadius, onHoverFn, pulse) {
     const r = pulse || 1;
     const a = typeof pulse === 'number' ? (100 + ((Math.sin(Date.now() / 400) + 1) / 2) * 120) : color[3];
-    layers.push(new deck.ScatterplotLayer({
+    topLayers.push(new deck.ScatterplotLayer({
       id: id + '-glow', data, getPosition: d => d.pos,
       getFillColor: [color[0], color[1], color[2], a * 0.3],
       getRadius: glowRadius * r, radiusUnits: 'meters', radiusMinPixels: 6, radiusMaxPixels: 24, pickable: false,
     }));
-    layers.push(new deck.ScatterplotLayer({
+    topLayers.push(new deck.ScatterplotLayer({
       id, data, getPosition: d => d.pos,
       getFillColor: [color[0], color[1], color[2], a],
       getLineColor: [255, 255, 255, a * 0.5],
@@ -1759,7 +1762,7 @@ function updateLayers() {
 
   // City-owned land overlay — parcels colored by housing-readiness category
   if (state.showCityLand && state.cityLand && state.cityLand.length) {
-    layers.push(new deck.ScatterplotLayer({
+    topLayers.push(new deck.ScatterplotLayer({
       id: 'cityland',
       data: state.cityLand,
       getPosition: d => d.p,
@@ -1791,7 +1794,7 @@ function updateLayers() {
   if (state.showGhosts && state.ghostsLoaded && state.ghosts) {
     const g = state.ghosts;
     const GHOST_RGB = [143, 180, 217];
-    layers.push(new deck.PolygonLayer({
+    topLayers.push(new deck.PolygonLayer({
       id: 'ghosts',
       data: g.indices,
       getPolygon: i => {
@@ -1847,15 +1850,20 @@ function updateLayers() {
   }
 
   state.deckgl.setProps({ layers });
+  if (state.deckglTop) state.deckglTop.setProps({ layers: topLayers });
   // Force deck.gl to redraw — belt-and-suspenders approach because
   // MapboxOverlay integration frequently skips repaints on data changes
   if (state.deckgl._deck) {
     state.deckgl._deck.redraw(true);
   }
+  if (state.deckglTop && state.deckglTop._deck) {
+    state.deckglTop._deck.redraw(true);
+  }
   state.map.triggerRepaint();
   // Schedule a second forced repaint on the next frame as a fallback
   requestAnimationFrame(() => {
     if (state.deckgl._deck) state.deckgl._deck.redraw(true);
+    if (state.deckglTop && state.deckglTop._deck) state.deckglTop._deck.redraw(true);
     state.map.triggerRepaint();
   });
 }
@@ -1876,6 +1884,38 @@ function startPulse() {
 function stopPulse() {
   if (_pulseRAF) { cancelAnimationFrame(_pulseRAF); _pulseRAF = null; }
 }
+
+// MVTLayer subclass that culls tiles against the live Mapbox camera.
+// Under MapboxOverlay, TileLayer's internal updates often run with a stale
+// default viewport (this.context.viewport), which marks every loaded tile
+// invisible — tiles fetch fine but never draw. Overriding _updateTileset to
+// substitute a viewport built from the map fixes it. Internal API: the deck.gl
+// script tag is pinned to 9.0.16, so revisit this if that version ever changes.
+class MapSyncedMVTLayer extends deck.MVTLayer {
+  _updateTileset() {
+    const m = state.map;
+    const prev = this.context.viewport;
+    if (m) {
+      const c = m.getCenter();
+      const cv = m.getCanvas();
+      this.context.viewport = new deck.WebMercatorViewport({
+        width: cv.clientWidth || cv.width,
+        height: cv.clientHeight || cv.height,
+        longitude: c.lng,
+        latitude: c.lat,
+        zoom: m.getZoom(),
+        pitch: m.getPitch(),
+        bearing: m.getBearing(),
+      });
+    }
+    try {
+      super._updateTileset();
+    } finally {
+      this.context.viewport = prev;
+    }
+  }
+}
+MapSyncedMVTLayer.layerName = 'MapSyncedMVTLayer';
 
 // ============================================================
 // ANIMATION
@@ -2637,6 +2677,16 @@ async function init() {
     getCursor: ({isDragging, isHovering}) => isDragging ? 'grabbing' : isHovering ? 'pointer' : 'default',
   });
   state.map.addControl(state.deckgl);
+  // Second overlay in non-interleaved mode for the footprint vector tiles and
+  // anything that must draw above them. deck 9's interleaved mode never renders
+  // TileLayer/MVTLayer sub-layers (tiles load but stay invisible), so the tiled
+  // footprints need their own canvas on top of the map.
+  state.deckglTop = new deck.MapboxOverlay({
+    interleaved: false,
+    layers: [],
+    getCursor: ({isDragging, isHovering}) => isDragging ? 'grabbing' : isHovering ? 'pointer' : 'default',
+  });
+  state.map.addControl(state.deckglTop);
   state.map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'bottom-right');
 
   // Force cursor back to default after any map interaction (drag, zoom)
