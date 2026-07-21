@@ -61,7 +61,7 @@ def main():
         all_features = []
         offset = 0
         while True:
-            url = f"{PARKS_BASE}?$limit={BATCH_SIZE}&$offset={offset}"
+            url = f"{PARKS_BASE}?$limit={BATCH_SIZE}&$offset={offset}&$order=:id"
             resp = requests.get(url, timeout=300, verify=False)
             resp.raise_for_status()
             data = resp.json()
