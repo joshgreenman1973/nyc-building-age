@@ -837,17 +837,12 @@
 
   <div class="filter-section fs-spotlight">
     <div class="section-label">Spotlight</div>
-    <div class="section-hint">Dim everything except one category</div>
-    <div class="filter-check"><input type="checkbox" id="hl-landmarks" data-hl="landmarks"><label for="hl-landmarks" style="color:#FFD700">Landmarks only</label></div>
-    <div class="filter-check"><input type="checkbox" id="hl-demolished" data-hl="demolished"><label for="hl-demolished" style="color:#FF3C3C">Demolished only</label></div>
+    <div class="section-hint">Highlight over a dimmed map — combine freely</div>
+    <div class="filter-check"><input type="checkbox" id="hl-landmarks" data-hl="landmarks"><label for="hl-landmarks" style="color:#FFD700">Landmarks</label></div>
+    <div class="filter-check"><input type="checkbox" id="hl-demolished" data-hl="demolished"><label for="hl-demolished" style="color:#FF3C3C">Demolished</label></div>
     <div class="filter-check"><input type="checkbox" id="hl-vacant" data-hl="vacant"><label for="hl-vacant" style="color:#DDE44C">Vacant lots</label></div>
     <div class="filter-check"><input type="checkbox" id="hl-construction"><label for="hl-construction" style="color:#00E5FF">Under construction</label> <span id="construction-status" style="font-size:8px;color:#555;"></span></div>
     <div class="filter-check"><input type="checkbox" id="hl-stalled"><label for="hl-stalled" style="color:#FF6B35">Stalled sites</label> <span id="stalled-status" style="font-size:8px;color:#555;"></span></div>
-  </div>
-
-  <div class="filter-section fs-overlay" style="border-left-color:rgba(100,160,255,0.4);">
-    <div class="section-label">Overlays</div>
-    <div class="filter-check"><input type="checkbox" id="show-subway"><label for="show-subway" style="color:#6BAED6">Subway lines</label> <span id="subway-status" style="font-size:8px;color:#555;"></span></div>
     <div class="filter-check"><input type="checkbox" id="show-cityland"><label for="show-cityland" style="color:#e0533a">City-owned land</label> <span id="cityland-status" style="font-size:8px;color:#555;"></span></div>
     <div id="cityland-legend" style="display:none;margin:4px 0 2px 19px;font-size:9px;line-height:1.6;">
       <div><span style="color:#e0533a">&#9679;</span> No current use</div>
@@ -860,6 +855,11 @@
     <div id="ghosts-legend" style="display:none;margin:4px 0 2px 19px;font-size:9px;line-height:1.6;color:#666;font-style:italic;">
       Footprints of buildings demolished since 1996, from the city's historic footprints file. Scrub the timeline: each one stands (solid) until its demolition year, then lingers as a pale outline. Zoom in to see shapes.
     </div>
+  </div>
+
+  <div class="filter-section fs-overlay" style="border-left-color:rgba(100,160,255,0.4);">
+    <div class="section-label">Reference</div>
+    <div class="filter-check"><input type="checkbox" id="show-subway"><label for="show-subway" style="color:#6BAED6">Subway lines</label> <span id="subway-status" style="font-size:8px;color:#555;"></span></div>
   </div>
 </div>
 
@@ -1193,11 +1193,6 @@ function _isFilteredFields(yb, bc, nf, ly, dy, cls) {
   if (!state.filters.uses.has(getUse(cls))) return true;
   const subUse = getSubUse(cls);
   if (subUse && !state.filters.subUses.has(subUse)) return true;
-  // Spotlight filters: when active, show ONLY the spotlight items,
-  // bypassing era/height/use/boro filters that might exclude them
-  if (state.filters.highlightLandmarks) return ly === 0;
-  if (state.filters.highlightDemolished) return dy === 0;
-  if (state.filters.highlightVacant) return cls.charAt(0) !== 'V';
   return false;
 }
 
@@ -1213,23 +1208,32 @@ function isFiltered(i) {
 }
 
 // Core color logic — operates on raw fields so both dots and polygons can call it.
-// When the ghost-buildings or city-owned-land overlay is on, regular buildings
-// dim (spotlight-style) so the overlay pops; the overlay layers themselves
-// don't go through this function and stay at full strength.
+// Unified spotlight behavior: whenever any spotlight or data overlay is active,
+// buildings that aren't the subject dim to 60% so the subject pops. Spotlighted
+// buildings (landmarks gold, demolished red, vacant chartreuse) and the overlay
+// layers themselves (ghosts, city land, construction/stalled dots) stay at full
+// strength. Nothing is hidden — scrub the timeline and it all still works.
 function _getColorFromFields(yb, bc, nf, ly, dy, ry, cls, yr, filtered) {
   const c = _rawColorFromFields(yb, bc, nf, ly, dy, ry, cls, yr, filtered);
-  if ((state.showGhosts || state.showCityLand) && c[3] > 110) {
-    return [(c[0] * 0.6) | 0, (c[1] * 0.6) | 0, (c[2] * 0.6) | 0, 110];
-  }
-  return c;
+  if (c[3] === 0) return c;
+  const f = state.filters;
+  const spotActive = f.highlightLandmarks || f.highlightDemolished || f.highlightVacant ||
+    f.highlightConstruction || f.highlightStalled || state.showGhosts || state.showCityLand;
+  if (!spotActive) return c;
+  const isSubject =
+    (f.highlightLandmarks && ly > 0 && ly <= yr) ||
+    (f.highlightDemolished && dy > 0 && dy <= yr) ||
+    (f.highlightVacant && cls.charAt(0) === 'V');
+  if (isSubject || c[3] <= 110) return c;
+  return [(c[0] * 0.6) | 0, (c[1] * 0.6) | 0, (c[2] * 0.6) | 0, 110];
 }
 
 function _rawColorFromFields(yb, bc, nf, ly, dy, ry, cls, yr, filtered) {
   if (filtered) return [0,0,0,0];
   if (state.filters.highlightVacant && cls.charAt(0) === 'V') return [221, 228, 76, 210]; // chartreuse
-
-  // Dim all buildings when Construction or Stalled spotlight is active
-  const _dim = (state.filters.highlightConstruction && state.constructionSites) || (state.filters.highlightStalled && state.stalledSites);
+  // Demolished spotlight: keep every demolished lot solid red instead of
+  // letting it fade out two years after demolition
+  if (state.filters.highlightDemolished && dy > 0 && dy <= yr) return [255, 60, 60, 220];
 
   // Not yet built (but allow unknown-year buildings through)
   if (yb > yr && yb > 0) return [0,0,0,0];
@@ -1239,7 +1243,7 @@ function _rawColorFromFields(yb, bc, nf, ly, dy, ry, cls, yr, filtered) {
     const floors = Math.max(nf, 1);
     const t = Math.min((floors - 1) / 50, 1); // 1..50+ floors mapped to 0..1
     // Pale sky blue → medium blue → deep navy
-    const a = _dim ? 40 : (160 + (t * 60) | 0);
+    const a = (160 + (t * 60)) | 0;
     return [
       180 - (t * 160) | 0,   // 180 → 20
       210 - (t * 170) | 0,   // 210 → 40
@@ -1251,31 +1255,31 @@ function _rawColorFromFields(yb, bc, nf, ly, dy, ry, cls, yr, filtered) {
   if (state.colorMode === 'class') {
     const ci = cls.charCodeAt(0) - 65;
     const c = (ci >= 0 && ci < 26 && CLASS_COLORS[ci]) ? CLASS_COLORS[ci] : [80,80,80,160];
-    return _dim ? [c[0], c[1], c[2], 40] : c;
+    return c;
   }
   // Color mode: borough
   if (state.colorMode === 'borough') {
     const c = BORO_COLORS[bc] || [80,80,80,160];
-    return _dim ? [c[0], c[1], c[2], 40] : c;
+    return c;
   }
 
   // Age mode
   // Unknown year — show as dim gray
   if (yb <= 0) {
-    const a = _dim ? 40 : 120;
+    const a = 120;
     return [80, 80, 80, a];
   }
   // Demolished?
   if (dy > 0 && dy <= yr) {
     if (ry > 0 && ry <= yr) {
       const ra = yr - ry;
-      if (ra < 5) { const t = 1 - ra/5; const a = _dim ? 40 : 220; return [0, 140+(t*81)|0, 180+(t*75)|0, a]; }
+      if (ra < 5) { const t = 1 - ra/5; const a = 220; return [0, 140+(t*81)|0, 180+(t*75)|0, a]; }
       const c = ageColor(ry);
-      const a = _dim ? 40 : 200;
+      const a = 200;
       return [c[0], c[1], c[2], a];
     }
     const da = yr - dy;
-    if (da < 2) return _dim ? [255, 60, 60, 40] : [255, 60, 60, 220 - (da*80)|0];
+    if (da < 2) return [255, 60, 60, 220 - (da*80)|0];
     return [0,0,0,0];
   }
 
@@ -1283,12 +1287,12 @@ function _rawColorFromFields(yb, bc, nf, ly, dy, ry, cls, yr, filtered) {
 
   // Landmark?
   if (ly > 0 && ly <= yr) {
-    const a = _dim ? 40 : 210;
+    const a = 210;
     return [255, 200, 50, a];
   }
 
   const c = ageColor(yb);
-  const a = _dim ? 40 : 200;
+  const a = 200;
   return [c[0], c[1], c[2], a];
 }
 
