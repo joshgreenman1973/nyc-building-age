@@ -736,7 +736,7 @@
   <div class="def"><strong>Building count</strong> — The "812,036 Buildings" counter reflects the number of buildings currently visible given the active year and filters, not the total in the dataset (857,000).</div>
 
   <h3>City-Owned Land</h3>
-  <p>The optional <strong>City-owned land</strong> overlay plots every parcel the city owns or leases, drawn from the NYC Department of City Planning's <a href="https://data.cityofnewyork.us/dataset/fn4k-qyk2" target="_blank">City Owned and Leased Properties (COLP)</a> dataset and joined to MapPLUTO for lot size and zoning. Parcels are sorted into four housing-readiness categories &mdash; no current use, already residential, other active use, and parks &amp; recreation &mdash; following the framing of the <a href="https://www.furmancenter.org/publication/what-new-interactive-maps-reveal-about-the-development-potential-of-new-york-citys-city-owned-land/" target="_blank">NYU Furman Center's interactive maps of city-owned land</a>. For no-use parcels, the tooltip shows a rough as-of-right housing capacity (lot area &times; residential FAR &divide; 1,000 sq ft) &mdash; a back-of-envelope figure, not a project estimate. A fuller version lives at the standalone <a href="https://joshgreenman1973.github.io/nyc-city-land-map/" target="_blank">city-owned land map</a>.</p>
+  <p>The optional <strong>City-owned land</strong> overlay shows the 14,940 tax lots the city owns or leases, drawn from the NYC Department of City Planning's <a href="https://data.cityofnewyork.us/dataset/fn4k-qyk2" target="_blank">City Owned and Leased Properties (COLP)</a> dataset and joined to MapPLUTO for lot boundaries, size and zoning. At close zoom each lot renders as its actual parcel outline over the building footprints, so you can see what stands (or doesn't) on city land; at city scale, lots render as dots. Parcels are sorted into four housing-readiness categories &mdash; no current use, already residential, other active use, and parks &amp; recreation &mdash; following the framing of the <a href="https://www.furmancenter.org/publication/what-new-interactive-maps-reveal-about-the-development-potential-of-new-york-citys-city-owned-land/" target="_blank">NYU Furman Center's interactive maps of city-owned land</a>. For no-current-use lots zoned for housing as-of-right, the tooltip shows a rough capacity (lot area &times; residential FAR &divide; 1,000 sq ft) &mdash; a back-of-envelope figure, not a project estimate. The tooltip also flags lots the city has marked for possible disposition, and lots the city leases rather than owns. Lots with multiple recorded uses are shown by their most active one; multi-part lots render their largest piece. A fuller version, with filters and a 3D capacity view, lives at the standalone <a href="https://joshgreenman1973.github.io/nyc-city-land-map/" target="_blank">city-owned land map</a>.</p>
 
   <h3>Ghost Buildings</h3>
   <p>The optional <strong>Ghost buildings</strong> overlay draws the footprints of roughly 40,000 demolished buildings from the city's <a href="https://data.cityofnewyork.us/Housing-Development/Building-Footprints-Historic-/ipkp-snf6" target="_blank">Building Footprints Historic</a> dataset, the companion file to the Building Footprints data that supplies this map's building shapes. The overlay is tied to the timeline: each demolished building renders solid (colored by its construction year) while it stood, then fades to a pale outline once the timeline passes its demolition year. Records are deduplicated by building identification number, keeping the most recently edited footprint version. Where a record lacks a demolition year (fewer than 1 percent), the year it was last edited is used instead. <span style="color:#FF9020">Important caveat:</span> the city only began maintaining digital footprints in the mid-1990s, so this overlay captures demolitions from 1996 onward &mdash; it is a record of the recent past, not of everything New York City has ever torn down. Construction years are unknown for about a quarter of these buildings; they are shown as standing from the start of the timeline until their demolition.</p>
@@ -845,7 +845,7 @@
       <div><span style="color:#3f6fb0">&#9679;</span> Already residential</div>
       <div><span style="color:#9a8c7a">&#9679;</span> Other active use</div>
       <div><span style="color:#4e9d6c">&#9679;</span> Parks &amp; natural areas</div>
-      <div style="color:#666;margin-top:3px;font-style:italic;">Every parcel the city owns or leases (DCP COLP), sorted by housing readiness after the <a href="https://www.furmancenter.org/publication/what-new-interactive-maps-reveal-about-the-development-potential-of-new-york-citys-city-owned-land/" target="_blank" style="color:#888;text-decoration:underline;">NYU Furman Center</a>.</div>
+      <div style="color:#666;margin-top:3px;font-style:italic;">Every parcel the city owns or leases (DCP COLP), sorted by housing readiness after the <a href="https://www.furmancenter.org/publication/what-new-interactive-maps-reveal-about-the-development-potential-of-new-york-citys-city-owned-land/" target="_blank" style="color:#888;text-decoration:underline;">NYU Furman Center</a>. Zoom in for lot outlines over the building footprints; full version at the <a href="https://joshgreenman1973.github.io/nyc-city-land-map/" target="_blank" style="color:#888;text-decoration:underline;">city-owned land map</a>.</div>
     </div>
     <div class="filter-check"><input type="checkbox" id="show-ghosts"><label for="show-ghosts" style="color:#8fb4d9">Ghost buildings</label> <span id="ghosts-status" style="font-size:8px;color:#555;"></span></div>
     <div id="ghosts-legend" style="display:none;margin:4px 0 2px 19px;font-size:9px;line-height:1.6;color:#666;font-style:italic;">
@@ -1346,7 +1346,10 @@ function forceRepaint() {
 
 // City-owned & leased land (DCP COLP), categorized by housing readiness after
 // the NYU Furman Center's interactive maps of city-owned land.
-const CITYLAND_URL = 'data/processed/city_land.json';
+// City-owned parcels: compact binary of 14,940 lot outlines + string tables,
+// built by data/build_cityland.py from the standalone nyc-city-land-map data.
+const CITYLAND_BIN_URL = 'data/processed/cityland.bin';
+const CITYLAND_META_URL = 'data/processed/cityland_meta.json';
 const CITYLAND_CATS = {
   1: { name: 'No current use',      color: [224, 83, 58] },
   2: { name: 'Already residential', color: [63, 111, 176] },
@@ -1365,16 +1368,96 @@ async function loadCityLandData() {
   const statusEl = document.getElementById('cityland-status');
   try {
     if (statusEl) statusEl.textContent = 'loading…';
-    const resp = await fetch(CITYLAND_URL);
-    if (!resp.ok) throw new Error(resp.status);
-    state.cityLand = await resp.json();
+    const [binResp, metaResp] = await Promise.all([fetch(CITYLAND_BIN_URL), fetch(CITYLAND_META_URL)]);
+    if (!binResp.ok) throw new Error(`bin HTTP ${binResp.status}`);
+    if (!metaResp.ok) throw new Error(`meta HTTP ${metaResp.status}`);
+    const buf = await binResp.arrayBuffer();
+    const meta = await metaResp.json();
+    const view = new DataView(buf);
+
+    const count = view.getUint32(0, true);
+    const vertexCount = view.getUint32(4, true);
+    const featuresStart = 12;
+    const RECORD_BYTES = 20;
+    const verticesStart = featuresStart + count * RECORD_BYTES;
+    if (verticesStart + vertexCount * 4 > buf.byteLength) throw new Error('cityland.bin truncated');
+
+    const cat = new Uint8Array(count);
+    const flags = new Uint8Array(count);
+    const agIdx = new Uint8Array(count);
+    const utIdx = new Uint8Array(count);
+    const zIdx = new Uint16Array(count);
+    const rf100 = new Uint16Array(count);
+    const ar = new Uint32Array(count);
+    const vOff = new Uint32Array(count);
+    const vCnt = new Uint16Array(count);
+    for (let i = 0; i < count; i++) {
+      const off = featuresStart + i * RECORD_BYTES;
+      cat[i] = view.getUint8(off);
+      flags[i] = view.getUint8(off + 1);
+      agIdx[i] = view.getUint8(off + 2);
+      utIdx[i] = view.getUint8(off + 3);
+      zIdx[i] = view.getUint16(off + 4, true);
+      rf100[i] = view.getUint16(off + 6, true);
+      ar[i] = view.getUint32(off + 8, true);
+      vOff[i] = view.getUint32(off + 12, true);
+      vCnt[i] = view.getUint16(off + 16, true);
+    }
+
+    const verts = new Float32Array(vertexCount * 2);
+    const lonRange = POLY_LON_MAX - POLY_LON_MIN;
+    const latRange = POLY_LAT_MAX - POLY_LAT_MIN;
+    for (let v = 0; v < vertexCount; v++) {
+      const off = verticesStart + v * 4;
+      verts[v * 2] = POLY_LON_MIN + (view.getUint16(off, true) / 65535) * lonRange;
+      verts[v * 2 + 1] = POLY_LAT_MIN + (view.getUint16(off + 2, true) / 65535) * latRange;
+    }
+
+    // Ring centroids for the far-zoom dot rendering
+    const centroids = new Float32Array(count * 2);
+    for (let i = 0; i < count; i++) {
+      let sx = 0, sy = 0;
+      const off = vOff[i], n = vCnt[i];
+      for (let v = 0; v < n; v++) { sx += verts[(off + v) * 2]; sy += verts[(off + v) * 2 + 1]; }
+      centroids[i * 2] = sx / n;
+      centroids[i * 2 + 1] = sy / n;
+    }
+
+    state.cityLand = {
+      count, cat, flags, agIdx, utIdx, zIdx, rf100, ar, vOff, vCnt, verts, centroids, meta,
+      indices: Array.from({ length: count }, (_, i) => i),
+    };
     state.cityLandLoaded = true;
-    if (statusEl) statusEl.textContent = `(${state.cityLand.length.toLocaleString()})`;
-    console.log(`Loaded ${state.cityLand.length} city-owned parcels`);
+    if (statusEl) statusEl.textContent = `(${count.toLocaleString()})`;
+    console.log(`Loaded ${count} city-owned parcels (${(buf.byteLength / 1024 / 1024).toFixed(1)} MB)`);
   } catch (e) {
     if (statusEl) statusEl.textContent = 'failed';
     console.error('City-owned land load failed:', e);
   }
+}
+
+// Tooltip HTML shared by the parcel-outline and dot renderings
+function cityLandTooltip(i) {
+  const cl = state.cityLand;
+  const m = cl.meta;
+  const catInfo = CITYLAND_CATS[cl.cat[i]];
+  const label = m.labels[i] ? titleCase(m.labels[i]) : 'City parcel';
+  const z = m.z[cl.zIdx[i]];
+  const ut = m.ut[cl.utIdx[i]];
+  const rows = [`<div class="tt-row"><span>Status</span><span style="color:rgb(${catInfo.color.join(',')})">${catInfo.name}</span></div>`];
+  if (m.ag[cl.agIdx[i]]) rows.push(`<div class="tt-row"><span>Agency</span><span>${m.ag[cl.agIdx[i]]}</span></div>`);
+  if (ut) rows.push(`<div class="tt-row"><span>Current use</span><span>${titleCase(ut)}</span></div>`);
+  if (cl.ar[i]) rows.push(`<div class="tt-row"><span>Lot size</span><span>${cl.ar[i].toLocaleString()} sq ft</span></div>`);
+  rows.push(`<div class="tt-row"><span>Zoning</span><span>${cityLandZone(z)}</span></div>`);
+  // Rough capacity only for no-current-use lots — on occupied sites the
+  // as-of-right number reads as if the existing buildings weren't there.
+  if (cl.cat[i] === 1 && cl.rf100[i] > 0 && cl.ar[i] > 0) {
+    const units = Math.floor((cl.ar[i] * cl.rf100[i] / 100) / 1000);
+    if (units > 0) rows.push(`<div class="tt-row"><span>Homes as-of-right</span><span>~${units.toLocaleString()}</span></div>`);
+  }
+  if (cl.flags[i] & 1) rows.push(`<div class="tt-row"><span>Flag</span><span style="color:#FF9020">Possible disposition</span></div>`);
+  if (cl.flags[i] & 2) rows.push(`<div class="tt-row"><span>Tenure</span><span>Leased by the city</span></div>`);
+  return `<div class="tt-address">${label}</div>${rows.join('')}<div style="font-size:8px;color:#666;margin-top:4px;">City-owned land · DCP COLP · categories after NYU Furman Center</div>`;
 }
 
 // Ghost buildings — demolished footprints from Building Footprints Historic.
@@ -1695,6 +1778,8 @@ function updateLayers() {
     },
     pickable: true,
     onHover: onPolyHover,
+    onTileLoad: () => kickDecks(),
+    onViewportLoad: () => kickDecks(),
     updateTriggers: {
       getFillColor: `${yr}_${state.colorMode}_${_filterVersion}_${SPOTLIGHT_KEYS.map(k => state.filters[k]).join('_')}`,
     },
@@ -1760,32 +1845,54 @@ function updateLayers() {
     });
   }
 
-  // City-owned land overlay — parcels colored by housing-readiness category
-  if (state.showCityLand && state.cityLand && state.cityLand.length) {
-    topLayers.push(new deck.ScatterplotLayer({
-      id: 'cityland',
-      data: state.cityLand,
-      getPosition: d => d.p,
-      getFillColor: d => {
-        const c = CITYLAND_CATS[d.c].color;
-        return [c[0], c[1], c[2], d.c === 1 ? 235 : 160];
-      },
-      getLineColor: [255, 255, 255, 140],
-      getRadius: d => d.c === 1 ? 9 : 6,
-      radiusUnits: 'meters', radiusMinPixels: 2.5, radiusMaxPixels: 11,
-      stroked: true, lineWidthMinPixels: 0.4,
-      pickable: true,
-      onHover: info => {
-        if (!info.object) { document.getElementById('tooltip').style.display = 'none'; return; }
-        const d = info.object; const cat = CITYLAND_CATS[d.c];
-        const rows = [`<div class="tt-row"><span>Status</span><span style="color:rgb(${cat.color.join(',')})">${cat.name}</span></div>`];
-        if (d.ag) rows.push(`<div class="tt-row"><span>Agency</span><span>${d.ag}</span></div>`);
-        if (d.ar) rows.push(`<div class="tt-row"><span>Lot size</span><span>${d.ar.toLocaleString()} sq ft</span></div>`);
-        rows.push(`<div class="tt-row"><span>Zoning</span><span>${cityLandZone(d.z)}</span></div>`);
-        if (d.eu) rows.push(`<div class="tt-row"><span>Homes as-of-right</span><span>~${d.eu.toLocaleString()}</span></div>`);
-        showTooltip(info, `<div class="tt-address">${titleCase((d.n || 'City parcel').toLowerCase())}</div>${rows.join('')}<div style="font-size:8px;color:#666;margin-top:4px;">City-owned land · DCP COLP · categories after NYU Furman Center</div>`);
-      },
-    }));
+  // City-owned land overlay — parcel outlines at footprint zoom so you can
+  // see what stands on each lot; centroid dots at city scale.
+  if (state.showCityLand && state.cityLandLoaded && state.cityLand) {
+    const cl = state.cityLand;
+    const onCityLandHover = info => {
+      if (info.index == null || info.index < 0) { document.getElementById('tooltip').style.display = 'none'; return; }
+      showTooltip(info, cityLandTooltip(info.index));
+    };
+    if (polygonsActive) {
+      topLayers.push(new deck.PolygonLayer({
+        id: 'cityland-poly',
+        data: cl.indices,
+        getPolygon: i => {
+          const off = cl.vOff[i], n = cl.vCnt[i];
+          const ring = new Array(n);
+          for (let v = 0; v < n; v++) ring[v] = [cl.verts[(off + v) * 2], cl.verts[(off + v) * 2 + 1]];
+          return ring;
+        },
+        getFillColor: i => {
+          const c = CITYLAND_CATS[cl.cat[i]].color;
+          return [c[0], c[1], c[2], cl.cat[i] === 1 ? 120 : 60];
+        },
+        getLineColor: i => {
+          const c = CITYLAND_CATS[cl.cat[i]].color;
+          return [c[0], c[1], c[2], 235];
+        },
+        stroked: true, filled: true,
+        lineWidthUnits: 'pixels', getLineWidth: 1.5,
+        pickable: true,
+        onHover: onCityLandHover,
+      }));
+    } else {
+      topLayers.push(new deck.ScatterplotLayer({
+        id: 'cityland',
+        data: cl.indices,
+        getPosition: i => [cl.centroids[i * 2], cl.centroids[i * 2 + 1]],
+        getFillColor: i => {
+          const c = CITYLAND_CATS[cl.cat[i]].color;
+          return [c[0], c[1], c[2], cl.cat[i] === 1 ? 235 : 160];
+        },
+        getLineColor: [255, 255, 255, 140],
+        getRadius: i => cl.cat[i] === 1 ? 9 : 6,
+        radiusUnits: 'meters', radiusMinPixels: 2.5, radiusMaxPixels: 11,
+        stroked: true, lineWidthMinPixels: 0.4,
+        pickable: true,
+        onHover: onCityLandHover,
+      }));
+    }
   }
 
   // Ghost buildings overlay — demolished footprints. Time-aware: a building
@@ -1851,19 +1958,46 @@ function updateLayers() {
 
   state.deckgl.setProps({ layers });
   if (state.deckglTop) state.deckglTop.setProps({ layers: topLayers });
-  // Force deck.gl to redraw — belt-and-suspenders approach because
-  // MapboxOverlay integration frequently skips repaints on data changes
-  if (state.deckgl._deck) {
-    state.deckgl._deck.redraw(true);
+  kickDecks();
+}
+
+// Force both deck instances to actually process pending layer updates and
+// repaint. Under MapboxOverlay, setProps and async tile loads mark the layer
+// manager dirty but nothing services the queue while the map sits idle — the
+// layers exist in props yet never mount (footprint tiles load and stay
+// invisible). Explicitly running layerManager.updateLayers() is the only
+// reliable kick. Debounced to one run per frame.
+// Safety net: async tile loads can mark the manager dirty after the last
+// event-driven kick has already run. Poll the (cheap) dirty flag and service
+// it; no-op when everything is clean.
+setInterval(() => {
+  let kicked = false;
+  for (const overlay of [state.deckgl, state.deckglTop]) {
+    const dk = overlay && overlay._deck;
+    if (dk && dk.layerManager && dk.layerManager.needsUpdate()) {
+      try { dk.layerManager.updateLayers(); } catch (e) { /* retry next tick */ }
+      dk.redraw(true);
+      kicked = true;
+    }
   }
-  if (state.deckglTop && state.deckglTop._deck) {
-    state.deckglTop._deck.redraw(true);
-  }
-  state.map.triggerRepaint();
-  // Schedule a second forced repaint on the next frame as a fallback
+  if (kicked && state.map) state.map.triggerRepaint();
+}, 400);
+
+let _kickQueued = false;
+function kickDecks() {
+  if (_kickQueued) return;
+  _kickQueued = true;
   requestAnimationFrame(() => {
-    if (state.deckgl._deck) state.deckgl._deck.redraw(true);
-    if (state.deckglTop && state.deckglTop._deck) state.deckglTop._deck.redraw(true);
+    _kickQueued = false;
+    for (const overlay of [state.deckgl, state.deckglTop]) {
+      const dk = overlay && overlay._deck;
+      if (dk && dk.layerManager) {
+        try {
+          if (dk.layerManager.needsUpdate()) dk.layerManager.updateLayers();
+        } catch (e) { /* mid-frame update collision; next kick catches up */ }
+        dk.redraw(true);
+      }
+    }
     state.map.triggerRepaint();
   });
 }
