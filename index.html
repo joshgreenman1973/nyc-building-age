@@ -495,6 +495,13 @@
   }
   #empty-state .empty-hint { font-size: 11px; color: #666; margin-top: 6px; }
   #empty-state.show { display: block; }
+  #empty-state button {
+    pointer-events: auto; margin-top: 12px; padding: 7px 16px; cursor: pointer;
+    background: rgba(255,144,32,0.18); color: #FF9020;
+    border: 1px solid rgba(255,144,32,0.5); border-radius: 4px;
+    font-family: inherit; font-size: 12px;
+  }
+  #empty-state button:hover { background: rgba(255,144,32,0.32); }
   .filter-check {
     display: flex; align-items: center; gap: 6px; margin-bottom: 3px;
     cursor: pointer;
@@ -615,7 +622,8 @@
 
     /* When toggled visible on mobile */
     #filter-panel.mobile-show {
-      display: block; top: 100px; right: 10px; left: 10px;
+      display: block; top: 100px; right: 10px; left: auto;
+      width: min(340px, calc(100vw - 20px));
       max-height: 60vh; overflow-y: auto;
     }
     #legend.mobile-show {
@@ -769,6 +777,7 @@
 <div id="empty-state">
   No buildings match the current filters
   <div class="empty-hint">Check the filter panel — a highlighted section has nothing selected</div>
+  <button id="empty-reset">Show all buildings</button>
 </div>
 
 <div id="legend"></div>
@@ -3209,6 +3218,11 @@ function setupControls() {
     const checked = e.target.classList.contains('all');
     if (!checked && !e.target.classList.contains('none')) return;
     ['era', 'use', 'height', 'boro'].forEach(s => selectSection(s, checked));
+  });
+
+  // One-click recovery from an all-filtered-out map
+  document.getElementById('empty-reset').addEventListener('click', () => {
+    ['era', 'use', 'height', 'boro'].forEach(s => selectSection(s, true));
   });
 
   // Info overlay — auto-show on load, fade after 5s
