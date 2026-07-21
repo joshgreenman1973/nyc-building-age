@@ -428,7 +428,7 @@
     position: absolute; top: 100px; left: 16px; bottom: 95px;
     background: rgba(10,10,10,0.88); border: 1px solid rgba(255,255,255,0.08);
     border-radius: 6px; padding: 12px 14px; z-index: 15;
-    font-size: 11px; min-width: 170px; overflow-y: auto;
+    font-size: 11px; min-width: 170px; max-width: 270px; overflow-y: auto;
   }
   #filter-panel .panel-title {
     font-weight: 600; font-size: 12px; margin-bottom: 10px;
@@ -1213,7 +1213,18 @@ function isFiltered(i) {
 }
 
 // Core color logic — operates on raw fields so both dots and polygons can call it.
+// When the ghost-buildings or city-owned-land overlay is on, regular buildings
+// dim (spotlight-style) so the overlay pops; the overlay layers themselves
+// don't go through this function and stay at full strength.
 function _getColorFromFields(yb, bc, nf, ly, dy, ry, cls, yr, filtered) {
+  const c = _rawColorFromFields(yb, bc, nf, ly, dy, ry, cls, yr, filtered);
+  if ((state.showGhosts || state.showCityLand) && c[3] > 110) {
+    return [(c[0] * 0.6) | 0, (c[1] * 0.6) | 0, (c[2] * 0.6) | 0, 110];
+  }
+  return c;
+}
+
+function _rawColorFromFields(yb, bc, nf, ly, dy, ry, cls, yr, filtered) {
   if (filtered) return [0,0,0,0];
   if (state.filters.highlightVacant && cls.charAt(0) === 'V') return [221, 228, 76, 210]; // chartreuse
 
@@ -1732,7 +1743,7 @@ function updateLayers() {
     pickingRadius: 3,
     onHover: onHover,
     updateTriggers: {
-      getFillColor: `${yr}_${state.colorMode}_${_filterVersion}_${SPOTLIGHT_KEYS.map(k => state.filters[k]).join('_')}`,
+      getFillColor: `${yr}_${state.colorMode}_${_filterVersion}_${state.showGhosts}_${state.showCityLand}_${SPOTLIGHT_KEYS.map(k => state.filters[k]).join('_')}`,
       getRadius: `${_filterVersion}`,
     },
   });
@@ -1790,7 +1801,7 @@ function updateLayers() {
     onTileLoad: () => kickDecks(),
     onViewportLoad: () => kickDecks(),
     updateTriggers: {
-      getFillColor: `${yr}_${state.colorMode}_${_filterVersion}_${SPOTLIGHT_KEYS.map(k => state.filters[k]).join('_')}`,
+      getFillColor: `${yr}_${state.colorMode}_${_filterVersion}_${state.showGhosts}_${state.showCityLand}_${SPOTLIGHT_KEYS.map(k => state.filters[k]).join('_')}`,
     },
   });
 
