@@ -4,7 +4,7 @@
 // release tag, so the CDN caches them aggressively.
 export const config = { runtime: 'edge' };
 
-import { PMTiles } from "../../_lib/pmtiles.js";
+import { PMTiles } from "../../../_lib/pmtiles.js";
 
 const ARCHIVE_URL =
   'https://github.com/joshgreenman1973/nyc-building-age/releases/download/tiles-v1/buildings.pmtiles';
