@@ -3097,10 +3097,17 @@ async function init() {
   }
 
   document.getElementById('loading-status').textContent = 'Creating overlay...';
+  // Both overlays and the hover dispatcher share one idea of the cursor:
+  // pointer over anything pickable on either canvas, the map's grab hand
+  // otherwise. Without this they overwrite each other and you get an arrow.
+  let _pickCursor = false;
+  const overlayCursor = ({ isDragging }) =>
+    isDragging ? 'grabbing' : (_pickCursor ? 'pointer' : 'grab');
+
   state.deckgl = new deck.MapboxOverlay({
     interleaved: true,
     layers: [],
-    getCursor: ({isDragging, isHovering}) => isDragging ? 'grabbing' : isHovering ? 'pointer' : 'default',
+    getCursor: overlayCursor,
   });
   state.map.addControl(state.deckgl);
   // Second overlay in non-interleaved mode for the footprint vector tiles and
@@ -3110,7 +3117,7 @@ async function init() {
   state.deckglTop = new deck.MapboxOverlay({
     interleaved: false,
     layers: [],
-    getCursor: ({isDragging, isHovering}) => isDragging ? 'grabbing' : isHovering ? 'pointer' : 'default',
+    getCursor: overlayCursor,
   });
   state.map.addControl(state.deckglTop);
   state.map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'bottom-right');
@@ -3118,12 +3125,64 @@ async function init() {
   // Force cursor back to default after any map interaction (drag, zoom)
   // Mapbox sets cursor asynchronously, so we need multiple frames to override
   const canvas = state.map.getCanvas();
-  function resetCursor() {
+
+  // Single hover dispatcher for both overlay canvases.
+  // The upper (non-interleaved) overlay's canvas carries pointer-events:none,
+  // so its deck instance never sees real mouse events and its layers' onHover
+  // never fires on its own. Rather than fight the canvas stacking, pick from
+  // both decks here — upper first, since it draws on top — and hand the result
+  // to whichever layer's own handler owns that tooltip.
+  function hoverHandlerFor(layer) {
+    let l = layer;
+    while (l) {
+      if (typeof l.props.onHover === 'function') return l.props.onHover;
+      l = l.parent;
+    }
+    return null;
+  }
+
+  let _hoverQueued = false, _hoverEvent = null;
+  function processHover() {
+    _hoverQueued = false;
+    const e = _hoverEvent;
+    if (!e) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left, y = e.clientY - rect.top;
+    const tooltip = document.getElementById('tooltip');
+
+    let pick = null;
+    for (const overlay of [state.deckglTop, state.deckgl]) {
+      const dk = overlay && overlay._deck;
+      if (!dk) continue;
+      try { pick = dk.pickObject({ x, y, radius: 2 }); } catch (err) { pick = null; }
+      if (pick) break;
+    }
+
+    _pickCursor = !!pick;
+    if (!pick) {
+      tooltip.style.display = 'none';
+      canvas.style.cursor = 'grab';
+      return;
+    }
+    const handler = hoverHandlerFor(pick.layer);
+    if (handler) handler({ ...pick, x, y });
+    canvas.style.cursor = 'pointer';
+  }
+
+  canvas.addEventListener('mousemove', (e) => {
+    _hoverEvent = e;
+    if (!_hoverQueued) { _hoverQueued = true; requestAnimationFrame(processHover); }
+  });
+  canvas.addEventListener('mouseleave', () => {
+    document.getElementById('tooltip').style.display = 'none';
+    _pickCursor = false;
     canvas.style.cursor = '';
-    requestAnimationFrame(() => {
-      canvas.style.cursor = '';
-      requestAnimationFrame(() => { canvas.style.cursor = ''; });
-    });
+  });
+
+  function resetCursor() {
+    const c = () => { canvas.style.cursor = _pickCursor ? 'pointer' : ''; };
+    c();
+    requestAnimationFrame(() => { c(); requestAnimationFrame(c); });
   }
   state.map.on('dragend', resetCursor);
   state.map.on('zoomend', resetCursor);
