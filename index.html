@@ -776,6 +776,12 @@
   <h3>Ghost Buildings</h3>
   <p>The optional <strong>Ghost buildings</strong> overlay draws the footprints of roughly 40,000 demolished buildings from the city's <a href="https://data.cityofnewyork.us/Housing-Development/Building-Footprints-Historic-/ipkp-snf6" target="_blank">Building Footprints Historic</a> dataset, the companion file to the Building Footprints data that supplies this map's building shapes. The overlay is tied to the timeline: each demolished building renders solid (colored by its construction year) while it stood, then fades to a pale outline once the timeline passes its demolition year. Records are deduplicated by building identification number, keeping the most recently edited footprint version. Where a record lacks a demolition year (fewer than 1 percent), the year it was last edited is used instead. <span style="color:#FF9020">Important caveat:</span> the city only began maintaining digital footprints in the mid-1990s, so this overlay captures demolitions from 1996 onward &mdash; it is a record of the recent past, not of everything New York City has ever torn down. Construction years are unknown for about a quarter of these buildings; they are shown as standing from the start of the timeline until their demolition.</p>
 
+  <h3>Zoning</h3>
+  <p>The optional <strong>Zoning</strong> reference layer draws the city's 5,416 primary zoning districts, from the New York City Department of City Planning's zoning districts layer (<code>nyzd</code>) &mdash; the same primary layer behind DCP's <a href="https://zola.planninglabs.nyc/" target="_blank">ZoLa</a> map, pulled from the department's live map service and retrieved July 22, 2026. The layer is continuous: every square foot of the city carries exactly one primary district, and it extends over water to the federal pierhead lines, which is why the tint runs past the shoreline.</p>
+  <p>Districts are grouped into five categories, using the same colors as the standalone <a href="https://joshgreenman1973.github.io/nyc-city-land-map/" target="_blank">city-owned land map</a>: residential, commercial, manufacturing, mixed use and mapped parkland. The 62 paired districts (<code>M1-2/R6A</code> and kin, created by rezonings like Greenpoint&ndash;Williamsburg and Gowanus) are recorded as manufacturing in the source data; because they permit housing alongside industry, this map gives them their own mixed-use category. Hovering any building shows the district it sits in; hovering open ground shows the district alone.</p>
+  <p><span style="color:#FF9020">Important:</span> zoning describes what may be built, not what is standing. Much of New York predates its current zoning and could not be rebuilt as it stands today &mdash; those buildings are legal but non-conforming. Reading the amber footprints against the zoning tint is a way to see that gap.</p>
+  <p>Two things ZoLa shows that this layer does not: <strong>commercial overlays</strong> (the C1 and C2 strips that put retail on residential avenues) and <strong>special purpose districts</strong>. Both are separate datasets. District boundaries here are simplified to roughly one-meter precision for file size, so they are not survey-accurate; check ZoLa or the zoning maps before relying on any specific lot line.</p>
+
   <h3>Known Limitations</h3>
   <p>• Construction dates before ~1950 are highly unreliable (see above).<br>
   • Demolition records only go back to approximately 2000 (DOB permits) and 1996 (ghost buildings overlay).<br>
@@ -886,6 +892,15 @@
   <div class="filter-section fs-overlay" style="border-left-color:rgba(100,160,255,0.4);">
     <div class="section-label">Reference</div>
     <div class="filter-check"><input type="checkbox" id="show-subway"><label for="show-subway" style="color:#6BAED6">Subway lines</label> <span id="subway-status" style="font-size:8px;color:#555;"></span></div>
+    <div class="filter-check"><input type="checkbox" id="show-zoning"><label for="show-zoning" style="color:#e8b53a">Zoning</label> <span id="zoning-status" style="font-size:8px;color:#555;"></span></div>
+    <div id="zoning-legend" style="display:none;margin:4px 0 2px 19px;font-size:9px;line-height:1.6;">
+      <div><span style="color:#e8b53a">&#9632;</span> Residential</div>
+      <div><span style="color:#d9534f">&#9632;</span> Commercial</div>
+      <div><span style="color:#7e6cb0">&#9632;</span> Manufacturing</div>
+      <div><span style="color:#be7898">&#9632;</span> Mixed use (MX)</div>
+      <div><span style="color:#4e9d6c">&#9632;</span> Mapped parkland</div>
+      <div style="color:#666;margin-top:3px;font-style:italic;">Every square foot of the city carries one primary zoning district (DCP, the layer behind <a href="https://zola.planninglabs.nyc/" target="_blank" style="color:#888;text-decoration:underline;">ZoLa</a>). Hover for the district code.</div>
+    </div>
   </div>
 </div>
 
@@ -1031,6 +1046,9 @@ const state = {
   stalledSites: null,
   subwayLoaded: false,
   showSubway: false,
+  zoning: null,
+  zoningLoaded: false,
+  showZoning: false,
   cityLand: null,
   cityLandLoaded: false,
   showCityLand: false,
@@ -1398,6 +1416,174 @@ function forceRepaint() {
 // the NYU Furman Center's interactive maps of city-owned land.
 // City-owned parcels: compact binary of 14,940 lot outlines + string tables,
 // built by data/build_cityland.py from the standalone nyc-city-land-map data.
+// Zoning districts (DCP nyzd) — polygon binary with interior rings preserved,
+// built by data/build_zoning.py. Categories match the standalone city-land map.
+const ZONING_BIN_URL = 'data/processed/zoning.bin';
+const ZONING_META_URL = 'data/processed/zoning_meta.json';
+const ZONING_CATS = [
+  { name: 'Residential',       color: [232, 181, 58] },
+  { name: 'Commercial',        color: [217, 83, 79] },
+  { name: 'Manufacturing',     color: [126, 108, 176] },
+  { name: 'Mapped parkland',   color: [78, 157, 108] },
+  { name: 'Battery Park City', color: [58, 166, 160] },
+  { name: 'Other',             color: [182, 178, 168] },
+  { name: 'Mixed use (MX)',    color: [190, 120, 152] },
+];
+const R_DENSITY = {
+  1: 'low density', 2: 'low density', 3: 'low density',
+  4: 'low-medium density', 5: 'low-medium density',
+  6: 'medium density', 7: 'medium density',
+  8: 'medium-high density', 9: 'high density', 10: 'high density',
+};
+// "R6A" -> "Residential - medium density"; "M1-1" -> "Manufacturing"
+function zoningLabel(code, cat) {
+  const base = ZONING_CATS[cat] ? ZONING_CATS[cat].name : 'Zoning district';
+  if (cat === 6) return base;
+  if (cat === 0) {
+    const m = String(code).match(/^R(\d+)/i);
+    const d = m && R_DENSITY[+m[1]];
+    if (d) return `${base} - ${d}`;
+  }
+  return base;
+}
+
+// Which zoning part contains this lon/lat? Even-odd ray casting over every
+// ring handles interior holes for free. Returns a part index, or -1.
+function zoningPartAt(lng, lat) {
+  const zo = state.zoning;
+  if (!zo) return -1;
+  const bb = zo.bbox;
+  for (let i = 0; i < zo.count; i++) {
+    const o = i * 4;
+    if (lng < bb[o] || lng > bb[o + 2] || lat < bb[o + 1] || lat > bb[o + 3]) continue;
+    let inside = false;
+    const rings = zo.polygons[i];
+    for (let r = 0; r < rings.length; r++) {
+      const ring = rings[r];
+      for (let a = 0, b = ring.length - 1; a < ring.length; b = a++) {
+        const xa = ring[a][0], ya = ring[a][1], xb = ring[b][0], yb = ring[b][1];
+        if ((ya > lat) !== (yb > lat) &&
+            lng < ((xb - xa) * (lat - ya)) / (yb - ya) + xa) {
+          inside = !inside;
+        }
+      }
+    }
+    if (inside) return i;
+  }
+  return -1;
+}
+
+// Tooltip row describing the zoning at a point; '' when zoning is off or unknown.
+function zoningTooltipRow(lng, lat) {
+  if (!state.showZoning || !state.zoningLoaded || lng == null) return '';
+  const i = zoningPartAt(lng, lat);
+  if (i < 0) return '';
+  const zo = state.zoning;
+  const code = zo.meta.zd[zo.zdIdx[i]] || '';
+  const c = ZONING_CATS[zo.cat[i]].color;
+  return `<div class="tt-row"><span>Zoning</span><span style="color:rgb(${c.join(',')})">${code}${code ? ' - ' : ''}${zoningLabel(code, zo.cat[i])}</span></div>`;
+}
+
+async function loadZoningData() {
+  const statusEl = document.getElementById('zoning-status');
+  try {
+    if (statusEl) statusEl.textContent = 'loading...';
+    const [binResp, metaResp] = await Promise.all([fetch(ZONING_BIN_URL), fetch(ZONING_META_URL)]);
+    if (!binResp.ok) throw new Error(`bin HTTP ${binResp.status}`);
+    if (!metaResp.ok) throw new Error(`meta HTTP ${metaResp.status}`);
+    const buf = await binResp.arrayBuffer();
+    const meta = await metaResp.json();
+    const view = new DataView(buf);
+
+    const partCount = view.getUint32(0, true);
+    const ringCount = view.getUint32(4, true);
+    const vertexCount = view.getUint32(8, true);
+    const PART_BYTES = 8, RING_BYTES = 8;
+    const partsStart = 12;
+    const ringsStart = partsStart + partCount * PART_BYTES;
+    const vertsStart = ringsStart + ringCount * RING_BYTES;
+    if (vertsStart + vertexCount * 4 > buf.byteLength) throw new Error('zoning.bin truncated');
+
+    const zdIdx = new Uint16Array(partCount);
+    const cat = new Uint8Array(partCount);
+    const ringN = new Uint8Array(partCount);
+    const firstRing = new Uint32Array(partCount);
+    for (let i = 0; i < partCount; i++) {
+      const off = partsStart + i * PART_BYTES;
+      zdIdx[i] = view.getUint16(off, true);
+      cat[i] = view.getUint8(off + 2);
+      ringN[i] = view.getUint8(off + 3);
+      firstRing[i] = view.getUint32(off + 4, true);
+    }
+
+    const ringOff = new Uint32Array(ringCount);
+    const ringLen = new Uint16Array(ringCount);
+    for (let r = 0; r < ringCount; r++) {
+      const off = ringsStart + r * RING_BYTES;
+      ringOff[r] = view.getUint32(off, true);
+      ringLen[r] = view.getUint16(off + 4, true);
+    }
+
+    const verts = new Float32Array(vertexCount * 2);
+    const lonRange = POLY_LON_MAX - POLY_LON_MIN;
+    const latRange = POLY_LAT_MAX - POLY_LAT_MIN;
+    for (let v = 0; v < vertexCount; v++) {
+      const off = vertsStart + v * 4;
+      verts[v * 2] = POLY_LON_MIN + (view.getUint16(off, true) / 65535) * lonRange;
+      verts[v * 2 + 1] = POLY_LAT_MIN + (view.getUint16(off + 2, true) / 65535) * latRange;
+    }
+
+    // Pre-build ring arrays once; deck.gl reads them every color/geometry pass.
+    const polygons = new Array(partCount);
+    for (let i = 0; i < partCount; i++) {
+      const rings = new Array(ringN[i]);
+      for (let r = 0; r < ringN[i]; r++) {
+        const ri = firstRing[i] + r;
+        const n = ringLen[ri], o = ringOff[ri];
+        const ring = new Array(n);
+        for (let v = 0; v < n; v++) ring[v] = [verts[(o + v) * 2], verts[(o + v) * 2 + 1]];
+        rings[r] = ring;
+      }
+      polygons[i] = rings;
+    }
+
+    // Per-part bounding boxes so a hover can find its district without
+    // testing every polygon in the city.
+    const bbox = new Float32Array(partCount * 4);
+    for (let i = 0; i < partCount; i++) {
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      const outer = polygons[i][0];
+      for (let v = 0; v < outer.length; v++) {
+        const x = outer[v][0], y = outer[v][1];
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+      bbox[i * 4] = minX; bbox[i * 4 + 1] = minY;
+      bbox[i * 4 + 2] = maxX; bbox[i * 4 + 3] = maxY;
+    }
+
+    // Paired districts (M1-2/R6A and kin) are mapped as manufacturing in the
+    // source but are really mixed-use; give them their own category to read.
+    const dcat = new Uint8Array(partCount);
+    for (let i = 0; i < partCount; i++) {
+      dcat[i] = (meta.zd[zdIdx[i]] || '').includes('/') ? 6 : cat[i];
+    }
+
+    state.zoning = {
+      count: partCount, zdIdx, cat: dcat, polygons, meta, bbox,
+      indices: Array.from({ length: partCount }, (_, i) => i),
+    };
+    state.zoningLoaded = true;
+    if (statusEl) statusEl.textContent = `(${meta.zd.length} districts)`;
+    console.log(`Loaded ${partCount} zoning parts (${(buf.byteLength / 1024 / 1024).toFixed(1)} MB)`);
+  } catch (e) {
+    if (statusEl) statusEl.textContent = 'failed';
+    console.error('Zoning load failed:', e);
+  }
+}
+
 const CITYLAND_BIN_URL = 'data/processed/cityland.bin';
 const CITYLAND_META_URL = 'data/processed/cityland_meta.json';
 const CITYLAND_CATS = {
@@ -1840,6 +2026,51 @@ function updateLayers() {
 
   // Base canvas (interleaved: labels above); top canvas (footprints + overlays).
   const layers = [parksLayer, layer];
+
+  // Zoning districts — a translucent wash beneath the parks and buildings, so
+  // you read what is built on top of what is allowed. Primitive layers on the
+  // interleaved canvas (like parks), which keeps street labels above them.
+  if (state.showZoning && state.zoningLoaded && state.zoning) {
+    const zo = state.zoning;
+    layers.unshift(new deck.PathLayer({
+      id: 'zoning-lines',
+      data: zo.indices,
+      getPath: i => zo.polygons[i][0],
+      getColor: i => {
+        const c = ZONING_CATS[zo.cat[i]].color;
+        return [c[0], c[1], c[2], 170];
+      },
+      getWidth: 1, widthUnits: 'pixels', widthMinPixels: 1,
+      pickable: false,
+    }));
+    layers.unshift(new deck.SolidPolygonLayer({
+      id: 'zoning-fill',
+      data: zo.indices,
+      getPolygon: i => zo.polygons[i],
+      getFillColor: i => {
+        const c = ZONING_CATS[zo.cat[i]].color;
+        return [c[0], c[1], c[2], 78];
+      },
+      pickable: true,
+      onHover: info => {
+        const tt = document.getElementById('tooltip');
+        if (info.index == null || info.index < 0) { tt.style.display = 'none'; return; }
+        // Buildings, ghosts and city parcels live on the upper canvas and own
+        // the cursor when they are under it; their tooltips carry zoning too.
+        const topDeck = state.deckglTop && state.deckglTop._deck;
+        if (topDeck && topDeck.pickObject({ x: info.x, y: info.y })) return;
+        const i = info.index;
+        const code = zo.meta.zd[zo.zdIdx[i]] || '';
+        const c = ZONING_CATS[zo.cat[i]].color;
+        tt.innerHTML = `<div class="tt-address">${code || 'Zoning district'}</div>
+          <div class="tt-row"><span>Zoning</span><span style="color:rgb(${c.join(',')})">${zoningLabel(code, zo.cat[i])}</span></div>
+          <div style="font-size:8px;color:#666;margin-top:4px;">NYC Dept. of City Planning zoning districts</div>`;
+        tt.style.display = 'block';
+        tt.style.left = (info.x + 12) + 'px';
+        tt.style.top = (info.y + 12) + 'px';
+      },
+    }));
+  }
   const topLayers = [polyLayer];
 
   // Overlay dot layers (construction, stalled) — glow ring + core dot + tooltip
@@ -1988,6 +2219,7 @@ function updateLayers() {
           <div class="tt-row"><span>Built</span><span>${built}</span></div>
           ${standing ? `<div class="tt-row"><span>Demolished</span><span>${g.dy[i]}</span></div>` : ''}
           ${boro ? `<div class="tt-row"><span>Borough</span><span>${boro}</span></div>` : ''}
+          ${info.coordinate ? zoningTooltipRow(info.coordinate[0], info.coordinate[1]) : ''}
           <div style="font-size:8px;color:#666;margin-top:4px;">Source: NYC Building Footprints Historic</div>`;
         tt.style.display = 'block';
         tt.style.left = (info.x + 12) + 'px';
@@ -2255,6 +2487,7 @@ function onPolyHover(info) {
 
   const boroughs = ['','Manhattan','Bronx','Brooklyn','Queens','Staten Island'];
   if (bc > 0 && bc <= 5) html += `<div class="tt-row"><span>Borough</span><span>${boroughs[bc]}</span></div>`;
+  if (info.coordinate) html += zoningTooltipRow(info.coordinate[0], info.coordinate[1]);
 
   tooltip.innerHTML = html;
   tooltip.style.display = 'block';
@@ -3221,6 +3454,13 @@ function setupControls() {
   });
 
   // Subway overlay toggle
+  document.getElementById('show-zoning').addEventListener('change', async (e) => {
+    state.showZoning = e.target.checked;
+    document.getElementById('zoning-legend').style.display = e.target.checked ? 'block' : 'none';
+    if (e.target.checked && !state.zoningLoaded) await loadZoningData();
+    refreshMap();
+  });
+
   document.getElementById('show-subway').addEventListener('change', async (e) => {
     state.showSubway = e.target.checked;
     if (e.target.checked && !state.subwayLoaded) {
