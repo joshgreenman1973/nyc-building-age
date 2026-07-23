@@ -778,7 +778,7 @@
 
   <h3>Zoning</h3>
   <p>The optional <strong>Zoning</strong> reference layer draws the city's 5,416 primary zoning districts, from the New York City Department of City Planning's zoning districts layer (<code>nyzd</code>) &mdash; the same primary layer behind DCP's <a href="https://zola.planninglabs.nyc/" target="_blank">ZoLa</a> map, pulled from the department's live map service and retrieved July 22, 2026. The layer is continuous: every square foot of the city carries exactly one primary district, and it extends over water to the federal pierhead lines, which is why the tint runs past the shoreline.</p>
-  <p>Districts are grouped into five categories, using the same colors as the standalone <a href="https://joshgreenman1973.github.io/nyc-city-land-map/" target="_blank">city-owned land map</a>: residential, commercial, manufacturing, mixed use and mapped parkland. The 62 paired districts (<code>M1-2/R6A</code> and kin, created by rezonings like Greenpoint&ndash;Williamsburg and Gowanus) are recorded as manufacturing in the source data; because they permit housing alongside industry, this map gives them their own mixed-use category. Hovering any building shows the district it sits in; hovering open ground shows the district alone.</p>
+  <p>Districts are grouped into five categories: residential, commercial, manufacturing, mixed use and mapped parkland. The colors here are all cool &mdash; blues, teals and violets &mdash; rather than the warm zoning palette used on the standalone <a href="https://joshgreenman1973.github.io/nyc-city-land-map/" target="_blank">city-owned land map</a>, because on this map the buildings themselves are amber and a warm zoning wash underneath them is unreadable. The 62 paired districts (<code>M1-2/R6A</code> and kin, created by rezonings like Greenpoint&ndash;Williamsburg and Gowanus) are recorded as manufacturing in the source data; because they permit housing alongside industry, this map gives them their own mixed-use category. Hovering any building shows the district it sits in; hovering open ground shows the district alone.</p>
   <p><span style="color:#FF9020">Important:</span> zoning describes what may be built, not what is standing. Much of New York predates its current zoning and could not be rebuilt as it stands today &mdash; those buildings are legal but non-conforming. Reading the amber footprints against the zoning tint is a way to see that gap.</p>
   <p>Two things ZoLa shows that this layer does not: <strong>commercial overlays</strong> (the C1 and C2 strips that put retail on residential avenues) and <strong>special purpose districts</strong>. Both are separate datasets. District boundaries here are simplified to roughly one-meter precision for file size, so they are not survey-accurate; check ZoLa or the zoning maps before relying on any specific lot line.</p>
 
@@ -892,13 +892,13 @@
   <div class="filter-section fs-overlay" style="border-left-color:rgba(100,160,255,0.4);">
     <div class="section-label">Reference</div>
     <div class="filter-check"><input type="checkbox" id="show-subway"><label for="show-subway" style="color:#6BAED6">Subway lines</label> <span id="subway-status" style="font-size:8px;color:#555;"></span></div>
-    <div class="filter-check"><input type="checkbox" id="show-zoning"><label for="show-zoning" style="color:#e8b53a">Zoning</label> <span id="zoning-status" style="font-size:8px;color:#555;"></span></div>
+    <div class="filter-check"><input type="checkbox" id="show-zoning"><label for="show-zoning" style="color:#9268d0">Zoning</label> <span id="zoning-status" style="font-size:8px;color:#555;"></span></div>
     <div id="zoning-legend" style="display:none;margin:4px 0 2px 19px;font-size:9px;line-height:1.6;">
-      <div><span style="color:#e8b53a">&#9632;</span> Residential</div>
-      <div><span style="color:#d9534f">&#9632;</span> Commercial</div>
-      <div><span style="color:#7e6cb0">&#9632;</span> Manufacturing</div>
-      <div><span style="color:#be7898">&#9632;</span> Mixed use (MX)</div>
-      <div><span style="color:#4e9d6c">&#9632;</span> Mapped parkland</div>
+      <div><span style="color:#5684c4">&#9632;</span> Residential</div>
+      <div><span style="color:#38b2ac">&#9632;</span> Commercial</div>
+      <div><span style="color:#9268d0">&#9632;</span> Manufacturing</div>
+      <div><span style="color:#ce62a8">&#9632;</span> Mixed use (MX)</div>
+      <div><span style="color:#489668">&#9632;</span> Mapped parkland</div>
       <div style="color:#666;margin-top:3px;font-style:italic;">Every square foot of the city carries one primary zoning district (DCP, the layer behind <a href="https://zola.planninglabs.nyc/" target="_blank" style="color:#888;text-decoration:underline;">ZoLa</a>). Hover for the district code.</div>
     </div>
   </div>
@@ -1420,14 +1420,16 @@ function forceRepaint() {
 // built by data/build_zoning.py. Categories match the standalone city-land map.
 const ZONING_BIN_URL = 'data/processed/zoning.bin';
 const ZONING_META_URL = 'data/processed/zoning_meta.json';
+// Deliberately all-cool: the buildings own every warm hue on this map, so
+// zoning stays in blues, teals and violets and the two never compete.
 const ZONING_CATS = [
-  { name: 'Residential',       color: [232, 181, 58] },
-  { name: 'Commercial',        color: [217, 83, 79] },
-  { name: 'Manufacturing',     color: [126, 108, 176] },
-  { name: 'Mapped parkland',   color: [78, 157, 108] },
-  { name: 'Battery Park City', color: [58, 166, 160] },
-  { name: 'Other',             color: [182, 178, 168] },
-  { name: 'Mixed use (MX)',    color: [190, 120, 152] },
+  { name: 'Residential',       color: [86, 132, 196] },
+  { name: 'Commercial',        color: [56, 178, 172] },
+  { name: 'Manufacturing',     color: [146, 104, 208] },
+  { name: 'Mapped parkland',   color: [72, 150, 104] },
+  { name: 'Battery Park City', color: [90, 185, 205] },
+  { name: 'Other',             color: [150, 155, 170] },
+  { name: 'Mixed use (MX)',    color: [206, 98, 168] },
 ];
 const R_DENSITY = {
   1: 'low density', 2: 'low density', 3: 'low density',
@@ -2038,9 +2040,9 @@ function updateLayers() {
       getPath: i => zo.polygons[i][0],
       getColor: i => {
         const c = ZONING_CATS[zo.cat[i]].color;
-        return [c[0], c[1], c[2], 170];
+        return [c[0], c[1], c[2], 200];
       },
-      getWidth: 1, widthUnits: 'pixels', widthMinPixels: 1,
+      getWidth: 1.2, widthUnits: 'pixels', widthMinPixels: 1,
       pickable: false,
     }));
     layers.unshift(new deck.SolidPolygonLayer({
