@@ -796,6 +796,10 @@
   <p>The <strong>Architects &amp; styles</strong> spotlight draws the 38,105 buildings in the Landmarks Preservation Commission's <a href="https://data.cityofnewyork.us/Housing-Development/Individual-Landmark-and-Historic-District-Building-/gpmc-yuvp" target="_blank">Individual Landmark and Historic District Building Database</a> &mdash; every individual landmark plus every building inside a historic district. For each, the LPC recorded the architect or builder, the architectural style, the primary material, the original use and a construction date; all of that appears on hover, and is appended to the ordinary building tooltip when the layer is on.</p>
   <p>This is the only citywide source that names architects, and its limits should be plain: it covers roughly <strong>4 percent of the city's buildings</strong> &mdash; the designated ones &mdash; and for about a quarter of those the LPC recorded the architect as "not determined," which this map shows rather than hides. It names 4,689 distinct architects; the most prolific are not the famous ones but the rowhouse and apartment-house firms &mdash; Louis Berger &amp; Company, Axel Hedman, Benjamin Driesler, Thom &amp; Wilson, George F. Pelham. Buildings are joined by exact point-in-polygon against the LPC's own footprints, not by address matching. Dates here are the LPC's research, which is generally better than the permit-derived dates used elsewhere on this map, and often approximate ("c. 1912").</p>
 
+  <h3>What the City Calls It</h3>
+  <p>The <strong>City calls it</strong> line on the building tooltip comes from <a href="https://data.cityofnewyork.us/dataset/CommonPlace/t95h-5fsr" target="_blank">CommonPlace</a>, published by the Office of Technology and Innovation. CommonPlace is the gazetteer behind Geosupport, the city's geocoder &mdash; the file that lets a city system resolve a name like "PS 61" to a building, a street segment and a coordinate. Its stated purpose, per the agency's own data dictionary, is to aid dispatch, so it covers what agencies get called out to rather than what is notable: a Home Depot and a park comfort station are both in it, most storefronts are not, and Yankee Stadium is missing entirely. Roughly <strong>1 percent of the city's buildings carry a name here</strong> &mdash; but they are disproportionately the ones worth naming, which is why 338 5 Avenue can tell you it is the Empire State Building.</p>
+  <p>Three things to know about how it is used. PLUTO tax lots key on BBL and CommonPlace keys on BIN, so there is no join between them &mdash; names are matched to the lot under the cursor by proximity, within 45 meters, which means a name can occasionally land on a neighbor. Where several names sit on one building, the source's own complex-versus-constituent flag decides: hovering Grand Central returns the terminal rather than the gift shop two meters closer. And NYPD-sourced entries other than public-safety sites are withheld, because the data dictionary states that "NYPD common places, with the exception of precinct locations, cannot be distributed" &mdash; 1,641 of 20,466 rows, most of them ordinary places that entered through the Sprint and PCAD dispatch systems. Categories shown are the city's own <code>FACILITY_TYPE</code> codes; the separate <code>FACILITY_DOMAINS</code> column is ignored because it carries 18 values that the published 13-row table does not describe.</p>
+
   <h3>Historic Districts</h3>
   <p>The <strong>Historic districts</strong> reference layer outlines all 159 historic districts and district extensions, from Brooklyn Heights in 1965 to the present. Hovering gives the designation date, borough, acreage and LPC number. The data comes from the companion project <a href="https://joshgreenman1973.github.io/nyc-historic-districts/" target="_blank">The landmarking of New York</a>, which animates the same districts by designation year. This closes a gap noted below: the Landmarks spotlight covers individually designated buildings only, while district designation protects far more buildings than individual designation ever has.</p>
 
@@ -1102,6 +1106,8 @@ const state = {
   ghosts: null,        // parsed ghosts.bin typed arrays
   ghostsLoaded: false,
   showGhosts: false,
+  commonplace: null,   // CommonPlace gazetteer + its lookup grid
+  commonplaceLoaded: false,
   // Story
   story: { active: false, id: null, stepIndex: 0, timer: null, savedState: null },
 };
@@ -1557,6 +1563,88 @@ function zoningTooltipRow(lng, lat) {
   const c = ZONING_CATS[zo.cat[i]].color;
   return `<div class="tt-row"><span>Zoning</span><span style="color:rgb(${c.join(',')})">${code}${code ? ' - ' : ''}${zoningLabel(code, zo.cat[i])}</span></div>`;
 }
+
+// ============================================================
+// COMMONPLACE — the city's own name for a building
+// ============================================================
+// CommonPlace (NYC Open Data t95h-5fsr) is the gazetteer behind Geosupport,
+// the city's geocoder: the file that resolves a name like "PS 61" to a
+// building and a coordinate. Only about 1 percent of the city's buildings
+// carry a name in it, but they are disproportionately the ones worth naming.
+//
+// PLUTO lots key on BBL and CommonPlace keys on BIN, so there is no join —
+// names are matched to whatever the cursor is over by proximity. Points are
+// bucketed into a coarse grid at load so a hover checks nine cells, not 19,000
+// points.
+const COMMONPLACE_URL = 'data/processed/commonplace.json';
+const CP_CELL = 0.002;                 // ~200m; comfortably larger than the match radius
+const CP_MATCH_M = 45;                 // a name has to be on the building, not down the block
+
+function cpKey(lat, lng) {
+  return Math.round(lat / CP_CELL) + ':' + Math.round(lng / CP_CELL);
+}
+
+async function loadCommonPlaceData() {
+  try {
+    const resp = await fetch(COMMONPLACE_URL);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const d = await resp.json();
+    const grid = new Map();
+    d.pts.forEach((p, i) => {
+      const k = cpKey(p[0], p[1]);
+      const cell = grid.get(k);
+      if (cell) cell.push(i); else grid.set(k, [i]);
+    });
+    d.grid = grid;
+    state.commonplace = d;
+    state.commonplaceLoaded = true;
+    console.log(`Loaded ${d.pts.length} named city places (CommonPlace, source updated ${d.modified})`);
+  } catch (e) {
+    // A naming layer is a nicety; never let it break the map.
+    console.warn('CommonPlace unavailable:', e.message);
+  }
+}
+
+// Best named place within CP_MATCH_M meters, or null.
+//
+// "Best" is not simply nearest. Several names often sit on one building — a
+// terminal and the shop inside it — so the source's own complex/constituent
+// flag adjusts the effective distance: a complex is allowed to win from
+// CP_COMPLEX_BONUS meters further out, and a constituent part is pushed back a
+// little. Hovering Grand Central returns the terminal (24m, flagged a complex)
+// over the gift shop two meters closer, while a clearly nearer unrelated
+// building still wins on its own merits.
+const CP_COMPLEX_BONUS = 30;
+const CP_PART_PENALTY = 10;
+function commonPlaceAt(lng, lat) {
+  const d = state.commonplace;
+  if (!d || lng == null || lat == null) return null;
+  const ci = Math.round(lat / CP_CELL), cj = Math.round(lng / CP_CELL);
+  const mPerLat = 111320, mPerLng = 111320 * Math.cos(lat * Math.PI / 180);
+  let best = null, bestD = 0, bestScore = Infinity;
+  for (let a = -1; a <= 1; a++) {
+    for (let b = -1; b <= 1; b++) {
+      const cell = d.grid.get((ci + a) + ':' + (cj + b));
+      if (!cell) continue;
+      for (const idx of cell) {
+        const p = d.pts[idx];
+        const dy = (p[0] - lat) * mPerLat, dx = (p[1] - lng) * mPerLng;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > CP_MATCH_M) continue;
+        const score = dist - (p[4] === 0 ? CP_COMPLEX_BONUS : 0) + (p[4] === 2 ? CP_PART_PENALTY : 0);
+        if (score < bestScore) { bestScore = score; bestD = dist; best = p; }
+      }
+    }
+  }
+  return best ? { name: best[2], type: d.types[best[3]], dist: bestD } : null;
+}
+
+function commonPlaceTooltipRow(lng, lat) {
+  const p = commonPlaceAt(lng, lat);
+  if (!p) return '';
+  return `<div class="tt-row"><span>City calls it</span><span style="color:rgb(${CP_COLOR.join(',')})">${p.name}</span></div>`;
+}
+const CP_COLOR = [242, 201, 76];
 
 // Historic districts, from the standalone "landmarking of New York" project.
 const HD_URL = 'data/processed/historic_districts.json';
@@ -2897,6 +2985,7 @@ function onHover(info) {
   if (bc > 0 && bc <= 5) html += `<div class="tt-row"><span>Borough</span><span>${boroughs[bc]}</span></div>`;
   const lngLat = info.coordinate || [state.positions[i * 2], state.positions[i * 2 + 1]];
   if (lngLat) {
+    html += commonPlaceTooltipRow(lngLat[0], lngLat[1]);
     html += zoningTooltipRow(lngLat[0], lngLat[1]);
     html += architectTooltipRows(lngLat[0], lngLat[1]);
   }
@@ -3650,6 +3739,7 @@ async function init() {
 
   // Lazy-load addresses in background (not critical for initial render)
   loadAddresses();
+  loadCommonPlaceData();
 
   updateLegend();
 

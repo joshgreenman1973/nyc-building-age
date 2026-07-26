@@ -1,0 +1,60 @@
+name: CommonPlace data refresh
+
+# Monthly rebuild of data/processed/commonplace.json from CommonPlace
+# (t95h-5fsr), the gazetteer behind the city's geocoder. The source is
+# refreshed weekly by the Office of Technology and Innovation; monthly is
+# plenty for a naming layer and keeps the diff noise down.
+#
+# This is deliberately independent of data/refresh_all.sh, which re-downloads
+# PLUTO and rebuilds the tile archive and takes about an hour. CommonPlace is a
+# ~1MB sidecar with no dependency on the building pipeline, so it refreshes on
+# its own and a push here triggers an ordinary Vercel deploy.
+#
+# The build script fails loudly on an empty or suspiciously short response
+# rather than writing a truncated file, so a bad upstream day leaves the last
+# good build in place and surfaces as a failed run (GitHub emails Josh).
+
+on:
+  schedule:
+    - cron: '45 11 2 * *'    # 2nd of the month, ~06:45 ET
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Rebuild CommonPlace data
+        run: python3 data/build_commonplace.py
+      - name: Commit if the places changed
+        run: |
+          git config user.name "Josh Greenman"
+          git config user.email "josh.greenman@gmail.com"
+          if git diff --quiet -- data/processed/commonplace.json; then
+            echo "no change"; exit 0
+          fi
+          # A same-data rebuild only moves the "built" date — not worth a deploy.
+          python3 - <<'PY'
+          import json, subprocess
+          new = json.load(open('data/processed/commonplace.json'))
+          old = json.loads(subprocess.run(
+              ['git', 'show', 'HEAD:data/processed/commonplace.json'],
+              capture_output=True, text=True).stdout or '{}')
+          same = all(new.get(k) == old.get(k) for k in ('pts', 'types', 'counts'))
+          open('.cp_changed', 'w').write('0' if same else str(len(new['pts'])))
+          PY
+          n=$(cat .cp_changed); rm -f .cp_changed
+          if [ "$n" = "0" ]; then
+            echo "only the build date moved; not committing"
+            git checkout -- data/processed/commonplace.json
+            exit 0
+          fi
+          git add data/processed/commonplace.json
+          git commit -m "Refresh CommonPlace named places ($n places)"
+          git push origin HEAD:main
