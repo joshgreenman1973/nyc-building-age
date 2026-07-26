@@ -1685,8 +1685,14 @@ function architectRecordAt(lng, lat) {
 // Extra tooltip rows for a building the LPC has documented; '' otherwise.
 function architectTooltipRows(lng, lat) {
   if (!state.showArchitects || !state.architectsLoaded || lng == null) return '';
-  const i = architectRecordAt(lng, lat);
-  if (i < 0) return '';
+  return architectRowsForIndex(architectRecordAt(lng, lat));
+}
+
+// Rows for a known record. Used directly when the record is already picked —
+// a centroid can fall outside its own polygon (long shapes like bridges), so
+// never round-trip a picked record through the spatial lookup.
+function architectRowsForIndex(i) {
+  if (i == null || i < 0 || !state.architectsLoaded) return '';
   const a = state.architects, m = a.meta;
   const rows = [];
   const arch = m.arch[a.archIdx[i]];
@@ -1697,7 +1703,8 @@ function architectTooltipRows(lng, lat) {
   const mat = m.mat[a.matIdx[i]];
   const date = m.dates[i];
   const nm = m.names[i];
-  if (nm) rows.push(`<div class="tt-row"><span>Known as</span><span>${nm}</span></div>`);
+  // Some LPC name fields hold placeholder digits rather than a building name.
+  if (nm && !/^\d+$/.test(nm)) rows.push(`<div class="tt-row"><span>Known as</span><span>${nm}</span></div>`);
   rows.push(`<div class="tt-row"><span>Architect</span><span style="color:rgb(${ARCHITECT_COLOR.join(',')})">${arch || 'Not determined'}</span></div>`);
   if (alt) rows.push(`<div class="tt-row"><span>Altered by</span><span>${alt}</span></div>`);
   if (style) rows.push(`<div class="tt-row"><span>Style</span><span>${style}</span></div>`);
@@ -2534,21 +2541,10 @@ function updateLayers() {
       getLineColor: [ARCHITECT_COLOR[0], ARCHITECT_COLOR[1], ARCHITECT_COLOR[2], 220],
       stroked: true, filled: true,
       lineWidthUnits: 'pixels', getLineWidth: 1,
-      pickable: true,
-      onHover: info => {
-        const tt = document.getElementById('tooltip');
-        if (info.index == null || info.index < 0) { tt.style.display = 'none'; return; }
-        const i = info.index, m = a.meta;
-        const c = a.polygons[i];
-        const cx = c.reduce((s2, p) => s2 + p[0], 0) / c.length;
-        const cy = c.reduce((s2, p) => s2 + p[1], 0) / c.length;
-        tt.innerHTML = `<div class="tt-address">${m.names[i] || 'Designated building'}</div>` +
-          architectTooltipRows(cx, cy) +
-          `<div style="font-size:8px;color:#666;margin-top:4px;">Source: NYC Landmarks Preservation Commission</div>`;
-        tt.style.display = 'block';
-        tt.style.left = (info.x + 12) + 'px';
-        tt.style.top = (info.y + 12) + 'px';
-      },
+      // Highlight only. The building beneath stays hoverable and its tooltip
+      // carries the LPC rows, so one tooltip holds address, age, height,
+      // zoning and architect rather than two competing ones.
+      pickable: false,
     }));
   }
 
@@ -2899,6 +2895,11 @@ function onHover(info) {
   const boroughs = ['','Manhattan','Bronx','Brooklyn','Queens','Staten Island'];
   const bc = state.boroCode[i];
   if (bc > 0 && bc <= 5) html += `<div class="tt-row"><span>Borough</span><span>${boroughs[bc]}</span></div>`;
+  const lngLat = info.coordinate || [state.positions[i * 2], state.positions[i * 2 + 1]];
+  if (lngLat) {
+    html += zoningTooltipRow(lngLat[0], lngLat[1]);
+    html += architectTooltipRows(lngLat[0], lngLat[1]);
+  }
 
   tooltip.innerHTML = html;
   tooltip.style.display = 'block';
@@ -3521,24 +3522,40 @@ async function init() {
     return null;
   }
 
-  let _hoverQueued = false, _hoverEvent = null;
-  function processHover() {
-    _hoverQueued = false;
-    const e = _hoverEvent;
-    if (!e) return;
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left, y = e.clientY - rect.top;
-    const tooltip = document.getElementById('tooltip');
+  // Pick synchronously on the event. Deferring to requestAnimationFrame meant
+  // the periodic redraw could invalidate deck's picking buffer before the pick
+  // ran, and every hover came back empty. Throttled by time instead.
+  // Deck's picking buffer is only valid for a rendered frame, and the two
+  // overlays render on different schedules — a pick taken synchronously can
+  // miss the tile layer, while one deferred to the next frame can miss layers
+  // the periodic redraw just invalidated. So: try immediately, and if nothing
+  // is found, try once more on the next frame before declaring a miss.
+  let _lastHover = 0;
 
-    let pick = null;
+  function pickAt(x, y) {
     for (const overlay of [state.deckglTop, state.deckgl]) {
       const dk = overlay && overlay._deck;
       if (!dk) continue;
-      try { pick = dk.pickObject({ x, y, radius: 2 }); } catch (err) { pick = null; }
+      let pick = null;
+      try {
+        pick = dk.pickObject({ x, y, radius: 2 });
+        // deck can only pick against a rendered frame. Under MapboxOverlay the
+        // two canvases render on their own schedules, so a pick often lands
+        // when the buffer is stale and returns nothing. Forcing a redraw and
+        // asking again makes it deterministic instead of a race.
+        if (!pick) {
+          dk.redraw(true);
+          pick = dk.pickObject({ x, y, radius: 2 });
+        }
+      } catch (err) { pick = null; }
       if (!isPickVisible(pick)) pick = null;
-      if (pick) break;
+      if (pick) return pick;
     }
+    return null;
+  }
 
+  function applyPick(pick, x, y) {
+    const tooltip = document.getElementById('tooltip');
     _pickCursor = !!pick;
     if (!pick) {
       tooltip.style.display = 'none';
@@ -3550,10 +3567,18 @@ async function init() {
     canvas.style.cursor = 'pointer';
   }
 
-  canvas.addEventListener('mousemove', (e) => {
-    _hoverEvent = e;
-    if (!_hoverQueued) { _hoverQueued = true; requestAnimationFrame(processHover); }
-  });
+  function processHover(e) {
+    if (!e) return;
+    const now = performance.now();
+    if (now - _lastHover < 16) return;
+    _lastHover = now;
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left, y = e.clientY - rect.top;
+
+    applyPick(pickAt(x, y), x, y);
+  }
+
+  canvas.addEventListener('mousemove', processHover);
   canvas.addEventListener('mouseleave', () => {
     document.getElementById('tooltip').style.display = 'none';
     _pickCursor = false;
