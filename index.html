@@ -792,11 +792,18 @@
   <h3>Future Buildings</h3>
   <p>The <strong>Future buildings</strong> spotlight is the mirror image of Ghost buildings: rather than what has been demolished, it shows what the city expects to gain and lose next. It draws 468 structures coded as under construction, permitted-but-unbuilt (the city maps a placeholder for these), or marked for construction; and 67 buildings marked for demolition. <span style="color:#FF9020">Caveat:</span> these are administrative records, not guarantees &mdash; a permitted building may never rise, and a building marked for demolition may be reprieved. A further 61 records the city labels "investigate construction" or "investigate demolition," meaning it is not certain the change occurred, are excluded here rather than presented as fact. Because these records track the footprints file, they update weekly.</p>
 
+  <h3>Architects &amp; Styles</h3>
+  <p>The <strong>Architects &amp; styles</strong> spotlight draws the 38,105 buildings in the Landmarks Preservation Commission's <a href="https://data.cityofnewyork.us/Housing-Development/Individual-Landmark-and-Historic-District-Building-/gpmc-yuvp" target="_blank">Individual Landmark and Historic District Building Database</a> &mdash; every individual landmark plus every building inside a historic district. For each, the LPC recorded the architect or builder, the architectural style, the primary material, the original use and a construction date; all of that appears on hover, and is appended to the ordinary building tooltip when the layer is on.</p>
+  <p>This is the only citywide source that names architects, and its limits should be plain: it covers roughly <strong>4 percent of the city's buildings</strong> &mdash; the designated ones &mdash; and for about a quarter of those the LPC recorded the architect as "not determined," which this map shows rather than hides. It names 4,689 distinct architects; the most prolific are not the famous ones but the rowhouse and apartment-house firms &mdash; Louis Berger &amp; Company, Axel Hedman, Benjamin Driesler, Thom &amp; Wilson, George F. Pelham. Buildings are joined by exact point-in-polygon against the LPC's own footprints, not by address matching. Dates here are the LPC's research, which is generally better than the permit-derived dates used elsewhere on this map, and often approximate ("c. 1912").</p>
+
+  <h3>Historic Districts</h3>
+  <p>The <strong>Historic districts</strong> reference layer outlines all 159 historic districts and district extensions, from Brooklyn Heights in 1965 to the present. Hovering gives the designation date, borough, acreage and LPC number. The data comes from the companion project <a href="https://joshgreenman1973.github.io/nyc-historic-districts/" target="_blank">The landmarking of New York</a>, which animates the same districts by designation year. This closes a gap noted below: the Landmarks spotlight covers individually designated buildings only, while district designation protects far more buildings than individual designation ever has.</p>
+
   <h3>Known Limitations</h3>
   <p>• Construction dates before ~1950 are highly unreliable (see above).<br>
   • Demolition records only go back to approximately 2000 (DOB permits) and 1996 (ghost buildings overlay).<br>
   • Floor counts are self-reported and may be outdated; the Height color mode uses measured roof heights instead.<br>
-  • Landmark data covers individual designations only, not historic districts.<br>
+  • The Landmarks spotlight covers individual designations only; use the Historic districts layer or the Architects &amp; styles spotlight for district-designated buildings.<br>
   • Under Construction data covers DOB NOW filings only, not the older BIS system; some active construction sites may be missing.<br>
   • Building class codes are assigned by the Department of Finance for tax purposes and may not perfectly reflect a building's current use.<br>
   • MapPLUTO is updated quarterly; the data here may lag real-world conditions by several months. Building data (MapPLUTO, footprints, landmarks, vacant-lot classes) last refreshed July 26, 2026.<br>
@@ -901,6 +908,10 @@
     </div>
     <div class="filter-check"><input type="checkbox" id="show-ghosts"><label for="show-ghosts" style="color:#8fb4d9">Ghost buildings</label> <span id="ghosts-status" style="font-size:8px;color:#555;"></span></div>
     <div class="filter-check"><input type="checkbox" id="show-future"><label for="show-future" style="color:#5fd3c4">Future buildings</label> <span id="future-status" style="font-size:8px;color:#555;"></span></div>
+    <div class="filter-check"><input type="checkbox" id="show-architects"><label for="show-architects" style="color:#b57edc">Architects &amp; styles</label> <span id="architects-status" style="font-size:8px;color:#555;"></span></div>
+    <div id="architects-legend" style="display:none;margin:4px 0 2px 19px;font-size:9px;line-height:1.5;color:#666;font-style:italic;">
+      The 38,105 landmarked and historic-district buildings the Landmarks Preservation Commission has documented. Hover any of them for architect, style, material and district. 73% have a named architect; the rest the LPC never determined.
+    </div>
     <div id="future-legend" style="display:none;margin:4px 0 2px 19px;font-size:9px;line-height:1.6;">
       <div><span style="color:#5fd3c4">&#9632;</span> Rising &mdash; permitted or under construction</div>
       <div><span style="color:#ff7043">&#9632;</span> Marked for demolition</div>
@@ -915,6 +926,10 @@
     <div class="section-label">Reference</div>
     <div class="filter-check"><input type="checkbox" id="show-subway"><label for="show-subway" style="color:#6BAED6">Subway lines</label> <span id="subway-status" style="font-size:8px;color:#555;"></span></div>
     <div class="filter-check"><input type="checkbox" id="show-zoning"><label for="show-zoning" style="color:#9268d0">Zoning</label> <span id="zoning-status" style="font-size:8px;color:#555;"></span></div>
+    <div class="filter-check"><input type="checkbox" id="show-hd"><label for="show-hd" style="color:#e07ba0">Historic districts</label> <span id="hd-status" style="font-size:8px;color:#555;"></span></div>
+    <div id="hd-legend" style="display:none;margin:4px 0 2px 19px;font-size:9px;line-height:1.5;color:#666;font-style:italic;">
+      All 159 historic districts and extensions, 1965 to today. Hover for the designation date and the LPC report. Full animated history at <a href="https://joshgreenman1973.github.io/nyc-historic-districts/" target="_blank" style="color:#888;text-decoration:underline;">The landmarking of New York</a>.
+    </div>
     <div id="zoning-legend" style="display:none;margin:4px 0 2px 19px;font-size:9px;line-height:1.6;">
       <div><span style="color:#5684c4">&#9632;</span> Residential</div>
       <div><span style="color:#38b2ac">&#9632;</span> Commercial</div>
@@ -1074,6 +1089,12 @@ const state = {
   future: null,
   futureLoaded: false,
   showFuture: false,
+  architects: null,
+  architectsLoaded: false,
+  showArchitects: false,
+  hd: null,
+  hdLoaded: false,
+  showHd: false,
   showGarages: true,
   cityLand: null,
   cityLandLoaded: false,
@@ -1308,7 +1329,7 @@ function _getColorFromFields(yb, bc, nf, ly, dy, ry, cls, yr, filtered, hf) {
   const f = state.filters;
   const spotActive = f.highlightLandmarks || f.highlightDemolished || f.highlightVacant ||
     f.highlightConstruction || f.highlightStalled || state.showGhosts ||
-    state.showCityLand || state.showFuture;
+    state.showCityLand || state.showFuture || state.showArchitects;
   if (!spotActive) return c;
   const isSubject =
     (f.highlightLandmarks && ly > 0 && ly <= yr) ||
@@ -1535,6 +1556,156 @@ function zoningTooltipRow(lng, lat) {
   const code = zo.meta.zd[zo.zdIdx[i]] || '';
   const c = ZONING_CATS[zo.cat[i]].color;
   return `<div class="tt-row"><span>Zoning</span><span style="color:rgb(${c.join(',')})">${code}${code ? ' - ' : ''}${zoningLabel(code, zo.cat[i])}</span></div>`;
+}
+
+// Historic districts, from the standalone "landmarking of New York" project.
+const HD_URL = 'data/processed/historic_districts.json';
+const HD_COLOR = [224, 123, 160];
+
+async function loadHistoricDistricts() {
+  const statusEl = document.getElementById('hd-status');
+  try {
+    if (statusEl) statusEl.textContent = 'loading...';
+    const resp = await fetch(HD_URL);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const fc = await resp.json();
+    // One entry per polygon part, so multi-part districts and holes both draw.
+    const parts = [];
+    for (const f of fc.features) {
+      const g = f.geometry, p = f.properties;
+      if (!g) continue;
+      const polys = g.type === 'Polygon' ? [g.coordinates]
+                  : g.type === 'MultiPolygon' ? g.coordinates : [];
+      for (const poly of polys) parts.push({ rings: poly, props: p });
+    }
+    state.hd = { parts, count: fc.features.length };
+    state.hdLoaded = true;
+    if (statusEl) statusEl.textContent = `(${fc.features.length})`;
+    console.log(`Loaded ${fc.features.length} historic districts (${parts.length} parts)`);
+  } catch (e) {
+    if (statusEl) statusEl.textContent = 'failed';
+    console.error('Historic districts load failed:', e);
+  }
+}
+
+// LPC building records: architect, style, material, original use, district.
+const ARCHITECTS_BIN_URL = 'data/processed/architects.bin';
+const ARCHITECTS_META_URL = 'data/processed/architects_meta.json';
+const ARCHITECT_COLOR = [181, 126, 220];
+
+async function loadArchitectsData() {
+  const statusEl = document.getElementById('architects-status');
+  try {
+    if (statusEl) statusEl.textContent = 'loading...';
+    const [binResp, metaResp] = await Promise.all([
+      fetch(ARCHITECTS_BIN_URL), fetch(ARCHITECTS_META_URL)]);
+    if (!binResp.ok) throw new Error(`bin HTTP ${binResp.status}`);
+    if (!metaResp.ok) throw new Error(`meta HTTP ${metaResp.status}`);
+    const buf = await binResp.arrayBuffer();
+    const meta = await metaResp.json();
+    const view = new DataView(buf);
+
+    const count = view.getUint32(0, true);
+    const vertexCount = view.getUint32(4, true);
+    const REC = 16, recStart = 8;
+    const vertsStart = recStart + count * REC;
+    if (vertsStart + vertexCount * 4 > buf.byteLength) throw new Error('architects.bin truncated');
+
+    const archIdx = new Uint16Array(count), styleIdx = new Uint16Array(count);
+    const distIdx = new Uint16Array(count), useIdx = new Uint16Array(count);
+    const matIdx = new Uint16Array(count);
+    const vOff = new Uint32Array(count), vCnt = new Uint16Array(count);
+    for (let i = 0; i < count; i++) {
+      const o = recStart + i * REC;
+      archIdx[i] = view.getUint16(o, true);
+      styleIdx[i] = view.getUint16(o + 2, true);
+      distIdx[i] = view.getUint16(o + 4, true);
+      useIdx[i] = view.getUint16(o + 6, true);
+      matIdx[i] = view.getUint16(o + 8, true);
+      vOff[i] = view.getUint32(o + 10, true);
+      vCnt[i] = view.getUint16(o + 14, true);
+    }
+
+    const verts = new Float32Array(vertexCount * 2);
+    const lonRange = POLY_LON_MAX - POLY_LON_MIN, latRange = POLY_LAT_MAX - POLY_LAT_MIN;
+    for (let v = 0; v < vertexCount; v++) {
+      const o = vertsStart + v * 4;
+      verts[v * 2] = POLY_LON_MIN + (view.getUint16(o, true) / 65535) * lonRange;
+      verts[v * 2 + 1] = POLY_LAT_MIN + (view.getUint16(o + 2, true) / 65535) * latRange;
+    }
+
+    const polygons = new Array(count);
+    const bbox = new Float32Array(count * 4);
+    for (let i = 0; i < count; i++) {
+      const n = vCnt[i], o = vOff[i];
+      const ring = new Array(n);
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      for (let v = 0; v < n; v++) {
+        const x = verts[(o + v) * 2], y = verts[(o + v) * 2 + 1];
+        ring[v] = [x, y];
+        if (x < minX) minX = x; if (x > maxX) maxX = x;
+        if (y < minY) minY = y; if (y > maxY) maxY = y;
+      }
+      polygons[i] = ring;
+      bbox[i * 4] = minX; bbox[i * 4 + 1] = minY;
+      bbox[i * 4 + 2] = maxX; bbox[i * 4 + 3] = maxY;
+    }
+
+    state.architects = { count, archIdx, styleIdx, distIdx, useIdx, matIdx, polygons, bbox, meta,
+      indices: Array.from({ length: count }, (_, i) => i) };
+    state.architectsLoaded = true;
+    const named = meta.arch.length - 1;
+    if (statusEl) statusEl.textContent = `(${count.toLocaleString()} buildings, ${named.toLocaleString()} architects)`;
+    console.log(`Loaded ${count} LPC building records (${(buf.byteLength / 1024 / 1024).toFixed(1)} MB)`);
+  } catch (e) {
+    if (statusEl) statusEl.textContent = 'failed';
+    console.error('Architects load failed:', e);
+  }
+}
+
+// Which LPC building contains this point? Exact point-in-polygon, bbox-indexed.
+function architectRecordAt(lng, lat) {
+  const a = state.architects;
+  if (!a) return -1;
+  const bb = a.bbox;
+  for (let i = 0; i < a.count; i++) {
+    const o = i * 4;
+    if (lng < bb[o] || lng > bb[o + 2] || lat < bb[o + 1] || lat > bb[o + 3]) continue;
+    const ring = a.polygons[i];
+    let inside = false;
+    for (let p = 0, q = ring.length - 1; p < ring.length; q = p++) {
+      const xa = ring[p][0], ya = ring[p][1], xb = ring[q][0], yb = ring[q][1];
+      if ((ya > lat) !== (yb > lat) && lng < ((xb - xa) * (lat - ya)) / (yb - ya) + xa) inside = !inside;
+    }
+    if (inside) return i;
+  }
+  return -1;
+}
+
+// Extra tooltip rows for a building the LPC has documented; '' otherwise.
+function architectTooltipRows(lng, lat) {
+  if (!state.showArchitects || !state.architectsLoaded || lng == null) return '';
+  const i = architectRecordAt(lng, lat);
+  if (i < 0) return '';
+  const a = state.architects, m = a.meta;
+  const rows = [];
+  const arch = m.arch[a.archIdx[i]];
+  const alt = m.alts[i];
+  const style = m.style[a.styleIdx[i]];
+  const dist = m.dist[a.distIdx[i]];
+  const use = m.use[a.useIdx[i]];
+  const mat = m.mat[a.matIdx[i]];
+  const date = m.dates[i];
+  const nm = m.names[i];
+  if (nm) rows.push(`<div class="tt-row"><span>Known as</span><span>${nm}</span></div>`);
+  rows.push(`<div class="tt-row"><span>Architect</span><span style="color:rgb(${ARCHITECT_COLOR.join(',')})">${arch || 'Not determined'}</span></div>`);
+  if (alt) rows.push(`<div class="tt-row"><span>Altered by</span><span>${alt}</span></div>`);
+  if (style) rows.push(`<div class="tt-row"><span>Style</span><span>${style}</span></div>`);
+  if (mat) rows.push(`<div class="tt-row"><span>Material</span><span>${mat}</span></div>`);
+  if (use) rows.push(`<div class="tt-row"><span>Built as</span><span>${use}</span></div>`);
+  if (date) rows.push(`<div class="tt-row"><span>LPC date</span><span>${date}</span></div>`);
+  if (dist) rows.push(`<div class="tt-row"><span>District</span><span>${dist}</span></div>`);
+  return rows.join('');
 }
 
 const FUTURE_URL = 'data/processed/future.json';
@@ -2037,7 +2208,7 @@ function updateLayers() {
     pickingRadius: 3,
     onHover: onHover,
     updateTriggers: {
-      getFillColor: `${yr}_${state.colorMode}_${_filterVersion}_${state.showGhosts}_${state.showCityLand}_${state.showFuture}_${state.showGarages}_${SPOTLIGHT_KEYS.map(k => state.filters[k]).join('_')}`,
+      getFillColor: `${yr}_${state.colorMode}_${_filterVersion}_${state.showGhosts}_${state.showCityLand}_${state.showFuture}_${state.showGarages}_${state.showArchitects}_${SPOTLIGHT_KEYS.map(k => state.filters[k]).join('_')}`,
       getRadius: `${_filterVersion}`,
     },
   });
@@ -2101,12 +2272,47 @@ function updateLayers() {
     onTileLoad: () => kickDecks(),
     onViewportLoad: () => kickDecks(),
     updateTriggers: {
-      getFillColor: `${yr}_${state.colorMode}_${_filterVersion}_${state.showGhosts}_${state.showCityLand}_${state.showFuture}_${state.showGarages}_${SPOTLIGHT_KEYS.map(k => state.filters[k]).join('_')}`,
+      getFillColor: `${yr}_${state.colorMode}_${_filterVersion}_${state.showGhosts}_${state.showCityLand}_${state.showFuture}_${state.showGarages}_${state.showArchitects}_${SPOTLIGHT_KEYS.map(k => state.filters[k]).join('_')}`,
     },
   });
 
   // Base canvas (interleaved: labels above); top canvas (footprints + overlays).
   const layers = [parksLayer, layer];
+
+  // Historic districts — outlines beneath the buildings. A reference frame,
+  // not a spotlight, so it does not dim the city.
+  if (state.showHd && state.hdLoaded && state.hd) {
+    layers.unshift(new deck.PolygonLayer({
+      id: 'historic-districts',
+      data: state.hd.parts,
+      getPolygon: d => d.rings,
+      getFillColor: [HD_COLOR[0], HD_COLOR[1], HD_COLOR[2], 34],
+      getLineColor: [HD_COLOR[0], HD_COLOR[1], HD_COLOR[2], 225],
+      stroked: true, filled: true,
+      lineWidthUnits: 'pixels', getLineWidth: 1.5,
+      pickable: true,
+      onHover: info => {
+        const tt = document.getElementById('tooltip');
+        if (!info.object) { tt.style.display = 'none'; return; }
+        const topDeck = state.deckglTop && state.deckglTop._deck;
+        if (topDeck && topDeck.pickObject({ x: info.x, y: info.y })) return;
+        const p = info.object.props;
+        const when = p.date ? new Date(p.date + 'T00:00:00').toLocaleDateString('en-US',
+          { year: 'numeric', month: 'long', day: 'numeric' }) : (p.year || '');
+        const rows = [];
+        if (when) rows.push(`<div class="tt-row"><span>Designated</span><span>${when}</span></div>`);
+        if (p.boro) rows.push(`<div class="tt-row"><span>Borough</span><span>${p.boro}</span></div>`);
+        if (p.acres) rows.push(`<div class="tt-row"><span>Size</span><span>${Math.round(p.acres).toLocaleString()} acres</span></div>`);
+        if (p.lp) rows.push(`<div class="tt-row"><span>LPC number</span><span>${p.lp}</span></div>`);
+        tt.innerHTML = `<div class="tt-address" style="color:rgb(${HD_COLOR.join(',')})">${p.name || 'Historic district'}</div>` +
+          rows.join('') +
+          `<div style="font-size:8px;color:#666;margin-top:4px;">NYC Landmarks Preservation Commission</div>`;
+        tt.style.display = 'block';
+        tt.style.left = (info.x + 12) + 'px';
+        tt.style.top = (info.y + 12) + 'px';
+      },
+    }));
+  }
 
   // Zoning districts — a translucent wash beneath the parks and buildings, so
   // you read what is built on top of what is allowed. Primitive layers on the
@@ -2303,7 +2509,7 @@ function updateLayers() {
           <div class="tt-row"><span>Built</span><span>${built}</span></div>
           ${standing ? `<div class="tt-row"><span>Demolished</span><span>${g.dy[i]}</span></div>` : ''}
           ${boro ? `<div class="tt-row"><span>Borough</span><span>${boro}</span></div>` : ''}
-          ${info.coordinate ? zoningTooltipRow(info.coordinate[0], info.coordinate[1]) : ''}
+          ${info.coordinate ? zoningTooltipRow(info.coordinate[0], info.coordinate[1]) + architectTooltipRows(info.coordinate[0], info.coordinate[1]) : ''}
           <div style="font-size:8px;color:#666;margin-top:4px;">Source: NYC Building Footprints Historic</div>`;
         tt.style.display = 'block';
         tt.style.left = (info.x + 12) + 'px';
@@ -2312,6 +2518,36 @@ function updateLayers() {
       updateTriggers: {
         getFillColor: yr,
         getLineColor: yr,
+      },
+    }));
+  }
+
+  // LPC-documented buildings — landmarks and historic-district contributors.
+  if (state.showArchitects && state.architectsLoaded && state.architects) {
+    const a = state.architects;
+    topLayers.push(new deck.PolygonLayer({
+      id: 'architects',
+      data: a.indices,
+      getPolygon: i => a.polygons[i],
+      getFillColor: i => [ARCHITECT_COLOR[0], ARCHITECT_COLOR[1], ARCHITECT_COLOR[2],
+                          a.archIdx[i] ? 130 : 55],
+      getLineColor: [ARCHITECT_COLOR[0], ARCHITECT_COLOR[1], ARCHITECT_COLOR[2], 220],
+      stroked: true, filled: true,
+      lineWidthUnits: 'pixels', getLineWidth: 1,
+      pickable: true,
+      onHover: info => {
+        const tt = document.getElementById('tooltip');
+        if (info.index == null || info.index < 0) { tt.style.display = 'none'; return; }
+        const i = info.index, m = a.meta;
+        const c = a.polygons[i];
+        const cx = c.reduce((s2, p) => s2 + p[0], 0) / c.length;
+        const cy = c.reduce((s2, p) => s2 + p[1], 0) / c.length;
+        tt.innerHTML = `<div class="tt-address">${m.names[i] || 'Designated building'}</div>` +
+          architectTooltipRows(cx, cy) +
+          `<div style="font-size:8px;color:#666;margin-top:4px;">Source: NYC Landmarks Preservation Commission</div>`;
+        tt.style.display = 'block';
+        tt.style.left = (info.x + 12) + 'px';
+        tt.style.top = (info.y + 12) + 'px';
       },
     }));
   }
@@ -2615,7 +2851,10 @@ function onPolyHover(info) {
 
   const boroughs = ['','Manhattan','Bronx','Brooklyn','Queens','Staten Island'];
   if (bc > 0 && bc <= 5) html += `<div class="tt-row"><span>Borough</span><span>${boroughs[bc]}</span></div>`;
-  if (info.coordinate) html += zoningTooltipRow(info.coordinate[0], info.coordinate[1]);
+  if (info.coordinate) {
+    html += zoningTooltipRow(info.coordinate[0], info.coordinate[1]);
+    html += architectTooltipRows(info.coordinate[0], info.coordinate[1]);
+  }
 
   tooltip.innerHTML = html;
   tooltip.style.display = 'block';
@@ -3660,6 +3899,13 @@ function setupControls() {
   });
 
   // Subway overlay toggle
+  document.getElementById('show-architects').addEventListener('change', async (e) => {
+    state.showArchitects = e.target.checked;
+    document.getElementById('architects-legend').style.display = e.target.checked ? 'block' : 'none';
+    if (e.target.checked && !state.architectsLoaded) await loadArchitectsData();
+    refreshMap();
+  });
+
   document.getElementById('show-future').addEventListener('change', async (e) => {
     state.showFuture = e.target.checked;
     document.getElementById('future-legend').style.display = e.target.checked ? 'block' : 'none';
@@ -3669,6 +3915,13 @@ function setupControls() {
 
   document.getElementById('show-garages').addEventListener('change', (e) => {
     state.showGarages = e.target.checked;
+    refreshMap();
+  });
+
+  document.getElementById('show-hd').addEventListener('change', async (e) => {
+    state.showHd = e.target.checked;
+    document.getElementById('hd-legend').style.display = e.target.checked ? 'block' : 'none';
+    if (e.target.checked && !state.hdLoaded) await loadHistoricDistricts();
     refreshMap();
   });
 
