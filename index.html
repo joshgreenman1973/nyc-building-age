@@ -2139,7 +2139,10 @@ function updateLayers() {
         // Buildings, ghosts and city parcels live on the upper canvas and own
         // the cursor when they are under it; their tooltips carry zoning too.
         const topDeck = state.deckglTop && state.deckglTop._deck;
-        if (topDeck && topDeck.pickObject({ x: info.x, y: info.y })) return;
+        const above = topDeck && topDeck.pickObject({ x: info.x, y: info.y });
+        if (above && !(state.showGarages === false && above.layer.id.startsWith('buildings-poly') &&
+            above.object && above.object.properties &&
+            NON_BUILDING_CODES.has(above.object.properties.ft || 0))) return;
         const i = info.index;
         const code = zo.meta.zd[zo.zdIdx[i]] || '';
         const c = ZONING_CATS[zo.cat[i]].color;
@@ -3258,6 +3261,18 @@ async function init() {
   // never fires on its own. Rather than fight the canvas stacking, pick from
   // both decks here — upper first, since it draws on top — and hand the result
   // to whichever layer's own handler owns that tooltip.
+  // A footprint hidden by the Structures filter is drawn fully transparent,
+  // but deck still picks it. Treat those picks as misses so hover falls
+  // through to whatever is actually visible underneath.
+  function isPickVisible(pick) {
+    if (!pick) return false;
+    if (state.showGarages) return true;
+    const id = pick.layer && pick.layer.id;
+    if (!id || !id.startsWith('buildings-poly')) return true;
+    const p = pick.object && pick.object.properties;
+    return !(p && NON_BUILDING_CODES.has(p.ft || 0));
+  }
+
   function hoverHandlerFor(layer) {
     let l = layer;
     while (l) {
@@ -3281,6 +3296,7 @@ async function init() {
       const dk = overlay && overlay._deck;
       if (!dk) continue;
       try { pick = dk.pickObject({ x, y, radius: 2 }); } catch (err) { pick = null; }
+      if (!isPickVisible(pick)) pick = null;
       if (pick) break;
     }
 
