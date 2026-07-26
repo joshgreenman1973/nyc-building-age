@@ -713,7 +713,7 @@
   <h2>Methodology &amp; Definitions</h2>
 
   <h3>Data Source</h3>
-  <p>Building data comes from <a href="https://www.nyc.gov/site/planning/data-maps/open-data/dwn-pluto-mappluto.page" target="_blank">MapPLUTO</a> (Primary Land Use Tax Lot Output), published by the NYC Department of City Planning. MapPLUTO merges tax lot data from the Department of Finance with building and zoning information from the Department of Buildings and City Planning. The data is pulled from the live MapPLUTO API and was last refreshed July 21, 2026; it contains approximately 857,000 building records.</p>
+  <p>Building data comes from <a href="https://www.nyc.gov/site/planning/data-maps/open-data/dwn-pluto-mappluto.page" target="_blank">MapPLUTO</a> (Primary Land Use Tax Lot Output), published by the NYC Department of City Planning. MapPLUTO merges tax lot data from the Department of Finance with building and zoning information from the Department of Buildings and City Planning. The data is pulled from the live MapPLUTO API and was last refreshed July 26, 2026; it contains approximately 857,000 building records.</p>
 
   <h3>Construction Era</h3>
   <div class="def"><strong>Before 1920</strong> — MapPLUTO <code>YearBuilt</code> before 1920. Includes colonial, 19th-century, and early 20th-century construction. Dates this old are highly unreliable; the city's DOB permit records do not go back this far, so many buildings are tagged with later dates or have no date at all.</div>
@@ -782,14 +782,24 @@
   <p><span style="color:#FF9020">Important:</span> zoning describes what may be built, not what is standing. Much of New York predates its current zoning and could not be rebuilt as it stands today &mdash; those buildings are legal but non-conforming. Reading the amber footprints against the zoning tint is a way to see that gap.</p>
   <p>Two things ZoLa shows that this layer does not: <strong>commercial overlays</strong> (the C1 and C2 strips that put retail on residential avenues) and <strong>special purpose districts</strong>. Both are separate datasets. District boundaries here are simplified to roughly one-meter precision for file size, so they are not survey-accurate; check ZoLa or the zoning maps before relying on any specific lot line.</p>
 
+  <h3>Building Height</h3>
+  <p>The <strong>Height</strong> color mode uses <code>HEIGHTROOF</code> from the city's building footprints: the measured height of the roof above ground level, in feet, derived photogrammetrically from aerial and street-level imagery. The city reports 95 percent of footprint measurements as accurate to within two feet. It is available for 812,000 of the 857,000 lots here (94.7 percent); lots without a measurement render dim gray rather than being estimated.</p>
+  <p>This replaces the earlier approach of coloring by MapPLUTO's <code>NumFloors</code>, which is self-reported and, as noted above, imperfect. The <strong>Height</strong> <em>filter</em> still works in floors, because its categories are named in floors &mdash; so single-story buildings remain filterable exactly as before. Where a lot carries several structures, the height shown is that of the tallest <em>building</em> on it; garages and sheds are excluded so a detached garage never defines a lot's height. The color ramp is logarithmic, because a 35-foot rowhouse and a 1,400-foot tower have to share it.</p>
+
+  <h3>Structure Types</h3>
+  <p>Not every footprint is a building. The city's <code>FEAT_CODE</code> field sorts the 1.08 million footprints by structure type, and <strong>213,460 of them &mdash; about one in five &mdash; are garages</strong>, alongside 132 gas station canopies, 119 skybridges, and smaller counts of storage tanks, temporary structures and cantilevered buildings. Only 868,460 are coded as buildings. The <strong>Garages &amp; sheds</strong> filter hides the non-building structures at street zoom; it never touches anything the city codes as a building, so one-story and single-family houses always remain visible. Where a structure is not an ordinary building, its type appears in the tooltip.</p>
+
+  <h3>Future Buildings</h3>
+  <p>The <strong>Future buildings</strong> spotlight is the mirror image of Ghost buildings: rather than what has been demolished, it shows what the city expects to gain and lose next. It draws 468 structures coded as under construction, permitted-but-unbuilt (the city maps a placeholder for these), or marked for construction; and 67 buildings marked for demolition. <span style="color:#FF9020">Caveat:</span> these are administrative records, not guarantees &mdash; a permitted building may never rise, and a building marked for demolition may be reprieved. A further 61 records the city labels "investigate construction" or "investigate demolition," meaning it is not certain the change occurred, are excluded here rather than presented as fact. Because these records track the footprints file, they update weekly.</p>
+
   <h3>Known Limitations</h3>
   <p>• Construction dates before ~1950 are highly unreliable (see above).<br>
   • Demolition records only go back to approximately 2000 (DOB permits) and 1996 (ghost buildings overlay).<br>
-  • Floor counts are self-reported and may be outdated.<br>
+  • Floor counts are self-reported and may be outdated; the Height color mode uses measured roof heights instead.<br>
   • Landmark data covers individual designations only, not historic districts.<br>
   • Under Construction data covers DOB NOW filings only, not the older BIS system; some active construction sites may be missing.<br>
   • Building class codes are assigned by the Department of Finance for tax purposes and may not perfectly reflect a building's current use.<br>
-  • MapPLUTO is updated quarterly; the data here may lag real-world conditions by several months. Building data (MapPLUTO, footprints, landmarks, vacant-lot classes) last refreshed July 21, 2026.<br>
+  • MapPLUTO is updated quarterly; the data here may lag real-world conditions by several months. Building data (MapPLUTO, footprints, landmarks, vacant-lot classes) last refreshed July 26, 2026.<br>
   • The red demolition markers and cyan rebuilt markers come from Buildings Information System permit filings, a system the Department of Buildings retired around 2020 — filings after that date are not captured there. For demolitions through the present, use the Ghost buildings spotlight, whose source updates weekly.</p>
 
   <p style="margin-top:12px;font-size:10px;color:#666;">Last updated: July 2026. Data sources: NYC Department of City Planning (MapPLUTO 25v1, City Owned and Leased Properties), NYC Landmarks Preservation Commission, NYC Department of Buildings (DOB NOW: Build), NYC Parks Department. City-owned land categories after the NYU Furman Center.</p>
@@ -858,6 +868,12 @@
     <div class="filter-check"><input type="checkbox" id="ht-mid" checked data-ht="mid"><label for="ht-mid">Mid-rise (7-20 fl)</label></div>
     <div class="filter-check"><input type="checkbox" id="ht-high" checked data-ht="high"><label for="ht-high">High-rise (21-49 fl)</label></div>
     <div class="filter-check"><input type="checkbox" id="ht-super" checked data-ht="super"><label for="ht-super">Skyscraper (50+ fl)</label></div>
+  </div>
+
+  <div class="filter-section fs-structures" style="border-left-color:rgba(158,203,255,0.4);">
+    <div class="section-label">Structures</div>
+    <div class="filter-check"><input type="checkbox" id="show-garages" checked><label for="show-garages">Garages &amp; sheds</label> <span style="font-size:8px;color:#555;">(213,460)</span></div>
+    <div style="font-size:8px;color:#666;margin:2px 0 0 19px;line-height:1.35;font-style:italic;">One in five footprints is a garage, canopy or shed rather than a building. Unchecking hides them at street zoom. One-story <em>houses</em> are buildings and always stay.</div>
     <div class="section-warning">No heights selected — buildings hidden</div>
   </div>
 
@@ -884,6 +900,12 @@
       Every parcel the city owns or leases (DCP COLP). Hover any lot for details; the full breakdown lives at the <a href="https://joshgreenman1973.github.io/nyc-city-land-map/" target="_blank" style="color:#888;text-decoration:underline;">city-owned land map</a>.
     </div>
     <div class="filter-check"><input type="checkbox" id="show-ghosts"><label for="show-ghosts" style="color:#8fb4d9">Ghost buildings</label> <span id="ghosts-status" style="font-size:8px;color:#555;"></span></div>
+    <div class="filter-check"><input type="checkbox" id="show-future"><label for="show-future" style="color:#5fd3c4">Future buildings</label> <span id="future-status" style="font-size:8px;color:#555;"></span></div>
+    <div id="future-legend" style="display:none;margin:4px 0 2px 19px;font-size:9px;line-height:1.6;">
+      <div><span style="color:#5fd3c4">&#9632;</span> Rising &mdash; permitted or under construction</div>
+      <div><span style="color:#ff7043">&#9632;</span> Marked for demolition</div>
+      <div style="color:#666;margin-top:3px;font-style:italic;">The mirror of ghost buildings: what the city expects to gain and lose next.</div>
+    </div>
     <div id="ghosts-legend" style="display:none;margin:4px 0 2px 19px;font-size:9px;line-height:1.6;color:#666;font-style:italic;">
       Footprints of buildings demolished since 1996, from the city's historic footprints file. Scrub the timeline: each one stands (solid) until its demolition year, then lingers as a pale outline. Zoom in to see shapes.
     </div>
@@ -996,7 +1018,7 @@ const POLYGON_MIN_ZOOM = 13;
 
 const MIN_YEAR = 1700;
 const MAX_YEAR = 2026;
-const BYTES_PER_RECORD = 24; // ffHBBHHH2sI = 4+4+2+1+1+2+2+2+2+4 = 24
+const BYTES_PER_RECORD = 26; // ffHBBHHH2sIH — must match data/pipeline.py
 
 // ============================================================
 // STATE
@@ -1049,6 +1071,10 @@ const state = {
   zoning: null,
   zoningLoaded: false,
   showZoning: false,
+  future: null,
+  futureLoaded: false,
+  showFuture: false,
+  showGarages: true,
   cityLand: null,
   cityLandLoaded: false,
   showCityLand: false,
@@ -1139,6 +1165,7 @@ async function loadBinaryData() {
   const rebuildYear = new Uint16Array(count);
   const bldgClass = new Array(count);
   const lotArea = new Uint32Array(count);
+  const heightFt = new Uint16Array(count); // measured roof height above ground
 
   // Parse in chunks to keep UI responsive
   const CHUNK = 100000;
@@ -1156,6 +1183,7 @@ async function loadBinaryData() {
       rebuildYear[i] = view.getUint16(off + 16, true);
       bldgClass[i] = String.fromCharCode(view.getUint8(off + 18), view.getUint8(off + 19));
       lotArea[i] = view.getUint32(off + 20, true);
+      heightFt[i] = view.getUint16(off + 24, true);
     }
     // Yield to UI between chunks
     if (end < count) {
@@ -1173,6 +1201,7 @@ async function loadBinaryData() {
   state.rebuildYear = rebuildYear;
   state.bldgClass = bldgClass;
   state.lotArea = lotArea;
+  state.heightFt = heightFt;
   state.count = count;
 
   // Build index-based data array for Deck.gl
@@ -1257,12 +1286,29 @@ function isFiltered(i) {
 // buildings (landmarks gold, demolished red, vacant chartreuse) and the overlay
 // layers themselves (ghosts, city land, construction/stalled dots) stay at full
 // strength. Nothing is hidden — scrub the timeline and it all still works.
-function _getColorFromFields(yb, bc, nf, ly, dy, ry, cls, yr, filtered) {
-  const c = _rawColorFromFields(yb, bc, nf, ly, dy, ry, cls, yr, filtered);
+// Height ramp endpoints: 12ft (a one-story garage) to 800ft. Anything taller
+// pins to the darkest blue; NYC's tallest roof is about 1,550ft.
+// FEATURE_CODE from the city's footprints: what kind of structure this is.
+// 20% of the 1.08M footprints are garages, not buildings.
+const FEATURE_CODES = {
+  1000: 'Parking', 1001: 'Gas station canopy', 1002: 'Storage tank',
+  1003: 'Permitted, not yet built', 1004: 'Auxiliary structure',
+  1005: 'Temporary structure', 1006: 'Cantilevered building',
+  2100: 'Building', 2110: 'Skybridge', 5100: 'Under construction', 5110: 'Garage',
+};
+// Structures that are not really buildings — hideable via the Structures filter.
+const NON_BUILDING_CODES = new Set([1000, 1001, 1002, 1004, 1005, 5110]);
+
+const HEIGHT_LOG_MIN = Math.log(12);
+const HEIGHT_LOG_SPAN = Math.log(800) - Math.log(12);
+
+function _getColorFromFields(yb, bc, nf, ly, dy, ry, cls, yr, filtered, hf) {
+  const c = _rawColorFromFields(yb, bc, nf, ly, dy, ry, cls, yr, filtered, hf);
   if (c[3] === 0) return c;
   const f = state.filters;
   const spotActive = f.highlightLandmarks || f.highlightDemolished || f.highlightVacant ||
-    f.highlightConstruction || f.highlightStalled || state.showGhosts || state.showCityLand;
+    f.highlightConstruction || f.highlightStalled || state.showGhosts ||
+    state.showCityLand || state.showFuture;
   if (!spotActive) return c;
   const isSubject =
     (f.highlightLandmarks && ly > 0 && ly <= yr) ||
@@ -1272,7 +1318,7 @@ function _getColorFromFields(yb, bc, nf, ly, dy, ry, cls, yr, filtered) {
   return [(c[0] * 0.6) | 0, (c[1] * 0.6) | 0, (c[2] * 0.6) | 0, 110];
 }
 
-function _rawColorFromFields(yb, bc, nf, ly, dy, ry, cls, yr, filtered) {
+function _rawColorFromFields(yb, bc, nf, ly, dy, ry, cls, yr, filtered, hf) {
   if (filtered) return [0,0,0,0];
   if (state.filters.highlightVacant && cls.charAt(0) === 'V') return [221, 228, 76, 210]; // chartreuse
   // Demolished spotlight: keep every demolished lot solid red instead of
@@ -1284,16 +1330,20 @@ function _rawColorFromFields(yb, bc, nf, ly, dy, ry, cls, yr, filtered) {
 
   // Color mode: height — blue gradient from pale sky to deep navy
   if (state.colorMode === 'height') {
-    const floors = Math.max(nf, 1);
-    const t = Math.min((floors - 1) / 50, 1); // 1..50+ floors mapped to 0..1
-    // Pale sky blue → medium blue → deep navy
-    const a = (160 + (t * 60)) | 0;
-    return [
-      180 - (t * 160) | 0,   // 180 → 20
-      210 - (t * 170) | 0,   // 210 → 40
-      240 - (t * 80) | 0,    // 240 → 160
-      a,
-    ];
+    // Measured roof height above ground, in feet, from the city's
+    // photogrammetric footprints — not PLUTO's self-reported floor counts.
+    // Log scale, because a 35ft rowhouse and a 1,400ft tower share this ramp.
+    if (hf > 0) {
+      const t = Math.min(Math.max((Math.log(hf) - HEIGHT_LOG_MIN) / HEIGHT_LOG_SPAN, 0), 1);
+      const a = (160 + (t * 60)) | 0;
+      return [
+        180 - (t * 160) | 0,   // 180 → 20
+        210 - (t * 170) | 0,   // 210 → 40
+        240 - (t * 80) | 0,    // 240 → 160
+        a,
+      ];
+    }
+    return [80, 80, 80, 110]; // height not measured
   }
   // Color mode: type
   if (state.colorMode === 'class') {
@@ -1350,7 +1400,8 @@ function getColor(i, yr) {
     state.rebuildYear[i],
     state.bldgClass[i],
     yr,
-    isFiltered(i)
+    isFiltered(i),
+    state.heightFt ? state.heightFt[i] : 0
   );
 }
 
@@ -1484,6 +1535,31 @@ function zoningTooltipRow(lng, lat) {
   const code = zo.meta.zd[zo.zdIdx[i]] || '';
   const c = ZONING_CATS[zo.cat[i]].color;
   return `<div class="tt-row"><span>Zoning</span><span style="color:rgb(${c.join(',')})">${code}${code ? ' - ' : ''}${zoningLabel(code, zo.cat[i])}</span></div>`;
+}
+
+const FUTURE_URL = 'data/processed/future.json';
+const FUTURE_CATS = [
+  { name: 'Rising',              color: [95, 211, 196] },
+  { name: 'Marked for demolition', color: [255, 112, 67] },
+];
+
+async function loadFutureData() {
+  const statusEl = document.getElementById('future-status');
+  try {
+    if (statusEl) statusEl.textContent = 'loading...';
+    const resp = await fetch(FUTURE_URL);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+    state.future = data;
+    state.futureLoaded = true;
+    const rising = data.features.filter(f => f.c === 0).length;
+    const falling = data.features.length - rising;
+    if (statusEl) statusEl.textContent = `(${rising} rising, ${falling} going)`;
+    console.log(`Loaded ${data.features.length} future buildings`);
+  } catch (e) {
+    if (statusEl) statusEl.textContent = 'failed';
+    console.error('Future buildings load failed:', e);
+  }
 }
 
 async function loadZoningData() {
@@ -1961,7 +2037,7 @@ function updateLayers() {
     pickingRadius: 3,
     onHover: onHover,
     updateTriggers: {
-      getFillColor: `${yr}_${state.colorMode}_${_filterVersion}_${state.showGhosts}_${state.showCityLand}_${SPOTLIGHT_KEYS.map(k => state.filters[k]).join('_')}`,
+      getFillColor: `${yr}_${state.colorMode}_${_filterVersion}_${state.showGhosts}_${state.showCityLand}_${state.showFuture}_${state.showGarages}_${SPOTLIGHT_KEYS.map(k => state.filters[k]).join('_')}`,
       getRadius: `${_filterVersion}`,
     },
   });
@@ -2003,7 +2079,7 @@ function updateLayers() {
     id: 'buildings-poly',
     // ?v= must change whenever the tiles release changes — tiles are CDN-cached
     // for a year, and the version query is what busts that cache.
-    data: '/api/bt/{z}/{x}/{y}?v=3',
+    data: '/api/bt/{z}/{x}/{y}?v=4',
     minZoom: 10,
     maxZoom: 16,
     maxRequests: 16,
@@ -2014,15 +2090,18 @@ function updateLayers() {
       const p = f.properties;
       const yb = p.yb || 0, bc = p.bc || 0, nf = p.nf || 1, cls = p.cls || '';
       const ly = p.ly || 0, dy = p.dy || 0, ry = p.ry || 0;
+      // Garages, canopies and sheds are structures, not buildings; hiding them
+      // never touches feature_code 2100, so one-story houses always remain.
+      if (!state.showGarages && NON_BUILDING_CODES.has(p.ft || 0)) return [0, 0, 0, 0];
       return _getColorFromFields(yb, bc, nf, ly, dy, ry, cls, yr,
-        _isFilteredFields(yb, bc, nf, ly, dy, cls));
+        _isFilteredFields(yb, bc, nf, ly, dy, cls), p.hr || 0);
     },
     pickable: true,
     onHover: onPolyHover,
     onTileLoad: () => kickDecks(),
     onViewportLoad: () => kickDecks(),
     updateTriggers: {
-      getFillColor: `${yr}_${state.colorMode}_${_filterVersion}_${state.showGhosts}_${state.showCityLand}_${SPOTLIGHT_KEYS.map(k => state.filters[k]).join('_')}`,
+      getFillColor: `${yr}_${state.colorMode}_${_filterVersion}_${state.showGhosts}_${state.showCityLand}_${state.showFuture}_${state.showGarages}_${SPOTLIGHT_KEYS.map(k => state.filters[k]).join('_')}`,
     },
   });
 
@@ -2230,6 +2309,44 @@ function updateLayers() {
       updateTriggers: {
         getFillColor: yr,
         getLineColor: yr,
+      },
+    }));
+  }
+
+  // Future buildings — permitted/under construction, and marked for demolition.
+  // The mirror of the ghost overlay: the city's next gains and losses.
+  if (state.showFuture && state.futureLoaded && state.future) {
+    const feats = state.future.features;
+    topLayers.push(new deck.PolygonLayer({
+      id: 'future',
+      data: feats,
+      getPolygon: d => d.p,
+      getFillColor: d => {
+        const c = FUTURE_CATS[d.c].color;
+        return [c[0], c[1], c[2], 110];
+      },
+      getLineColor: d => {
+        const c = FUTURE_CATS[d.c].color;
+        return [c[0], c[1], c[2], 255];
+      },
+      stroked: true, filled: true,
+      lineWidthUnits: 'pixels', getLineWidth: 2,
+      pickable: true,
+      onHover: info => {
+        const tt = document.getElementById('tooltip');
+        if (!info.object) { tt.style.display = 'none'; return; }
+        const d = info.object;
+        const cat = FUTURE_CATS[d.c];
+        const rows = [`<div class="tt-row"><span>Status</span><span style="color:rgb(${cat.color.join(',')})">${cat.name}</span></div>`];
+        if (d.st) rows.push(`<div class="tt-row"><span>City record</span><span>${d.st}</span></div>`);
+        if (d.ft && FEATURE_CODES[d.ft]) rows.push(`<div class="tt-row"><span>Structure</span><span>${FEATURE_CODES[d.ft]}</span></div>`);
+        if (d.hr > 0) rows.push(`<div class="tt-row"><span>Height</span><span>${d.hr.toLocaleString()} ft</span></div>`);
+        if (d.cy > 0) rows.push(`<div class="tt-row"><span>Construction year</span><span>${d.cy}</span></div>`);
+        tt.innerHTML = `<div class="tt-address">${d.addr ? titleCase(d.addr) : 'Future building'}</div>${rows.join('')}` +
+          `<div style="font-size:8px;color:#666;margin-top:4px;">Source: NYC Building Footprints</div>`;
+        tt.style.display = 'block';
+        tt.style.left = (info.x + 12) + 'px';
+        tt.style.top = (info.y + 12) + 'px';
       },
     }));
   }
@@ -2471,13 +2588,19 @@ function onPolyHover(info) {
   const dy = p.dy || 0;
   const ry = p.ry || 0;
   const bc = p.bc || 0;
+  const hr = p.hr || 0;
+  const ft = p.ft || 0;
 
   let html = '';
   const addr = (p.addr || '').trim();
   html += `<div class="tt-address">${addr ? titleCase(addr) : 'Building'}</div>`;
 
   if (yb > 0) html += `<div class="tt-row"><span>Built</span><span>${yb}</span></div>`;
+  if (hr > 0) html += `<div class="tt-row"><span>Height</span><span>${hr.toLocaleString()} ft</span></div>`;
   if (nf > 0) html += `<div class="tt-row"><span>Floors</span><span>${nf}</span></div>`;
+  if (ft && ft !== 2100 && FEATURE_CODES[ft]) {
+    html += `<div class="tt-row"><span>Structure</span><span style="color:#9ecbff">${FEATURE_CODES[ft]}</span></div>`;
+  }
   if (cls) {
     const classKey = cls.charAt(0).toUpperCase();
     const className = CLASS_NAMES[classKey] || cls;
@@ -2505,6 +2628,7 @@ function onHover(info) {
   }
 
   const i = info.object; // data items are original building indices
+  const hf = state.heightFt ? state.heightFt[i] : 0;
   const yb = state.yearBuilt[i];
   const nf = state.numFloors[i];
   const cls = state.bldgClass[i].trim();
@@ -2518,6 +2642,8 @@ function onHover(info) {
   html += `<div class="tt-address">${addr || 'Building ' + (i + 1)}</div>`;
 
   if (yb > 0) html += `<div class="tt-row"><span>Built</span><span>${yb}</span></div>`;
+  // Tallest measured structure on this lot; the dot stands for the whole lot.
+  if (hf > 0) html += `<div class="tt-row"><span>Height</span><span>${hf.toLocaleString()} ft</span></div>`;
   if (nf > 0) html += `<div class="tt-row"><span>Floors</span><span>${nf}</span></div>`;
   if (cls) {
     const classKey = cls.charAt(0).toUpperCase();
@@ -3276,12 +3402,15 @@ function updateLegend() {
       <div style="font-size:8px;color:#666;margin:4px 0 0 18px;line-height:1.3;">*Dates before ~1950 are highly unreliable (<a href="https://www.reddit.com/r/centuryhomes/comments/1ggn7u3/how_accurate_are_date_built_records/" target="_blank" style="color:#888;text-decoration:underline;">why?</a>)</div>`;
   } else if (mode === 'height') {
     html = `<div class="legend-title">Color: Building height</div>
-      <div style="font-size:9px;color:#777;margin-bottom:6px;">Lighter = shorter, darker = taller</div>
-      <div class="legend-item"><div class="legend-swatch" style="background:rgb(180,210,240)"></div> 1 floor</div>
-      <div class="legend-item"><div class="legend-swatch" style="background:rgb(130,170,220)"></div> 2-6 floors</div>
-      <div class="legend-item"><div class="legend-swatch" style="background:rgb(80,130,200)"></div> 10 floors</div>
-      <div class="legend-item"><div class="legend-swatch" style="background:rgb(40,85,180)"></div> 25 floors</div>
-      <div class="legend-item"><div class="legend-swatch" style="background:rgb(20,40,160)"></div> 50+ floors</div>`;
+      <div style="font-size:9px;color:#777;margin-bottom:6px;">Measured roof height, lighter = shorter</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(172,201,236)"></div> ~15 ft (1 story)</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(139,167,220)"></div> ~35 ft (rowhouse)</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(119,145,209)"></div> ~60 ft (walk-up)</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(84,108,192)"></div> ~150 ft</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(46,68,173)"></div> ~400 ft</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(20,40,160)"></div> 800+ ft</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(80,80,80)"></div> Not measured</div>
+      <div style="font-size:8px;color:#666;margin:4px 0 0 18px;line-height:1.3;">Photogrammetric, from the city's building footprints &mdash; not self-reported floor counts.</div>`;
   } else if (mode === 'class') {
     html = `<div class="legend-title">Color: Building Type</div>
       <div style="font-size:9px;color:#777;margin-bottom:6px;">Each use category has its own color</div>
@@ -3515,6 +3644,18 @@ function setupControls() {
   });
 
   // Subway overlay toggle
+  document.getElementById('show-future').addEventListener('change', async (e) => {
+    state.showFuture = e.target.checked;
+    document.getElementById('future-legend').style.display = e.target.checked ? 'block' : 'none';
+    if (e.target.checked && !state.futureLoaded) await loadFutureData();
+    refreshMap();
+  });
+
+  document.getElementById('show-garages').addEventListener('change', (e) => {
+    state.showGarages = e.target.checked;
+    refreshMap();
+  });
+
   document.getElementById('show-zoning').addEventListener('change', async (e) => {
     state.showZoning = e.target.checked;
     document.getElementById('zoning-legend').style.display = e.target.checked ? 'block' : 'none';

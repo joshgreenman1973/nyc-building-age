@@ -283,7 +283,43 @@ def step5_load_dob():
     return demo_lookup, rebuild_lookup
 
 
-def step6_join(gdf, landmark_lookup, demo_lookup, rebuild_lookup):
+def step5b_load_heights():
+    """BBL -> tallest measured roof height (feet above ground) on that lot.
+
+    From the Building Footprints snapshot that build_pmtiles.py caches. This is
+    photogrammetric, unlike PLUTO's self-reported floor counts, and covers
+    ~99.9% of footprints. A lot can carry several structures, so the tallest
+    wins — that is the building the dot represents at city zoom. Garages and
+    other non-building structures (feature_code != 2100) are ignored so a
+    detached garage never defines a lot's height.
+    """
+    print("\n=== STEP 5b: Load measured heights ===")
+    path = RAW_DIR / "building_footprints.geojson"
+    if not path.exists():
+        print("  [SKIP] no footprints snapshot; heights will be 0")
+        return {}
+
+    with open(path) as f:
+        fc = json.load(f)
+
+    heights = {}
+    skipped_type = 0
+    for feat in fc.get("features", []):
+        props = feat.get("properties", {})
+        if int(props.get("ft") or 0) not in (0, 2100):
+            skipped_type += 1
+            continue
+        bbl = str(props.get("bbl") or "").split(".")[0].strip()
+        hr = int(float(props.get("hr") or 0))
+        if not bbl or hr <= 0 or hr > 2000:
+            continue
+        if hr > heights.get(bbl, 0):
+            heights[bbl] = hr
+    print(f"  Heights for {len(heights)} BBLs (ignored {skipped_type} non-building structures)")
+    return heights
+
+
+def step6_join(gdf, landmark_lookup, demo_lookup, rebuild_lookup, height_lookup=None):
     """Join all data sources."""
     print("\n=== STEP 6: Join datasets ===")
 
@@ -296,6 +332,9 @@ def step6_join(gdf, landmark_lookup, demo_lookup, rebuild_lookup):
     gdf["rebuild_year"] = gdf["bbl"].map(rebuild_lookup).fillna(0).astype(int)
     print(f"  Rebuilds joined: {(gdf['rebuild_year'] > 0).sum()} lots")
 
+    gdf["height_ft"] = gdf["bbl"].map(height_lookup or {}).fillna(0).astype(int)
+    print(f"  Heights joined: {(gdf['height_ft'] > 0).sum()} lots")
+
     return gdf
 
 
@@ -305,7 +344,8 @@ def step7_export(gdf, landmark_lookup, demo_lookup, rebuild_lookup):
 
     # Export columns
     export_cols = ["bbl", "yearbuilt", "landmark_year", "demo_year", "rebuild_year",
-                   "bldgclass", "numfloors", "borocode", "address", "lotarea", "geometry"]
+                   "bldgclass", "numfloors", "borocode", "address", "lotarea",
+                   "height_ft", "geometry"]
     gdf_export = gdf[[c for c in export_cols if c in gdf.columns]].copy()
 
     # Export to FlatGeobuf
@@ -317,11 +357,12 @@ def step7_export(gdf, landmark_lookup, demo_lookup, rebuild_lookup):
 
     # Also export a compact binary format for faster loading
     # Format: [lon(f32), lat(f32), yearbuilt(u16), borocode(u8), numfloors(u8),
-    #          landmark_year(u16), demo_year(u16), rebuild_year(u16), bldgclass(2 bytes), lotarea(u32)]
-    # = 22 bytes per record
+    #          landmark_year(u16), demo_year(u16), rebuild_year(u16),
+    #          bldgclass(2 bytes), lotarea(u32), height_ft(u16)]
+    # = 26 bytes per record. Keep BYTES_PER_RECORD in index.html in sync.
     print("  Writing compact binary format...")
     bin_path = PROCESSED_DIR / "buildings.bin"
-    meta = {"count": len(gdf_export), "bytesPerRecord": 22}
+    meta = {"count": len(gdf_export), "bytesPerRecord": 26}
 
     with open(bin_path, "wb") as f:
         for _, row in gdf_export.iterrows():
@@ -335,10 +376,11 @@ def step7_export(gdf, landmark_lookup, demo_lookup, rebuild_lookup):
             ry = int(row.get("rebuild_year", 0))
             cls = (str(row.get("bldgclass", "")) + "  ")[:2]
             la = min(int(row.get("lotarea", 0)), 4294967295)
+            hf = min(int(row.get("height_ft", 0) or 0), 65535)
 
-            f.write(struct.pack("<ffHBBHHH2sI",
+            f.write(struct.pack("<ffHBBHHH2sIH",
                                 lon, lat, yb, bc, nf, ly, dy, ry,
-                                cls.encode("ascii", errors="replace"), la))
+                                cls.encode("ascii", errors="replace"), la, hf))
 
     bin_size = bin_path.stat().st_size / (1024 * 1024)
     print(f"  Binary written: {bin_size:.1f} MB")
@@ -415,7 +457,8 @@ def main():
     gdf = step3_process_pluto()
     landmark_lookup = step4_load_landmarks()
     demo_lookup, rebuild_lookup = step5_load_dob()
-    gdf = step6_join(gdf, landmark_lookup, demo_lookup, rebuild_lookup)
+    height_lookup = step5b_load_heights()
+    gdf = step6_join(gdf, landmark_lookup, demo_lookup, rebuild_lookup, height_lookup)
     step7_export(gdf, landmark_lookup, demo_lookup, rebuild_lookup)
 
     print("\nPipeline complete!")

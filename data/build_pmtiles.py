@@ -32,7 +32,8 @@ PROCESSED_DIR = SCRIPT_DIR / "processed"
 
 FOOTPRINTS_DATASET = "5zhs-2jue"
 FOOTPRINTS_BASE = f"https://data.cityofnewyork.us/resource/{FOOTPRINTS_DATASET}.json"
-FOOTPRINTS_FIELDS = "the_geom,mappluto_bbl,height_roof,construction_year,bin"
+FOOTPRINTS_FIELDS = ("the_geom,mappluto_bbl,height_roof,construction_year,bin,"
+                     "feature_code,last_status_type")
 
 BATCH_SIZE = 10000  # GeoJSON rows are big, keep batches smaller
 FOOTPRINTS_CACHE = RAW_DIR / "building_footprints.geojson"
@@ -82,6 +83,10 @@ def download_footprints():
                 "hr": int(float(rec.get("height_roof") or 0)),
                 "cy": int(float(rec.get("construction_year") or 0)),
                 "bin": str(rec.get("bin") or ""),
+                # Type of structure: 2100 building, 5110 garage, 2110 skybridge,
+                # 5100 under construction, 1003 permitted placeholder, etc.
+                "ft": int(float(rec.get("feature_code") or 0)),
+                "st": (rec.get("last_status_type") or "").strip(),
             }
             all_features.append({
                 "type": "Feature",
@@ -201,6 +206,7 @@ def join_and_export():
                 "dy": demos.get(bbl, 0),
                 "ry": rebuilds.get(bbl, 0),
                 "addr": pluto_attrs.get("addr", ""),
+                "ft": feat["properties"].get("ft", 0),
             }
 
             # Strip zero/empty values to save tile space
