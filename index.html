@@ -2352,7 +2352,7 @@ function updateLayers() {
     id: 'buildings-poly',
     // ?v= must change whenever the tiles release changes — tiles are CDN-cached
     // for a year, and the version query is what busts that cache.
-    data: '/api/bt/{z}/{x}/{y}?v=4',
+    data: '/api/bt/{z}/{x}/{y}?v=5',
     // Footprints only show from POLYGON_MIN_ZOOM up. A hidden layer still
     // loads data, so a lower minZoom made every city-wide view download about
     // 2MB of tiles nobody saw. Tiles start loading at map zoom 12.5 (deck
