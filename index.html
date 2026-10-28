@@ -252,6 +252,9 @@
   .stat-landmarks .stat-value { color: #FFD700; }
   .stat-demolished .stat-value { color: #FF3C3C; }
   .stat-rebuilt .stat-value { color: #00DDFF; }
+  .stat-caveat { color: #FF3C3C; text-decoration: none; font-size: 11px; margin-left: 1px; }
+  .stat-caveat:hover, .stat-caveat:focus-visible { color: #fff; }
+  #def-demolished.flash { background: rgba(255,60,60,0.12); transition: background 0.4s; }
 
   #footer-row {
     display: flex; align-items: center; justify-content: space-between;
@@ -713,7 +716,7 @@
   <h2>Methodology &amp; Definitions</h2>
 
   <h3>Data Source</h3>
-  <p>Building data comes from <a href="https://www.nyc.gov/site/planning/data-maps/open-data/dwn-pluto-mappluto.page" target="_blank">MapPLUTO</a> (Primary Land Use Tax Lot Output), published by the NYC Department of City Planning. MapPLUTO merges tax lot data from the Department of Finance with building and zoning information from the Department of Buildings and City Planning. The data is pulled from the live MapPLUTO API and was last refreshed July 26, 2026; it contains approximately 857,000 building records.</p>
+  <p>Building data comes from <a href="https://www.nyc.gov/site/planning/data-maps/open-data/dwn-pluto-mappluto.page" target="_blank">MapPLUTO</a> (Primary Land Use Tax Lot Output), published by the NYC Department of City Planning. MapPLUTO merges tax lot data from the Department of Finance with building and zoning information from the Department of Buildings and City Planning. The data is pulled from the live MapPLUTO API and was last refreshed Oct. 28, 2026 (PLUTO version 26v2); it contains approximately 857,000 building records.</p>
 
   <h3>Construction Era</h3>
   <div class="def"><strong>Before 1920</strong> — MapPLUTO <code>YearBuilt</code> before 1920. Includes colonial, 19th-century, and early 20th-century construction. Dates this old are highly unreliable; the city's DOB permit records do not go back this far, so many buildings are tagged with later dates or have no date at all.</div>
@@ -754,7 +757,7 @@
 
   <h3>Spotlight Layers</h3>
   <div class="def"><strong>Landmarks</strong> — Buildings individually designated as landmarks by the NYC <a href="https://www.nyc.gov/site/lpc/index.page" target="_blank">Landmarks Preservation Commission</a>. Data from LPC's public designations list. Note: Historic <em>districts</em> are not included — only individual landmark designations.</div>
-  <div class="def"><strong>Demolished</strong> — Buildings with recorded demolition permits in DOB filings (approximately 2000 onward). Earlier demolitions are not tracked. Derived from DOB job filings with job type "DM" (Demolition).</div>
+  <div class="def" id="def-demolished"><strong>Demolished</strong> — Buildings with recorded demolition permits in DOB filings (approximately 2000 onward). Earlier demolitions are not tracked. Derived from DOB job filings with job type "DM" (Demolition) in the older Buildings Information System, which DOB used for demolitions until early 2023, and from "Full Demolition" jobs in <a href="https://data.cityofnewyork.us/Housing-Development/DOB-NOW-Build-Job-Application-Filings/w9ak-ipjd" target="_blank">DOB NOW: Build</a> after that. DOB NOW jobs count only once DOB has issued the permit or signed off the work; each lot is dated by the year its demolition was first filed. The <strong>Demolitions filed</strong> count in the stats bar is the number of tax lots, among those in today's PLUTO with a known construction year, that have such a filing on or before the year shown. It counts lots, not buildings, and filings, not finished demolitions: some older filings were withdrawn or never completed, and lots that are vacant today or have since been merged are left out. For a count of demolished buildings, see the Ghost buildings spotlight.</div>
   <div class="def"><strong>Vacant lots</strong> — Tax lots with building class starting with "V" (Vacant Land) in MapPLUTO.</div>
   <div class="def"><strong>Under Construction</strong> — Active new-building permits from the <a href="https://data.cityofnewyork.us/Housing-Development/DOB-NOW-Build-Job-Application-Filings/w9ak-ipjd" target="_blank">DOB NOW: Build</a> filing system. Includes jobs with types "New Building" and "ALT-CO — New Building with Existing Elements to Remain" in "Permit Entire" or "Permit Issued" status, filed since January 2023. Fetched live from the NYC Open Data API. Does not include renovations or alterations to existing buildings.</div>
 
@@ -777,7 +780,7 @@
   <p>The optional <strong>Ghost buildings</strong> overlay draws the footprints of roughly 40,000 demolished buildings from the city's <a href="https://data.cityofnewyork.us/Housing-Development/Building-Footprints-Historic-/ipkp-snf6" target="_blank">Building Footprints Historic</a> dataset, the companion file to the Building Footprints data that supplies this map's building shapes. The overlay is tied to the timeline: each demolished building renders solid (colored by its construction year) while it stood, then fades to a pale outline once the timeline passes its demolition year. Records are deduplicated by building identification number, keeping the most recently edited footprint version. Where a record lacks a demolition year (fewer than 1 percent), the year it was last edited is used instead. <span style="color:#FF9020">Important caveat:</span> the city only began maintaining digital footprints in the mid-1990s, so this overlay captures demolitions from 1996 onward &mdash; it is a record of the recent past, not of everything New York City has ever torn down. Construction years are unknown for about a quarter of these buildings; they are shown as standing from the start of the timeline until their demolition.</p>
 
   <h3>Zoning</h3>
-  <p>The optional <strong>Zoning</strong> reference layer draws the city's 5,416 primary zoning districts, from the New York City Department of City Planning's zoning districts layer (<code>nyzd</code>) &mdash; the same primary layer behind DCP's <a href="https://zola.planninglabs.nyc/" target="_blank">ZoLa</a> map, pulled from the department's live map service and retrieved July 22, 2026. The layer is continuous: every square foot of the city carries exactly one primary district, and it extends over water to the federal pierhead lines, which is why the tint runs past the shoreline.</p>
+  <p>The optional <strong>Zoning</strong> reference layer draws the city's 5,440 primary zoning districts, from the New York City Department of City Planning's zoning districts layer (<code>nyzd</code>) &mdash; the same primary layer behind DCP's <a href="https://zola.planninglabs.nyc/" target="_blank">ZoLa</a> map, pulled from the department's live map service and retrieved Oct. 28, 2026. The layer is continuous: every square foot of the city carries exactly one primary district, and it extends over water to the federal pierhead lines, which is why the tint runs past the shoreline.</p>
   <p>Districts are grouped into five categories: residential, commercial, manufacturing, mixed use and mapped parkland. The colors here are all cool &mdash; blues, teals and violets &mdash; rather than the warm zoning palette used on the standalone <a href="https://joshgreenman1973.github.io/nyc-city-land-map/" target="_blank">city-owned land map</a>, because on this map the buildings themselves are amber and a warm zoning wash underneath them is unreadable. The 62 paired districts (<code>M1-2/R6A</code> and kin, created by rezonings like Greenpoint&ndash;Williamsburg and Gowanus) are recorded as manufacturing in the source data; because they permit housing alongside industry, this map gives them their own mixed-use category. Hovering any building shows the district it sits in; hovering open ground shows the district alone.</p>
   <p><span style="color:#FF9020">Important:</span> zoning describes what may be built, not what is standing. Much of New York predates its current zoning and could not be rebuilt as it stands today &mdash; those buildings are legal but non-conforming. Reading the amber footprints against the zoning tint is a way to see that gap.</p>
   <p>Two things ZoLa shows that this layer does not: <strong>commercial overlays</strong> (the C1 and C2 strips that put retail on residential avenues) and <strong>special purpose districts</strong>. Both are separate datasets. District boundaries here are simplified to roughly one-meter precision for file size, so they are not survey-accurate; check ZoLa or the zoning maps before relying on any specific lot line.</p>
@@ -787,10 +790,10 @@
   <p>This replaces the earlier approach of coloring by MapPLUTO's <code>NumFloors</code>, which is self-reported and, as noted above, imperfect. The <strong>Height</strong> <em>filter</em> still works in floors, because its categories are named in floors &mdash; so single-story buildings remain filterable exactly as before. Where a lot carries several structures, the height shown is that of the tallest <em>building</em> on it; garages and sheds are excluded so a detached garage never defines a lot's height. The color ramp is logarithmic, because a 35-foot rowhouse and a 1,400-foot tower have to share it.</p>
 
   <h3>Structure Types</h3>
-  <p>Not every footprint is a building. The city's <code>FEAT_CODE</code> field sorts the 1.08 million footprints by structure type, and <strong>213,460 of them &mdash; about one in five &mdash; are garages</strong>, alongside 132 gas station canopies, 119 skybridges, and smaller counts of storage tanks, temporary structures and cantilevered buildings. Only 868,460 are coded as buildings. The <strong>Garages &amp; sheds</strong> filter hides the non-building structures at street zoom; it never touches anything the city codes as a building, so one-story and single-family houses always remain visible. Where a structure is not an ordinary building, its type appears in the tooltip.</p>
+  <p>Not every footprint is a building. The city's <code>FEAT_CODE</code> field sorts the 1.08 million footprints by structure type, and <strong>213,408 of them &mdash; about one in five &mdash; are garages</strong>, alongside 135 gas station canopies, 119 skybridges, and smaller counts of storage tanks, temporary structures and cantilevered buildings. Only 868,582 are coded as buildings. The <strong>Garages &amp; sheds</strong> filter hides the non-building structures at street zoom; it never touches anything the city codes as a building, so one-story and single-family houses always remain visible. Where a structure is not an ordinary building, its type appears in the tooltip.</p>
 
   <h3>Future Buildings</h3>
-  <p>The <strong>Future buildings</strong> spotlight is the mirror image of Ghost buildings: rather than what has been demolished, it shows what the city expects to gain and lose next. It draws 468 structures coded as under construction, permitted-but-unbuilt (the city maps a placeholder for these), or marked for construction; and 67 buildings marked for demolition. <span style="color:#FF9020">Caveat:</span> these are administrative records, not guarantees &mdash; a permitted building may never rise, and a building marked for demolition may be reprieved. A further 61 records the city labels "investigate construction" or "investigate demolition," meaning it is not certain the change occurred, are excluded here rather than presented as fact. Because these records track the footprints file, they update weekly.</p>
+  <p>The <strong>Future buildings</strong> spotlight is the mirror image of Ghost buildings: rather than what has been demolished, it shows what the city expects to gain and lose next. It draws 354 structures coded as under construction, permitted-but-unbuilt (the city maps a placeholder for these), or marked for construction; and 67 buildings marked for demolition. <span style="color:#FF9020">Caveat:</span> these are administrative records, not guarantees &mdash; a permitted building may never rise, and a building marked for demolition may be reprieved. A further 61 records the city labels "investigate construction" or "investigate demolition," meaning it is not certain the change occurred, are excluded here rather than presented as fact. Because these records track the footprints file, they update weekly.</p>
 
   <h3>Architects &amp; Styles</h3>
   <p>The <strong>Architects &amp; styles</strong> spotlight draws the 38,105 buildings in the Landmarks Preservation Commission's <a href="https://data.cityofnewyork.us/Housing-Development/Individual-Landmark-and-Historic-District-Building-/gpmc-yuvp" target="_blank">Individual Landmark and Historic District Building Database</a> &mdash; every individual landmark plus every building inside a historic district. For each, the LPC recorded the architect or builder, the architectural style, the primary material, the original use and a construction date; all of that appears on hover, and is appended to the ordinary building tooltip when the layer is on.</p>
@@ -806,14 +809,15 @@
   <h3>Known Limitations</h3>
   <p>• Construction dates before ~1950 are highly unreliable (see above).<br>
   • Demolition records only go back to approximately 2000 (DOB permits) and 1996 (ghost buildings overlay).<br>
+  • The Demolitions filed count is a count of tax lots with a filing, not of buildings torn down. It includes some filings that were withdrawn or never completed, and leaves out lots that are vacant today or have been merged.<br>
   • Floor counts are self-reported and may be outdated; the Height color mode uses measured roof heights instead.<br>
   • The Landmarks spotlight covers individual designations only; use the Historic districts layer or the Architects &amp; styles spotlight for district-designated buildings.<br>
   • Under Construction data covers DOB NOW filings only, not the older BIS system; some active construction sites may be missing.<br>
   • Building class codes are assigned by the Department of Finance for tax purposes and may not perfectly reflect a building's current use.<br>
-  • MapPLUTO is updated quarterly; the data here may lag real-world conditions by several months. Building data (MapPLUTO, footprints, landmarks, vacant-lot classes) last refreshed July 26, 2026.<br>
-  • The red demolition markers and cyan rebuilt markers come from Buildings Information System permit filings, a system the Department of Buildings retired around 2020 — filings after that date are not captured there. For demolitions through the present, use the Ghost buildings spotlight, whose source updates weekly.</p>
+  • MapPLUTO is updated quarterly; the data here may lag real-world conditions by several months. Building data (MapPLUTO, footprints, landmarks, vacant-lot classes) last refreshed Oct. 28, 2026.<br>
+  • The red demolition markers and cyan rebuilt markers come from Department of Buildings job filings: the older Buildings Information System through 2021 for new buildings and early 2023 for demolitions, and DOB NOW: Build since then (counted only once permitted). They are dated by filing year, which can run a year or more ahead of the actual demolition or completion.</p>
 
-  <p style="margin-top:12px;font-size:10px;color:#666;">Last updated: July 2026. Data sources: NYC Department of City Planning (MapPLUTO 25v1, City Owned and Leased Properties), NYC Landmarks Preservation Commission, NYC Department of Buildings (DOB NOW: Build), NYC Parks Department. City-owned land categories after the NYU Furman Center.</p>
+  <p style="margin-top:12px;font-size:10px;color:#666;">Last updated: Oct. 28, 2026. Data sources: NYC Department of City Planning (PLUTO 26v2, City Owned and Leased Properties), NYC Landmarks Preservation Commission, NYC Department of Buildings (DOB NOW: Build), NYC Parks Department. City-owned land categories after the NYU Furman Center.</p>
   <p class="byline" style="font-size:.78rem;opacity:.75;margin-top:1.2rem;color:#ddd">Built by Josh Greenman.</p>
 </div>
 
@@ -962,9 +966,9 @@
         <span class="stat-value" id="stat-landmarks">0</span>
         <span class="stat-label">Landmarks</span>
       </div>
-      <div class="stat stat-demolished">
+      <div class="stat stat-demolished" title="Tax lots with a demolition filed with the Department of Buildings since 2000, up to the year shown. A filing is not always a completed demolition.">
         <span class="stat-value" id="stat-demolished">0</span>
-        <span class="stat-label">Demolished</span>
+        <span class="stat-label">Demolitions filed<a href="#" id="demo-caveat" class="stat-caveat" aria-label="What this count includes">*</a></span>
       </div>
       <div class="stat stat-rebuilt">
         <span class="stat-value" id="stat-rebuilt">0</span>
@@ -4262,6 +4266,17 @@ function setupControls() {
     e.preventDefault();
     methOverlay.classList.add('show');
     methBackdrop.classList.add('show');
+  });
+  // The asterisk on "Demolitions filed" opens the methodology at its caveat;
+  // hover text alone never reaches phone readers.
+  document.getElementById('demo-caveat').addEventListener('click', (e) => {
+    e.preventDefault();
+    methOverlay.classList.add('show');
+    methBackdrop.classList.add('show');
+    const def = document.getElementById('def-demolished');
+    def.scrollIntoView({ block: 'center' });
+    def.classList.add('flash');
+    setTimeout(() => def.classList.remove('flash'), 1600);
   });
   document.getElementById('methodology-close').addEventListener('click', () => {
     methOverlay.classList.remove('show');

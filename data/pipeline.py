@@ -13,9 +13,11 @@ efficiently at all zoom levels via Deck.gl ScatterplotLayer.
 import json
 import math
 import os
+import re
 import struct
 import sys
 import warnings
+from datetime import date
 from pathlib import Path
 
 import geopandas as gpd
@@ -42,23 +44,81 @@ LPC_LANDMARKS_URL = "https://data.cityofnewyork.us/resource/buis-pvji.json?$limi
 DOB_JOBS_DM_URL = "https://data.cityofnewyork.us/resource/ic3t-wcy2.json?$limit=200000&$where=job_type=%27DM%27&$select=borough,block,lot,job_type,pre__filing_date,latest_action_date"
 DOB_JOBS_NB_URL = "https://data.cityofnewyork.us/resource/ic3t-wcy2.json?$limit=200000&$where=job_type=%27NB%27&$select=borough,block,lot,job_type,pre__filing_date,latest_action_date"
 
+# DOB moved filings from BIS to DOB NOW: Build in stages — new buildings in
+# 2021, full demolitions in March 2023 — so the BIS file above thins out and
+# stops in those years. DOB NOW (w9ak-ipjd) carries everything since. Its
+# filing_date is a real timestamp; BIS dates are text, which is why a
+# max(pre__filing_date) query misleadingly reports 12/31/2020.
+DOB_NOW_URL = "https://data.cityofnewyork.us/resource/w9ak-ipjd.json"
+DOB_NOW_FIELDS = "job_filing_number,job_type,filing_status,filing_date,bbl,borough,block,lot"
+DOB_NOW_DM_TYPES = ("Full Demolition",)
+DOB_NOW_NB_TYPES = ("New Building", "ALT-CO - New Building with Existing Elements to Remain")
+# Count a DOB NOW job only once the city has permitted it or signed it off;
+# plan approval alone, objections and withdrawn filings do not count.
+DOB_NOW_DONE_STATUSES = {"LOC Issued", "CO Issued", "Full Demolition Signed-off"}
+
+CURRENT_YEAR = date.today().year
+
 # Batch size for PLUTO download (API limit is 50000 per request)
 BATCH_SIZE = 50000
 
 
 def download_json(url, dest, description="data"):
-    """Download JSON data from NYC Open Data."""
+    """Download every row of a NYC Open Data query, a page at a time.
+
+    One request with a big $limit silently stops at the limit: the BIS
+    new-building query once asked for 200,000 rows of 225,409 and dropped the
+    rest. Paging in a fixed order (:id) gets them all.
+    """
     if dest.exists():
         size = dest.stat().st_size
         print(f"  [SKIP] {description} already downloaded: {dest.name} ({size // 1024}KB)")
         return
     print(f"  Downloading {description}...")
-    resp = requests.get(url, timeout=300, verify=False)
-    resp.raise_for_status()
-    data = resp.json()
+    base = re.sub(r"\$limit=\d+&?", "", url).rstrip("&?")
+    sep = "&" if "?" in base else "?"
+    data, offset = [], 0
+    while True:
+        page_url = f"{base}{sep}$order=:id&$limit={BATCH_SIZE}&$offset={offset}"
+        resp = requests.get(page_url, timeout=300, verify=False)
+        resp.raise_for_status()
+        page = resp.json()
+        data.extend(page)
+        if len(page) < BATCH_SIZE:
+            break
+        offset += BATCH_SIZE
+    if not data:
+        raise RuntimeError(f"{description}: no rows returned; refusing to continue")
     with open(dest, "w") as f:
         json.dump(data, f)
     print(f"    Got {len(data)} records")
+
+
+def download_dob_now(job_types, dest, description):
+    """Page through DOB NOW job filings of the given types (50,000 rows a page)."""
+    if dest.exists():
+        print(f"  [SKIP] {description} already downloaded: {dest.name}")
+        return
+    print(f"  Downloading {description}...")
+    types = ",".join("'" + t + "'" for t in job_types)
+    rows, offset = [], 0
+    while True:
+        resp = requests.get(DOB_NOW_URL, params={
+            "$select": DOB_NOW_FIELDS, "$where": f"job_type in({types})",
+            "$order": "job_filing_number", "$limit": BATCH_SIZE, "$offset": offset,
+        }, timeout=300, verify=False)
+        resp.raise_for_status()
+        page = resp.json()
+        rows.extend(page)
+        if len(page) < BATCH_SIZE:
+            break
+        offset += BATCH_SIZE
+    # Fail loudly rather than quietly writing a map with no recent demolitions.
+    if len(rows) < 1000:
+        raise RuntimeError(f"{description}: only {len(rows)} rows from DOB NOW; refusing to continue")
+    with open(dest, "w") as f:
+        json.dump(rows, f)
+    print(f"    Got {len(rows)} records")
 
 
 def step1_download_pluto():
@@ -103,6 +163,8 @@ def step2_download_other():
     download_json(LPC_LANDMARKS_URL, RAW_DIR / "lpc_landmarks.json", "LPC Landmarks")
     download_json(DOB_JOBS_DM_URL, RAW_DIR / "dob_demolitions.json", "DOB Demolitions")
     download_json(DOB_JOBS_NB_URL, RAW_DIR / "dob_new_buildings.json", "DOB New Buildings")
+    download_dob_now(DOB_NOW_DM_TYPES, RAW_DIR / "dobnow_demolitions.json", "DOB NOW Demolitions")
+    download_dob_now(DOB_NOW_NB_TYPES, RAW_DIR / "dobnow_new_buildings.json", "DOB NOW New Buildings")
 
 
 def step3_process_pluto():
@@ -243,7 +305,7 @@ def step5_load_dob():
                     y = int(ds[:4])
                 else:
                     continue
-                if 1900 <= y <= 2026:
+                if 1900 <= y <= CURRENT_YEAR:
                     return y
             except (ValueError, IndexError):
                 continue
@@ -280,6 +342,41 @@ def step5_load_dob():
                 rebuild_lookup[bbl] = year
 
     print(f"  New building BBLs: {len(rebuild_lookup)}")
+
+    # DOB NOW. One job has several filing documents (-I1 initial, -S2
+    # subsequent and so on); the job counts if any document reached a permit or
+    # sign-off, and is dated by its earliest filing, matching the BIS filing
+    # dates above.
+    def load_dob_now(path, lookup, label):
+        with open(path) as f:
+            rows = json.load(f)
+        jobs = {}
+        for rec in rows:
+            job = rec.get("job_filing_number", "").split("-")[0]
+            bbl = (rec.get("bbl") or "").strip() or dob_bbl(rec)
+            ds = rec.get("filing_date", "")
+            if not job or not bbl or len(bbl) != 10 or not ds[:4].isdigit():
+                continue
+            status = rec.get("filing_status", "")
+            done = status.startswith("Permit") or status in DOB_NOW_DONE_STATUSES
+            j = jobs.setdefault(job, {"bbl": bbl, "year": int(ds[:4]), "done": False})
+            j["year"] = min(j["year"], int(ds[:4]))
+            j["done"] = j["done"] or done
+        added = 0
+        for j in jobs.values():
+            if not j["done"] or not 1900 <= j["year"] <= CURRENT_YEAR:
+                continue
+            if j["bbl"] not in lookup:
+                added += 1
+            if j["year"] > lookup.get(j["bbl"], 0):
+                lookup[j["bbl"]] = j["year"]
+        print(f"  {label}: {len(rows)} filings, {len(jobs)} jobs, "
+              f"{sum(j['done'] for j in jobs.values())} permitted, {added} new BBLs")
+
+    load_dob_now(RAW_DIR / "dobnow_demolitions.json", demo_lookup, "DOB NOW demolitions")
+    load_dob_now(RAW_DIR / "dobnow_new_buildings.json", rebuild_lookup, "DOB NOW new buildings")
+    print(f"  Demolition BBLs (BIS + DOB NOW): {len(demo_lookup)}")
+    print(f"  New building BBLs (BIS + DOB NOW): {len(rebuild_lookup)}")
     return demo_lookup, rebuild_lookup
 
 
@@ -296,8 +393,12 @@ def step5b_load_heights():
     print("\n=== STEP 5b: Load measured heights ===")
     path = RAW_DIR / "building_footprints.geojson"
     if not path.exists():
-        print("  [SKIP] no footprints snapshot; heights will be 0")
-        return {}
+        # Shipping without heights blanks the Height color mode for every
+        # lot, so stop. refresh_all.sh downloads footprints before this runs.
+        raise RuntimeError(
+            "no footprints snapshot at data/raw/building_footprints.geojson; "
+            "run: python3 -c 'import sys; sys.path.insert(0, \"data\"); "
+            "import build_pmtiles; build_pmtiles.download_footprints()'")
 
     with open(path) as f:
         fc = json.load(f)
