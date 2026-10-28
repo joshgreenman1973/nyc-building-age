@@ -2330,11 +2330,13 @@ function updateLayers() {
     onHover: info => {
       if (info.object) {
         const tt = document.getElementById('tooltip');
-        tt.querySelector('.tt-address').textContent = info.object.n || 'Park';
         const details = [];
         if (info.object.a) details.push(`${info.object.a} acres`);
         if (info.object.y) details.push(`Acquired ${info.object.y}`);
-        tt.querySelector('.tt-details').textContent = details.join(' · ');
+        // Write the whole tooltip: other layers replace its contents, so the
+        // original .tt-address/.tt-details children may be gone by now.
+        tt.innerHTML = `<div class="tt-address">${escHtml(info.object.n || 'Park')}</div>` +
+          `<div class="tt-details">${escHtml(details.join(' · '))}</div>`;
         tt.style.display = 'block';
         tt.style.left = (info.x + 12) + 'px';
         tt.style.top = (info.y - 12) + 'px';
