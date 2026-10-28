@@ -679,7 +679,7 @@
 <div id="share-toast">Link copied!</div>
 
 <div id="search-bar">
-  <input id="search-input" type="text" placeholder="Search an address&hellip;" autocomplete="off" spellcheck="false">
+  <input id="search-input" type="text" placeholder="Search an address or place&hellip;" autocomplete="off" spellcheck="false">
   <button id="search-clear">&times;</button>
   <div id="search-results"></div>
 </div>
@@ -3143,28 +3143,132 @@ function setupSearch() {
   });
 }
 
-async function geocodeSearch(query) {
+// Search draws on three sources, local ones first:
+//  1. CommonPlace names, already loaded for the tooltip, so "Barclays Center"
+//     or "Empire State Building" resolve (Mapbox's POI coverage misses both).
+//  2. The map's own lot addresses (PLUTO's "338 5 AVENUE" form) for
+//     address-like queries, normalized so "5th Ave" matches "5 AVENUE".
+//  3. Mapbox for everything else. Its bbox is a rectangle that takes in
+//     Yonkers, Nassau and half of north Jersey, so results are kept only when
+//     Mapbox places them in New York City (place "New York", which covers all
+//     five boroughs).
+const SEARCH_MAX = 6;
+const BORO_NAMES = ['', 'Manhattan', 'Bronx', 'Brooklyn', 'Queens', 'Staten Island'];
+const ORDINAL_WORDS = { FIRST: 1, SECOND: 2, THIRD: 3, FOURTH: 4, FIFTH: 5, SIXTH: 6, SEVENTH: 7,
+  EIGHTH: 8, NINTH: 9, TENTH: 10, ELEVENTH: 11, TWELFTH: 12 };
+const STREET_ABBR = { AVE: 'AVENUE', AV: 'AVENUE', ST: 'STREET', BLVD: 'BOULEVARD', PL: 'PLACE',
+  RD: 'ROAD', PKWY: 'PARKWAY', DR: 'DRIVE', LN: 'LANE', TER: 'TERRACE', CT: 'COURT', HWY: 'HIGHWAY' };
+let _searchSeq = 0;
+
+function escHtml(s) {
+  return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+}
+
+function normalizeAddressQuery(q) {
+  const words = q.toUpperCase().replace(/[.,#]/g, ' ').split(/\s+/).filter(Boolean)
+    .map(w => ORDINAL_WORDS[w] != null ? String(ORDINAL_WORDS[w]) : w.replace(/^(\d+)(ST|ND|RD|TH)$/, '$1'));
+  // Expand abbreviations except in the house-number slot, and only expand "ST"
+  // after the street name has started, so "St Marks Place" keeps its saint.
+  return words.map((w, k) => (k > 1 && STREET_ABBR[w]) || (k > 0 && w !== 'ST' && STREET_ABBR[w]) || w).join(' ');
+}
+
+function searchPlaceNames(q) {
+  const d = state.commonplace;
+  if (!d) return [];
+  const needle = q.toLowerCase();
+  const hits = [];
+  for (const p of d.pts) {
+    const name = p[2].toLowerCase();
+    const at = name.indexOf(needle);
+    if (at < 0) continue;
+    // Prefix matches first, then word-start matches, then anything else.
+    const rank = at === 0 ? 0 : name[at - 1] === ' ' ? 1 : 2;
+    if (rank === 2 && needle.length < 5) continue;
+    hits.push({ rank, len: name.length, p });
+  }
+  hits.sort((a, b) => a.rank - b.rank || a.len - b.len);
+  return hits.slice(0, 4).map(({ p }) => ({
+    label: p[2], sub: d.types[p[3]] === 'Miscellaneous' ? '' : d.types[p[3]], center: [p[1], p[0]], zoom: 17,
+  }));
+}
+
+function searchLotAddresses(q) {
+  const addrs = state.addresses;
+  if (!addrs || !/^\d/.test(q)) return [];
+  const needle = normalizeAddressQuery(q);
+  const hits = [];
+  for (let i = 0; i < state.count && hits.length < 3; i++) {
+    const a = addrs[i];
+    if (a && a.startsWith(needle)) {
+      hits.push({
+        label: titleCase(a.trim()), sub: BORO_NAMES[state.boroCode[i]] || '',
+        center: [state.positions[i * 2], state.positions[i * 2 + 1]], zoom: 17.5,
+      });
+    }
+  }
+  return hits;
+}
+
+function isInNYC(f) {
+  return (f.context || []).some(c => c.id.startsWith('place.') && c.text === 'New York');
+}
+
+// Mapbox fuzzes hard: "Barclays Center" brings back Center Boulevard, "123
+// Main Street" an East Loop Road. Keep a result only if it contains the first
+// real word of the query (three letters or more, after the same abbreviation
+// and ordinal normalization), which is the part people get right.
+function keyWord(q) {
+  return normalizeAddressQuery(q).split(' ').find(w => w.length >= 3 && !/^\d+$/.test(w)) || '';
+}
+function isRelevant(label, kw) {
+  return !kw || (' ' + normalizeAddressQuery(label) + ' ').includes(' ' + kw);
+}
+
+function renderSearchResults() {
   const results = document.getElementById('search-results');
+  _searchActiveIdx = -1;
+  if (!_searchResults.length) {
+    results.innerHTML = '<div class="search-result" style="color:#666;">No results in New York City</div>';
+    results.style.display = 'block';
+    return;
+  }
+  results.innerHTML = _searchResults.map((r, i) =>
+    `<div class="search-result" data-idx="${i}">${escHtml(r.label)}` +
+    (r.sub ? ` <span style="color:#777">${escHtml(r.sub)}</span>` : '') + `</div>`
+  ).join('');
+  results.style.display = 'block';
+  results.querySelectorAll('.search-result').forEach(el => {
+    el.addEventListener('click', () => selectResult(parseInt(el.dataset.idx)));
+  });
+}
+
+async function geocodeSearch(query) {
+  const seq = ++_searchSeq;
+  const local = [...searchPlaceNames(query), ...searchLotAddresses(query)];
   try {
-    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${MAPBOX_TOKEN}&bbox=-74.26,40.49,-73.7,40.92&types=address,poi&limit=5`;
+    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${MAPBOX_TOKEN}&bbox=-74.26,40.49,-73.7,40.92&proximity=-73.98,40.75&types=address,poi&limit=10`;
     const resp = await fetch(url);
     const data = await resp.json();
-    _searchResults = data.features || [];
-    _searchActiveIdx = -1;
-    if (!_searchResults.length) {
-      results.innerHTML = '<div class="search-result" style="color:#666;">No results found</div>';
-      results.style.display = 'block';
-      return;
+    if (seq !== _searchSeq) return; // a newer keystroke already answered
+    const kw = keyWord(query);
+    const seen = new Set(local.map(r => (r.label + '|' + r.sub).toLowerCase()));
+    const remote = [];
+    for (const f of (data.features || []).filter(isInNYC)) {
+      const boro = (f.context || []).find(c => c.id.startsWith('locality.'));
+      const r = { label: f.place_name.split(', ')[0], sub: boro ? boro.text : '', center: f.center, zoom: 16.5 };
+      const key = (r.label + '|' + r.sub).toLowerCase();
+      // Mapbox often returns one address several times under different ZIPs.
+      if (seen.has(key) || !isRelevant(r.label, kw)) continue;
+      seen.add(key);
+      remote.push(r);
     }
-    results.innerHTML = _searchResults.map((f, i) =>
-      `<div class="search-result" data-idx="${i}">${f.place_name}</div>`
-    ).join('');
-    results.style.display = 'block';
-    results.querySelectorAll('.search-result').forEach(el => {
-      el.addEventListener('click', () => selectResult(parseInt(el.dataset.idx)));
-    });
+    _searchResults = [...local, ...remote].slice(0, SEARCH_MAX);
+    renderSearchResults();
   } catch (err) {
     console.error('Geocode failed:', err);
+    if (seq !== _searchSeq) return;
+    _searchResults = local.slice(0, SEARCH_MAX);
+    renderSearchResults();
   }
 }
 
@@ -3178,14 +3282,14 @@ function selectResult(idx) {
   const f = _searchResults[idx];
   if (!f) return;
   const [lng, lat] = f.center;
-  state.map.flyTo({ center: [lng, lat], zoom: 16, duration: 1500 });
+  state.map.flyTo({ center: [lng, lat], zoom: f.zoom || 16, duration: 1500 });
   // Drop marker
   if (state.searchMarker) state.searchMarker.remove();
   const el = document.createElement('div');
   el.style.cssText = 'width:16px;height:16px;border-radius:50%;background:#FF9020;border:2px solid #fff;animation:search-pulse 1.5s ease-in-out infinite;';
   state.searchMarker = new mapboxgl.Marker({ element: el }).setLngLat([lng, lat]).addTo(state.map);
   // Update input
-  document.getElementById('search-input').value = f.place_name.split(',')[0];
+  document.getElementById('search-input').value = f.label;
   document.getElementById('search-results').style.display = 'none';
   document.getElementById('search-clear').style.display = 'block';
 }
