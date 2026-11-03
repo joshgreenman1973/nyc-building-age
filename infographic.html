@@ -303,14 +303,14 @@
 <!-- HERO -->
 <div class="hero section" id="hero">
   <div class="big-number"><span class="counter" data-target="857161" data-duration="2500">0</span></div>
-  <h1>structures make up the built fabric of New York City</h1>
-  <div class="dek">A statistical portrait of every building in the five boroughs — when they were built, how tall they stand, what they are, and what's been torn down</div>
+  <h1>structures stand in New York City</h1>
+  <div class="dek">A statistical portrait of every building in the five boroughs — when they were built, how tall they stand, what they are and what's been torn down</div>
 </div>
 
 <!-- SECTION 1: WHEN WAS NYC BUILT? (morphing chart) -->
 <div class="section" id="decade-section">
   <div class="chart-title" id="decade-title">City records say the 1920s shaped New York more than any other decade</div>
-  <div class="chart-subtitle" id="decade-subtitle">Buildings constructed per decade, 1850–2020s, according to DOB permit records. Earlier decades are likely undercounted.</div>
+  <div class="chart-subtitle" id="decade-subtitle">Buildings constructed per decade, 1850–2020s, according to Department of Buildings (DOB) permit records. Earlier decades are likely undercounted.</div>
   <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
     <div id="decade-toggle" style="display:inline-flex;border:1px solid var(--cloud);border-radius:4px;overflow:hidden;font-size:12px;">
       <button class="decade-tog active" data-view="buildings" style="padding:6px 14px;border:none;cursor:pointer;font-family:inherit;font-weight:600;background:var(--black);color:var(--white);transition:background .3s,color .3s;">Buildings</button>
@@ -358,7 +358,7 @@
 
 <!-- SECTION 2: HEIGHT DISTRIBUTION -->
 <div class="section" id="height-section">
-  <div class="chart-title">New York is a city of low-rises dressed up as a city of skyscrapers</div>
+  <div class="chart-title">Most New York buildings are low-rise; the median has two floors</div>
   <div class="chart-subtitle">Distribution of buildings by height category across all five boroughs. Median building: 2 floors.</div>
 
   <div class="h-bar-row">
@@ -441,7 +441,7 @@
 
 <!-- SECTION 3: STAT CARDS -->
 <div class="section" id="stats-section">
-  <div class="chart-title">Three numbers that define the city's built landscape</div>
+  <div class="chart-title">Three numbers about the city's buildings</div>
   <div class="chart-subtitle"></div>
   <div class="stat-row">
     <div class="stat-card">
@@ -561,16 +561,16 @@
 <div class="methodology">
   <h2>About the data</h2>
   <p><strong>Where the building dates come from.</strong> The construction year for each building comes from the YearBuilt field in MapPLUTO, a tax-lot-level dataset maintained by the NYC Department of City Planning. That field is populated primarily from Department of Buildings permit records. It reflects the year the <em>current</em> structure on a lot was built or last substantially reconstructed &mdash; not every building that has ever stood there.</p>
-  <p><strong>Construction dates before ~1950 are unreliable.</strong> The YearBuilt field was not designed as a historical archive. Because it comes from DOB permit records, it only goes back as far as the department's filing system does. Much of New York was built in the 1800s, but surprisingly few buildings carry pre-1900 dates in the data. That's a gap in the records, not in history. Dates become more trustworthy from roughly the mid-20th century onward, once permit tracking was more systematic. Within designated historic districts, the city has done more to backfill accurate dates, but outside those areas many older buildings are misdated or undated.</p>
-  <p><strong>What "unknown year" means.</strong> About 39,000 lots (4.6%) have a YearBuilt of zero, meaning no construction date was recorded. These tend to be utility lots, parking structures, vacant land with minor improvements, or older buildings whose records were lost. They appear on the map as dark gray dots.</p>
+  <p><strong>Construction dates before ~1950 are unreliable.</strong> The YearBuilt field was not designed as a historical archive. Because it comes from DOB permit records, it only goes back as far as the department's filing system does. Much of New York was built in the 1800s, but few buildings carry pre-1900 dates in the data, because the records are incomplete. Dates become more trustworthy from roughly the mid-20th century onward, once permit tracking was more systematic. Within designated historic districts, the city has done more to backfill accurate dates, but outside those areas many older buildings are misdated or undated.</p>
+  <p><strong>What "unknown year" means.</strong> About 39,000 lots (4.6%) have a YearBuilt of zero, meaning no construction date was recorded. These tend to be utility lots, parking structures, vacant land with minor improvements or older buildings whose records were lost. They appear on the map as dark gray dots.</p>
   <p><strong>Demolitions and rebuilds.</strong> Demolition and new-construction counts come from DOB job filings (type DM for demolition, type NB for new building). These records are only reliably available from roughly 2000 onward, so the demolition data here captures about 25 years of activity &mdash; not the full history of what's been torn down in New York.</p>
   <p><strong>Floor counts.</strong> The NumFloors field in MapPLUTO is self-reported by property owners on tax forms and can be inconsistent. A "floor" in a warehouse is not the same as a floor in a residential tower. The stories-per-decade chart uses these numbers at face value, so treat it as a rough proxy for building volume, not a precise engineering measure.</p>
-  <p><strong>Landmark designations.</strong> Landmark data comes from the Landmarks Preservation Commission's individual and interior landmark lists, joined by BBL. Historic district boundaries are not yet included in this version.</p>
+  <p><strong>Landmark designations.</strong> Landmark data comes from the Landmarks Preservation Commission's individual and interior landmark lists, joined by borough-block-lot number (BBL). Historic district boundaries are not yet included in this version.</p>
 </div>
 
 <!-- FOOTER -->
 <div class="footer">
-  <p><a href="index.html" style="color:#fff;text-decoration:underline;">&#8592; Explore the interactive map</a></p>
+  <p><a href="index.html" style="color:#fff;text-decoration:underline;">&#8592; Open the interactive map</a></p>
   <p>Data: NYC Dept. of City Planning (MapPLUTO), Landmarks Preservation Commission, Dept. of Buildings</p>
   <p style="margin-top:12px;font-size:11px;opacity:0.8;">Conceived by Josh Greenman. Built by Claude Code. Data may contain errors — AI, like people, makes mistakes.</p>
 </div>
@@ -600,7 +600,7 @@ let decadeView = 'buildings'; // current view
 const viewConfig = {
   buildings: {
     title: 'City records say the 1920s shaped New York more than any other decade',
-    subtitle: 'Buildings constructed per decade, 1850–2020s, according to DOB permit records. Earlier decades are likely undercounted.',
+    subtitle: 'Buildings constructed per decade, 1850–2020s, according to Department of Buildings (DOB) permit records. Earlier decades are likely undercounted.',
     source: 'Source: NYC MapPLUTO tax lot data, Dept. of City Planning',
     data: decades, max: maxV,
     highlight: (l) => l==='1920' ? 'var(--chartreuse)' : l==='1930' ? 'var(--chartreuse-50)' : 'var(--cloud)',
