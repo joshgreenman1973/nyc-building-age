@@ -169,6 +169,7 @@
   }
   #play-hint:hover { opacity: 1; text-decoration: underline; }
   #play-hint.hidden { display: none; }
+  #timeline-caveat { order: 2; font-size: 8px; color: #777; line-height: 1.3; margin: 3px 0 0 2px; }
   #year-label-min, #year-label-max {
     font-size: 9px; color: #555; font-variant-numeric: tabular-nums;
     min-width: 30px;
@@ -637,6 +638,7 @@
     #stats-row { gap: 10px; row-gap: 0; justify-content: flex-start; margin-left: 0; width: 100%; }
     .stat-value { font-size: 11px; }
     .stat-label { font-size: 8px; }
+    .stat-label-long { display: none; }
     #credit { font-size: 9px; }
 
     /* Mobile toggle buttons for legend/filters */
@@ -675,7 +677,7 @@
 
 <div id="title-bar">
   <h1>Every Building <span id="info-btn" title="About this map">i</span><span id="share-btn" title="Copy link to this view">&#128279;</span></h1>
-  <div class="subtitle">Every structure in New York City — from the 1600s to today</div>
+  <div class="subtitle">New York City’s building footprints and tax-lot records, from the 1600s to today</div>
   <a id="infographic-top-link" href="infographic.html" target="_blank">By the Numbers &#8599;</a>
 </div>
 
@@ -704,10 +706,10 @@
 <div id="info-overlay">
   <span id="info-close">&times;</span>
   <h2>About this map</h2>
-  <p>This map shows <strong>857,000 buildings</strong> across the five boroughs, colored by age. Press play to watch New York build itself, from the 1600s to today.</p>
+  <p>This map draws New York City’s building footprints, linked to city records for <strong>857,347 tax lots</strong> across the five boroughs, colored by age. Press play to see the buildings in today’s records appear by the year they were built, from the 1600s to today. It is not a complete historical reconstruction: it shows what survives, plus footprints of buildings demolished since the mid-1990s.</p>
   <p>Filters, spotlights and overlays live in the left panel; the color buttons at the bottom switch between age, height, type and borough.</p>
   <p class="caveat-label">A note on accuracy</p>
-  <p><strong>Construction dates before roughly 1950 are highly unreliable</strong> — the city's records were never meant as a historical archive. Full caveats under Methodology &amp; Definitions below.</p>
+  <p><strong>Construction years are administrative estimates from PLUTO.</strong> Exact dates may be approximate; some historic-district records incorporate Landmarks Preservation Commission research. Use original records to verify a particular building. Full caveats under Methodology &amp; Definitions below.</p>
 </div>
 
 <div id="methodology-backdrop"></div>
@@ -716,25 +718,25 @@
   <h2>Methodology &amp; definitions</h2>
 
   <h3>Data source</h3>
-  <p>Building data comes from <a href="https://www.nyc.gov/site/planning/data-maps/open-data/dwn-pluto-mappluto.page" target="_blank">MapPLUTO</a> (Primary Land Use Tax Lot Output), published by the NYC Department of City Planning. MapPLUTO merges tax lot data from the Department of Finance with building and zoning information from the Department of Buildings and City Planning. The data is pulled from the live MapPLUTO API and was last refreshed Oct. 28, 2026 (PLUTO version 26v2); it contains approximately 857,000 building records.</p>
+  <p>Building data comes from <a href="https://www.nyc.gov/site/planning/data-maps/open-data/dwn-pluto-mappluto.page" target="_blank">MapPLUTO</a> (Primary Land Use Tax Lot Output), published by the NYC Department of City Planning. MapPLUTO merges tax lot data from the Department of Finance with building and zoning information from the Department of Buildings and City Planning. This map uses the PLUTO extract downloaded from NYC Open Data on Oct. 28, 2026 (version 26v2). It holds 857,347 tax-lot records with coordinates. A tax lot is a unit of property, not a building: one lot can hold several buildings, and a vacant lot holds none. At close zoom the map switches to the city’s building footprints, a separate dataset of more than a million structures, each joined to the record of the lot it sits on.</p>
 
   <h3>Construction era</h3>
-  <div class="def"><strong>Before 1920</strong> — MapPLUTO <code>YearBuilt</code> before 1920. Includes colonial, 19th-century and early 20th-century construction. Dates this old are highly unreliable; the city's Department of Buildings (DOB) permit records do not go back this far, so many buildings are tagged with later dates or have no date at all.</div>
-  <div class="def"><strong>1920–1950</strong> — <code>YearBuilt</code> between 1920 and 1949. The interwar building boom: Art Deco skyscrapers, the first public housing and the outer-borough apartment expansion. More reliable than earlier eras but still imperfect.</div>
-  <div class="def"><strong>1950–1980</strong> — <code>YearBuilt</code> between 1950 and 1979. The postwar era: Robert Moses highways, towers-in-the-park and suburban-style development in the outer boroughs. Generally reliable.</div>
-  <div class="def"><strong>1980–2010</strong> — <code>YearBuilt</code> between 1980 and 2009. Late 20th-century development through the post-9/11 building boom. Reliable.</div>
-  <div class="def"><strong>Since 2010</strong> — <code>YearBuilt</code> of 2010 or later. The most recent wave of construction. Most reliable era in the dataset.</div>
+  <div class="def"><strong>Before 1920</strong> — MapPLUTO <code>YearBuilt</code> before 1920. Includes colonial, 19th-century and early 20th-century construction. Many buildings from the 1800s and early 1900s carry a year between 1899 and 1901 in the source, so these years are grouped into one era.</div>
+  <div class="def"><strong>1920–1950</strong> — <code>YearBuilt</code> between 1920 and 1949. The interwar building boom: Art Deco skyscrapers, the first public housing and the outer-borough apartment expansion.</div>
+  <div class="def"><strong>1950–1980</strong> — <code>YearBuilt</code> between 1950 and 1979. The postwar era: Robert Moses highways, towers-in-the-park and suburban-style development in the outer boroughs.</div>
+  <div class="def"><strong>1980–2010</strong> — <code>YearBuilt</code> between 1980 and 2009. Late 20th-century development through the post-9/11 building boom.</div>
+  <div class="def"><strong>Since 2010</strong> — <code>YearBuilt</code> of 2010 or later. The most recent wave of construction.</div>
   <div class="def"><strong>Unknown year</strong> — <code>YearBuilt</code> is 0 or missing. Approximately 39,000 lots.</div>
-  <p style="color:#FF9020;font-size:10px;"><strong>Important:</strong> Dates before roughly 1950 are highly unreliable. The city's building records (MapPLUTO YearBuilt) come from DOB permit filings, which were not designed as a historical archive. Much of New York was built in the 1800s, but the data undercounts pre-1900 construction. (<a href="https://www.reddit.com/r/centuryhomes/comments/1ggn7u3/how_accurate_are_date_built_records/" target="_blank">More</a>, <a href="https://www.reddit.com/r/AskNYC/comments/12uaoao/can_you_reliably_find_the_yeardecade_of/" target="_blank">more</a>)</p>
+  <p style="color:#FF9020;font-size:10px;"><strong>Important:</strong> Construction years are administrative estimates. PLUTO takes <code>YearBuilt</code> from the Department of Finance’s Property Tax System, and the Department of City Planning’s <a href="https://s-media.nyc.gov/agencies/dcp/assets/files/pdf/data-tools/bytes/pluto_datadictionary.pdf" target="_blank">PLUTO data dictionary</a> (version 26v2, August 2026) says the year is generally accurate for the decade but not necessarily the specific year. Between 1910 and 1985 most values end in 5 or 0, and many structures built between the 1800s and early 1900s carry a year between 1899 and 1901. For about 26,000 buildings in historic districts, the department replaced the tax-record year with the date from the Landmarks Preservation Commission’s building database. Use original records to verify a particular building.</p>
 
-  <h3>Building height</h3>
+  <h3>Floors (Height filter)</h3>
   <div class="def"><strong>Single-story (1 fl)</strong> — MapPLUTO <code>NumFloors</code> = 1. Fractional counts are rounded down, so a lot recorded at 1.5 floors counts here and one at 6.5 counts as low-rise.</div>
   <div class="def"><strong>Low-rise (2–6 fl)</strong> — <code>NumFloors</code> between 2 and 6. Includes most row houses and walk-up apartment buildings.</div>
   <div class="def"><strong>Mid-rise (7–20 fl)</strong> — <code>NumFloors</code> between 7 and 20.</div>
   <div class="def"><strong>High-rise (21–49 fl)</strong> — <code>NumFloors</code> between 21 and 49.</div>
   <div class="def"><strong>Skyscraper (50+ fl)</strong> — <code>NumFloors</code> of 50 or more.</div>
   <div class="def"><strong>Floors unknown/not applicable</strong> — <code>NumFloors</code> is 0 or missing, which PLUTO uses when it has no floor count. That covers about 41,500 lots, most of them vacant land, garages and parking lots, and parks. They have their own filter rather than being counted as one story.</div>
-  <p>Floor counts are self-reported by building owners to the Department of Finance and may not always reflect current conditions.</p>
+  <p>Floor counts come from the Department of Finance’s Property Tax System, via PLUTO, and describe the tallest building on the lot. They may not reflect current conditions. Map colors in Height mode use measured roof height instead; see Roof height below.</p>
 
   <h3>Building use</h3>
   <p>Derived from MapPLUTO's <code>BldgClass</code> field, which uses the <a href="https://www.nyc.gov/assets/finance/jump/hlpbldgcode.html" target="_blank">NYC Department of Finance building classification system</a>. For most classes the first letter sets the category. Condominium classes, which all begin with R, are mapped by their full two-character code, because a condominium is a form of ownership and can hold offices, stores or a hotel as easily as apartments. RC, RD, RI, RM, RX and RZ are mixed classes the Department of City Planning assigns when it combines a building's condo units into one billing lot (<a href="https://s-media.nyc.gov/agencies/dcp/assets/files/pdf/data-tools/bytes/pluto_datadictionary.pdf" target="_blank">PLUTO data dictionary</a>, 26v2).</p>
@@ -764,7 +766,7 @@
 
   <h3>Color modes</h3>
   <div class="def"><strong>Age</strong> — Buildings colored on a warm-to-cool gradient. Bright orange = recently built; darker orange = ~50 years old; mauve/purple = ~100 years; deep purple = 200+ years. Gold-tinted dots indicate individually landmarked buildings. Red flash indicates a recently demolished building.</div>
-  <div class="def"><strong>Height</strong> — Buildings colored on a cream-to-crimson gradient based on floor count: pale cream = 1 floor; warm gold = mid-rise; deep crimson = 50+ floors.</div>
+  <div class="def"><strong>Height</strong> — Buildings colored by measured roof height in feet, from pale blue (short) to deep navy (800 feet and up). Lots with no measurement are dim gray. See Roof height below.</div>
   <div class="def"><strong>Type</strong> — Each building class is assigned a distinct color. See Building Use definitions above for the class-to-category mapping.</div>
   <div class="def"><strong>Borough</strong> — Each borough gets a distinct color: Manhattan (amber), Bronx (pink), Brooklyn (blue), Queens (green), Staten Island (yellow).</div>
 
@@ -772,13 +774,13 @@
   <div class="def"><strong>Parks</strong> — Green polygons from NYC Parks Department open data (Parks Properties). During the timeline animation each park appears in its recorded acquisition year — Bowling Green in 1686, Central Park in 1856, Flushing Meadows in 1934. The 91 parks with no recorded acquisition date are shown throughout. Acquisition is when the city took the land, which can precede the park people know by decades (Freshkills reads 1929, its landfill-era acquisition).</div>
   <div class="def"><strong>Addresses</strong> — Derived from MapPLUTO <code>Address</code> field. Title-cased for display. Some lots have no address recorded.</div>
   <div class="def"><strong>Lot size</strong> — Dot radius is proportional to MapPLUTO <code>LotArea</code> (in square feet), clamped to a reasonable range.</div>
-  <div class="def"><strong>Building count</strong> — The "812,036 Buildings" counter reflects the number of buildings currently visible given the active year and filters, not the total in the dataset (857,000).</div>
+  <div class="def"><strong>Tax lots matching filters</strong> — The counter in the stats bar is the number of tax lots with a known construction year on or before the year shown that match the active filters. It counts lots, not buildings. It leaves out the 39,447 lots with no recorded year, and lots with a demolition filed by that year unless a new building was filed afterward. The dataset holds 857,347 lots in all.</div>
 
   <h3>City-owned land</h3>
   <p>The optional <strong>City-owned land</strong> overlay shows the 14,940 tax lots the city owns or leases, drawn from the NYC Department of City Planning's <a href="https://data.cityofnewyork.us/dataset/fn4k-qyk2" target="_blank">City Owned and Leased Properties (COLP)</a> dataset and joined to MapPLUTO for lot boundaries, size and zoning. At close zoom each lot renders as its actual parcel outline over the building footprints, so you can see what stands (or doesn't) on city land; at city scale, lots render as dots. Parcels are sorted into four housing-readiness categories &mdash; no current use, already residential, other active use, and parks &amp; recreation &mdash; following the framing of the <a href="https://www.furmancenter.org/publication/what-new-interactive-maps-reveal-about-the-development-potential-of-new-york-citys-city-owned-land/" target="_blank">NYU Furman Center's interactive maps of city-owned land</a>. For no-current-use lots zoned for housing as-of-right, the tooltip shows a rough capacity (lot area &times; residential floor area ratio &divide; 1,000 sq ft) &mdash; a back-of-envelope figure, not a project estimate. The tooltip also flags lots the city has marked for possible disposition, and lots the city leases rather than owns. Lots with multiple recorded uses are shown by their most active one; multi-part lots render their largest piece. A fuller version, with filters and a 3D capacity view, lives at the standalone <a href="https://joshgreenman1973.github.io/nyc-city-land-map/" target="_blank">city-owned land map</a>.</p>
 
   <h3>Ghost buildings</h3>
-  <p>The optional <strong>Ghost buildings</strong> overlay draws 45,881 footprint records of demolished buildings from the city's <a href="https://data.cityofnewyork.us/Housing-Development/Building-Footprints-Historic-/ipkp-snf6" target="_blank">Building Footprints Historic</a> dataset, the companion file to the Building Footprints data that supplies this map's building shapes. The overlay is tied to the timeline: each demolished building renders solid (colored by its construction year) while it stood, then fades to a pale outline once the timeline passes its demolition year. Records with a building identification number (BIN) are deduplicated by it, keeping the most recently edited footprint version. Records without a real BIN, including the borough placeholders (1000000, 2000000 and so on) the city uses when a building's number is unassigned, are deduplicated only where the footprint shape is identical. The count is of footprint records, not of verified unique buildings: a footprint redrawn before demolition without a BIN can appear more than once. Where a record lacks a demolition year (fewer than 1 percent), the year it was last edited is used instead. <span style="color:#FF9020">Caveat:</span> the city only began maintaining digital footprints in the mid-1990s, so this overlay captures demolitions from 1996 onward; earlier demolitions are missing. Construction years are unknown for about a quarter of these records; those footprints are not drawn before their demolition year, because the record says when the building came down but not when it went up.</p>
+  <p>The optional <strong>Ghost buildings</strong> overlay draws 45,881 footprint records of demolished buildings from the city's <a href="https://data.cityofnewyork.us/Housing-Development/Building-Footprints-Historic-/ipkp-snf6" target="_blank">Building Footprints Historic</a> dataset, the companion file to the Building Footprints data that supplies this map's building shapes. The overlay is tied to the timeline: each demolished building renders solid (colored by its construction year) while it stood, then fades to a pale outline once the timeline passes its demolition year. Records with a building identification number (BIN) are deduplicated by it, keeping the most recently edited footprint version. Records without a real BIN, including the borough placeholders (1000000, 2000000 and so on) the city uses when a building's number is unassigned, are deduplicated only where the footprint shape is identical. The count is of footprint records, not of verified unique buildings: a footprint redrawn before demolition without a BIN can appear more than once. Where a record lacks a demolition year (fewer than 1 percent), the year it was last edited is used instead. This layer uses the extract downloaded Oct. 28, 2026. <span style="color:#FF9020">Caveat:</span> the city only began maintaining digital footprints in the mid-1990s, so this overlay captures demolitions from 1996 onward; earlier demolitions are missing. Construction years are unknown for about a quarter of these records; those footprints are not drawn before their demolition year, because the record says when the building came down but not when it went up.</p>
 
   <h3>Zoning</h3>
   <p>The optional <strong>Zoning</strong> reference layer draws the city's 5,440 primary zoning districts, from the New York City Department of City Planning's zoning districts layer (<code>nyzd</code>) &mdash; the same primary layer behind its <a href="https://zola.planninglabs.nyc/" target="_blank">ZoLa</a> map, pulled from the department's live map service and retrieved Oct. 28, 2026. The layer is continuous: every square foot of the city carries exactly one primary district, and it extends over water to the federal pierhead lines, which is why the tint runs past the shoreline.</p>
@@ -786,36 +788,37 @@
   <p><span style="color:#FF9020">Important:</span> zoning describes what may be built, not what is standing. Much of New York predates its current zoning and could not be rebuilt as it stands today &mdash; those buildings are legal but non-conforming. Reading the amber footprints against the zoning tint is a way to see that gap.</p>
   <p>Two things ZoLa shows that this layer does not: <strong>commercial overlays</strong> (the C1 and C2 strips that put retail on residential avenues) and <strong>special purpose districts</strong>. Both are separate datasets. District boundaries here are simplified to roughly one-meter precision for file size, so they are not survey-accurate; check ZoLa or the zoning maps before relying on any specific lot line.</p>
 
-  <h3>Building height</h3>
-  <p>The <strong>Height</strong> color mode uses <code>HEIGHTROOF</code> from the city's building footprints: the measured height of the roof above ground level, in feet, derived photogrammetrically from aerial and street-level imagery. The city reports 95 percent of footprint measurements as accurate to within two feet. It is available for 812,000 of the 857,000 lots here (94.7 percent); lots without a measurement render dim gray rather than being estimated.</p>
-  <p>This replaces the earlier approach of coloring by MapPLUTO's <code>NumFloors</code>, which is self-reported and, as noted above, imperfect. The <strong>Height</strong> <em>filter</em> still works in floors, because its categories are named in floors &mdash; so single-story buildings remain filterable exactly as before. Where a lot carries several structures, the height shown is that of the tallest <em>building</em> on it; garages and sheds are excluded so a detached garage never defines a lot's height. The color ramp is logarithmic, because a 35-foot rowhouse and a 1,400-foot tower have to share it.</p>
+  <h3>Roof height (Height color)</h3>
+  <p>The <strong>Height</strong> color mode uses <code>HEIGHTROOF</code> from the city's building footprints: the measured height of the roof above ground level, in feet, taken from aerial and street-level imagery and from Department of Buildings plan drawings. The city’s footprint metadata states a two-foot accuracy standard for features updated photogrammetrically and calls manually digitized features less accurate, so that standard is not a guarantee for every height on this map. Measured height is available for 812,000 of the 857,000 lots here (94.7 percent); lots without a measurement render dim gray rather than being estimated. This map uses the footprints extract downloaded Oct. 28, 2026.</p>
+  <p>Roof height in feet sets the color; the <strong>Height</strong> filter in the left panel uses PLUTO floor counts (see Floors above). At city zoom each dot is a tax lot, and where a lot carries several structures the dot shows the height of the tallest building on it, a lot-level summary rather than the height of every structure there. Garages and sheds are excluded so a detached garage never defines a lot’s height. At close zoom each footprint shows its own height. The color ramp is logarithmic, because a 35-foot rowhouse and a 1,400-foot tower have to share it.</p>
 
   <h3>Structure types</h3>
   <p>Not every footprint is a building. The city's <code>FEAT_CODE</code> field sorts the 1.08 million footprints by structure type, and <strong>213,408 of them &mdash; about one in five &mdash; are garages</strong>, alongside 135 gas station canopies, 119 skybridges and smaller counts of storage tanks, temporary structures and cantilevered buildings. Only 868,582 are coded as buildings. The <strong>Garages &amp; sheds</strong> filter hides the non-building structures at street zoom; it never touches anything the city codes as a building, so one-story and single-family houses always remain visible. Where a structure is not an ordinary building, its type appears in the tooltip.</p>
 
   <h3>Future buildings</h3>
-  <p>The <strong>Future buildings</strong> spotlight is the mirror image of Ghost buildings: rather than what has been demolished, it shows what the city expects to gain and lose next. It draws 354 structures coded as under construction, permitted-but-unbuilt (the city maps a placeholder for these) or marked for construction; and 67 buildings marked for demolition. <span style="color:#FF9020">Caveat:</span> these are administrative records, not guarantees &mdash; a permitted building may never rise, and a building marked for demolition may be reprieved. A further 61 records the city labels "investigate construction" or "investigate demolition," meaning it is not certain the change occurred, are excluded here rather than presented as fact. Because these records track the footprints file, they update weekly.</p>
+  <p>The <strong>Future buildings</strong> spotlight is the mirror image of Ghost buildings: rather than what has been demolished, it shows what the city expects to gain and lose next. It draws 354 structures coded as under construction, permitted-but-unbuilt (the city maps a placeholder for these) or marked for construction; and 67 buildings marked for demolition. <span style="color:#FF9020">Caveat:</span> these are administrative records, not guarantees &mdash; a permitted building may never rise, and a building marked for demolition may be reprieved. A further 61 records the city labels "investigate construction" or "investigate demolition," meaning it is not certain the change occurred, are excluded here rather than presented as fact. The city updates the footprints file on its own schedule; this layer uses the extract downloaded Oct. 28, 2026, and does not refresh on its own.</p>
 
   <h3>Architects &amp; styles</h3>
   <p>The <strong>Architects &amp; styles</strong> spotlight draws the 38,105 buildings in the Landmarks Preservation Commission's <a href="https://data.cityofnewyork.us/Housing-Development/Individual-Landmark-and-Historic-District-Building-/gpmc-yuvp" target="_blank">Individual Landmark and Historic District Building Database</a> &mdash; every individual landmark plus every building inside a historic district. For each, the LPC recorded the architect or builder, the architectural style, the primary material, the original use and a construction date; all of that appears on hover, and is appended to the ordinary building tooltip when the layer is on.</p>
-  <p>This is the only citywide source that names architects. It covers roughly <strong>4 percent of the city's buildings</strong> &mdash; the designated ones &mdash; and for about a quarter of those the LPC recorded the architect as "not determined," which this map shows rather than hides. It names 4,689 distinct architects; the most prolific are the rowhouse and apartment-house firms &mdash; Louis Berger &amp; Company, Axel Hedman, Benjamin Driesler, Thom &amp; Wilson, George F. Pelham. Buildings are joined by exact point-in-polygon against the LPC's own footprints, not by address matching. Dates here are the LPC's research, which is generally better than the permit-derived dates used elsewhere on this map, and often approximate ("c. 1912").</p>
+  <p>This is the only citywide source that names architects. It covers roughly <strong>4 percent of the city's buildings</strong> &mdash; the designated ones &mdash; and for about a quarter of those the LPC recorded the architect as "not determined," which this map shows rather than hides. It names 4,689 distinct architects; the most prolific are the rowhouse and apartment-house firms &mdash; Louis Berger &amp; Company, Axel Hedman, Benjamin Driesler, Thom &amp; Wilson, George F. Pelham. Buildings are joined by exact point-in-polygon against the LPC's own footprints, not by address matching. Dates here are the LPC's research, which is generally better than the tax-record dates used elsewhere on this map, and often approximate ("c. 1912"). This layer uses the LPC database extract downloaded Oct. 28, 2026.</p>
 
   <h3>What the city calls it</h3>
   <p>The <strong>City calls it</strong> line on the building tooltip comes from <a href="https://data.cityofnewyork.us/dataset/CommonPlace/t95h-5fsr" target="_blank">CommonPlace</a>, published by the Office of Technology and Innovation. CommonPlace is the gazetteer behind Geosupport, the city's geocoder &mdash; the file that lets a city system resolve a name like "PS 61" to a building, a street segment and a coordinate. Its stated purpose, per the agency's own data dictionary, is to aid dispatch, so it covers what agencies get called out to rather than what is notable: a Home Depot and a park comfort station are both in it, most storefronts are not, and Yankee Stadium is missing entirely. Roughly <strong>1 percent of the city's buildings carry a name here</strong> &mdash; but they are disproportionately the ones worth naming, which is why 338 5 Avenue can tell you it is the Empire State Building.</p>
-  <p>Three things to know about how it is used. PLUTO tax lots key on borough-block-lot number (BBL) and CommonPlace keys on building identification number (BIN), so there is no join between them &mdash; names are matched to the lot under the cursor by proximity, within 45 meters. That radius is deliberately tight: a wider one would confidently mislabel neighbors on a dense block, so the tradeoff runs the other way, and hovering the far end of a very large building can return no name at all even though the building is in the file. Where several names sit on one building, the source's own complex-versus-constituent flag decides: hovering Grand Central returns the terminal rather than the gift shop two meters closer. And NYPD-sourced entries other than public-safety sites are withheld, because the data dictionary states that "NYPD common places, with the exception of precinct locations, cannot be distributed" &mdash; 1,641 of 20,466 rows, most of them ordinary places that entered through the Sprint and PCAD dispatch systems. Categories shown are the city's own <code>FACILITY_TYPE</code> codes; the separate <code>FACILITY_DOMAINS</code> column is ignored because it carries 18 values that the published 13-row table does not describe.</p>
+  <p>Three things to know about how it is used. PLUTO tax lots key on borough-block-lot number (BBL) and CommonPlace keys on building identification number (BIN), so there is no join between them &mdash; names are matched to the lot under the cursor by proximity, within 45 meters, so a name is a possible match for the building, not a confirmed identification. That radius is deliberately tight: a wider one would confidently mislabel neighbors on a dense block, so the tradeoff runs the other way, and hovering the far end of a very large building can return no name at all even though the building is in the file. Where several names sit on one building, the source's own complex-versus-constituent flag decides: hovering Grand Central returns the terminal rather than the gift shop two meters closer. And NYPD-sourced entries other than public-safety sites are withheld, because the data dictionary states that "NYPD common places, with the exception of precinct locations, cannot be distributed" &mdash; 1,641 of 20,466 rows, most of them ordinary places that entered through the Sprint and PCAD dispatch systems. Categories shown are the city's own <code>FACILITY_TYPE</code> codes; the separate <code>FACILITY_DOMAINS</code> column is ignored because it carries 18 values that the published 13-row table does not describe.</p>
 
   <h3>Historic districts</h3>
   <p>The <strong>Historic districts</strong> reference layer outlines all 159 historic districts and district extensions, from Brooklyn Heights in 1965 to the present. Hovering gives the designation date, borough, acreage and LPC number. The data comes from the companion project <a href="https://joshgreenman1973.github.io/nyc-historic-districts/" target="_blank">The landmarking of New York</a>, which animates the same districts by designation year. This closes a gap noted below: the Landmarks spotlight covers individually designated buildings only, while district designation protects far more buildings than individual designation ever has.</p>
 
   <h3>Known limitations</h3>
-  <p>• Construction dates before ~1950 are highly unreliable (see above).<br>
+  <p>• Construction years are administrative estimates, generally right to the decade but not always the year (see above).<br>
   • Demolition records only go back to approximately 2000 (DOB permits) and 1996 (ghost buildings overlay).<br>
   • The Demolitions filed count is a count of tax lots with a filing, not of buildings torn down. It includes some filings that were withdrawn or never completed, and leaves out lots that are vacant today or have been merged.<br>
-  • Floor counts are self-reported and may be outdated; the Height color mode uses measured roof heights instead.<br>
+  • Floor counts come from tax records and may be outdated; the Height color mode uses measured roof heights instead.<br>
   • The Landmarks spotlight covers individual designations only; use the Historic districts layer or the Architects &amp; styles spotlight for district-designated buildings.<br>
   • Under Construction data covers DOB NOW filings only, not the older BIS system; some active construction sites may be missing.<br>
   • Building class codes are assigned by the Department of Finance for tax purposes and may not perfectly reflect a building's current use.<br>
   • MapPLUTO is updated quarterly; the data here may lag real-world conditions by several months. Building data (MapPLUTO, footprints, landmarks, vacant-lot classes) last refreshed Oct. 28, 2026.<br>
+  • The map does not refresh automatically. Extract dates by layer: PLUTO, building footprints, historic footprints (ghost buildings), future buildings, Department of Buildings filings, LPC landmarks and building database, parks and zoning, Oct. 28, 2026; city-owned land, built July 21, 2026, from the standalone city-owned land map; historic districts, July 26, 2026; CommonPlace names, Nov. 2, 2026 (rebuilt monthly). The Under construction and Stalled sites layers query NYC Open Data when switched on.<br>
   • The red demolition markers and cyan rebuilt markers come from Department of Buildings job filings: the older Buildings Information System through 2021 for new buildings and early 2023 for demolitions, and DOB NOW: Build since then (counted only once permitted). They are dated by filing year, which can run a year or more ahead of the actual demolition or completion.</p>
 
   <p style="margin-top:12px;font-size:10px;color:#666;">Last updated: Oct. 28, 2026. Data sources: NYC Department of City Planning (PLUTO 26v2, City Owned and Leased Properties), NYC Landmarks Preservation Commission, NYC Department of Buildings (DOB NOW: Build), NYC Parks Department. City-owned land categories after the NYU Furman Center.</p>
@@ -823,7 +826,7 @@
 </div>
 
 <div id="year-display">2026</div>
-<div id="anim-caveat">Pre-1900 dates are unreliable — fast-forwarding</div>
+<div id="anim-caveat">Pre-1900 dates are approximate — fast-forwarding</div>
 
 <div id="mobile-toggles">
   <button class="mobile-tog" id="mob-legend-btn">Legend</button>
@@ -849,7 +852,7 @@
   <div class="panel-title">Filter Buildings <span class="select-toggle" id="global-toggle"><span class="all">All</span><span class="sep">/</span><span class="none">None</span></span></div>
 
   <div class="filter-section fs-era">
-    <div class="section-label">Era <span class="era-info">i<span class="era-tooltip">NYC building dates come from DOB permit filings, which were never designed as a historical archive. Dates before ~1920 are highly unreliable -- the city didn't track them consistently. We group everything before 1920 into one era rather than implying false precision about older buildings.</span></span> <span class="select-toggle" data-section="era"><span class="all">All</span><span class="sep">/</span><span class="none">None</span></span></div>
+    <div class="section-label">Era <span class="era-info">i<span class="era-tooltip">Construction years come from the Department of Finance's property tax records, via PLUTO. City Planning says they are generally accurate to the decade, not the year, and many buildings from the 1800s and early 1900s carry a year between 1899 and 1901. Everything before 1920 is grouped into one era rather than implying false precision about older buildings.</span></span> <span class="select-toggle" data-section="era"><span class="all">All</span><span class="sep">/</span><span class="none">None</span></span></div>
     <div class="filter-check"><input type="checkbox" id="era-pre1920" checked data-era="pre1920"><label for="era-pre1920">Before 1920</label></div>
     <div class="filter-check"><input type="checkbox" id="era-interwar" checked data-era="interwar"><label for="era-interwar">1920-1950</label></div>
     <div class="filter-check"><input type="checkbox" id="era-postwar" checked data-era="postwar"><label for="era-postwar">1950-1980</label></div>
@@ -956,13 +959,13 @@
   <div id="mode-row">
     <span class="label" title="Changes what the colors on the map represent">Color by:</span>
     <button class="btn mode-btn active" data-mode="age" title="Color buildings by how old they are">Age</button>
-    <button class="btn mode-btn" data-mode="height" title="Color buildings by number of floors">Height</button>
+    <button class="btn mode-btn" data-mode="height" title="Color buildings by measured roof height (feet)">Height</button>
     <button class="btn mode-btn" data-mode="class" title="Color buildings by use (residential, office, etc.)">Type</button>
     <button class="btn mode-btn" data-mode="borough" title="Color buildings by borough">Borough</button>
     <div id="stats-row">
       <div class="stat stat-buildings">
         <span class="stat-value" id="stat-buildings">0</span>
-        <span class="stat-label">Buildings</span>
+        <span class="stat-label">Tax lots<span class="stat-label-long"> matching filters</span></span>
       </div>
       <div class="stat stat-landmarks">
         <span class="stat-value" id="stat-landmarks">0</span>
@@ -979,7 +982,7 @@
     </div>
   </div>
   <div id="timeline-row">
-    <button id="play-btn" class="btn" title="Play/Pause animation">&#9654;</button>
+    <button id="play-btn" class="btn" title="Play/Pause animation. A timeline of buildings in today’s records, plus available recent-demolition footprints; not a complete historical reconstruction.">&#9654;</button>
     <span id="play-hint">Watch NYC grow</span>
     <div style="position:relative;display:inline-block;">
       <button id="story-btn" class="btn" title="Guided tours">Guided tours</button>
@@ -1013,6 +1016,7 @@
       <button class="btn jump-btn active" data-year="2026">Now</button>
     </div>
   </div>
+  <div id="timeline-caveat">A timeline of buildings in today’s records, plus available recent-demolition footprints; not a complete historical reconstruction.</div>
   <div id="footer-row">
     <span id="credit">Conceived by Josh Greenman. Built by Claude Code. Data may contain errors — AI, like people, makes mistakes. <a href="#" id="methodology-link">Methodology &amp; Definitions</a></span>
   </div>
@@ -1429,7 +1433,7 @@ function _rawColorFromFields(yb, bc, nf, ly, dy, ry, cls, yr, filtered, hf) {
   // Color mode: height — blue gradient from pale sky to deep navy
   if (state.colorMode === 'height') {
     // Measured roof height above ground, in feet, from the city's
-    // photogrammetric footprints — not PLUTO's self-reported floor counts.
+    // photogrammetric footprints — not PLUTO's tax-record floor counts.
     // Log scale, because a 35ft rowhouse and a 1,400ft tower share this ramp.
     if (hf > 0) {
       const t = Math.min(Math.max((Math.log(hf) - HEIGHT_LOG_MIN) / HEIGHT_LOG_SPAN, 0), 1);
@@ -3388,7 +3392,7 @@ const STORIES = {
       { center: [-73.98, 40.75], zoom: 12, year: 1930, mode: 'age', caption: 'The interwar building boom transforms New York. Art Deco towers rise in Midtown and downtown. The subway system opens the outer boroughs to development.', duration: 5000 },
       { center: [-73.93, 40.72], zoom: 11.5, year: 1965, mode: 'age', caption: 'The postwar era brings Robert Moses\u2019s highways and towers-in-the-park. Public housing rises across the city. The suburbs draw families out of Brooklyn and the Bronx.', duration: 5000 },
       { center: [-73.98, 40.75], zoom: 11, year: 2000, mode: 'age', caption: 'A new wave of construction arrives — luxury towers along the waterfront, new transit-oriented development and the transformation of former industrial areas.', duration: 5000 },
-      { center: [-73.98, 40.75], zoom: 11, year: 2026, mode: 'age', caption: 'Today: 857,000 structures, from 17th-century stone houses to supertall glass towers.', duration: 6000 },
+      { center: [-73.98, 40.75], zoom: 11, year: 2026, mode: 'age', caption: 'Today: the records of 857,347 tax lots, from 17th-century stone houses to supertall glass towers.', duration: 6000 },
     ],
   },
   bronx: {
@@ -3412,16 +3416,16 @@ const STORIES = {
   victorian: {
     title: 'Brooklyn\u2019s Victorian belt',
     steps: [
-      { center: [-73.977, 40.675], zoom: 15, year: 2026, mode: 'age', filters: { eras: ['pre1920','interwar'] }, caption: 'Park Slope: one of the finest collections of Victorian and Edwardian rowhouses in America. Block after block of brownstones built in the 1880s and 1890s.', duration: 5000 },
-      { center: [-73.94, 40.685], zoom: 15, year: 2026, mode: 'age', filters: { eras: ['pre1920','interwar'] }, caption: 'Bed-Stuy: the nation\u2019s largest collection of intact Victorian architecture. Thousands of brownstones and rowhouses, many dating to the 1870s\u20131900s.', duration: 5000 },
-      { center: [-73.995, 40.695], zoom: 15.5, year: 2026, mode: 'age', filters: { eras: ['pre1920','interwar'] }, caption: 'Brooklyn Heights: America\u2019s first suburb. Federal and Greek Revival homes from the 1830s\u20131860s, and the city\u2019s first designated historic district (1965).', duration: 6000 },
+      { center: [-73.977, 40.675], zoom: 15, year: 2026, mode: 'age', filters: { eras: ['pre1920','interwar'] }, caption: 'Park Slope: Victorian and Edwardian rowhouses. Block after block of brownstones built in the 1880s and 1890s.', duration: 5000 },
+      { center: [-73.94, 40.685], zoom: 15, year: 2026, mode: 'age', filters: { eras: ['pre1920','interwar'] }, caption: 'Bed-Stuy: thousands of Victorian brownstones and rowhouses, many dating to the 1870s\u20131900s.', duration: 5000 },
+      { center: [-73.995, 40.695], zoom: 15.5, year: 2026, mode: 'age', filters: { eras: ['pre1920','interwar'] }, caption: 'Brooklyn Heights: often called America\u2019s first suburb. Federal and Greek Revival homes from the 1830s\u20131860s, and the city\u2019s first designated historic district (1965).', duration: 6000 },
     ],
   },
   worship: {
     title: 'Houses of worship',
     steps: [
       { center: [-73.98, 40.72], zoom: 11, year: 2026, mode: 'class', filters: { uses: ['institutional'], subUses: ['religious'] }, caption: 'More than 5,000 religious buildings stand across New York — churches, synagogues, mosques, temples and meeting houses. They appear in every neighborhood.', duration: 5000 },
-      { center: [-73.96, 40.635], zoom: 14, year: 2026, mode: 'age', filters: { uses: ['institutional'], subUses: ['religious'] }, caption: 'Flatbush and Midwood: one of the most religiously diverse areas in the country. Historic churches alongside newer mosques and yeshivas.', duration: 5000 },
+      { center: [-73.96, 40.635], zoom: 14, year: 2026, mode: 'age', filters: { uses: ['institutional'], subUses: ['religious'] }, caption: 'Flatbush and Midwood: historic churches alongside newer mosques and yeshivas.', duration: 5000 },
       { center: [-73.945, 40.815], zoom: 14.5, year: 2026, mode: 'age', filters: { uses: ['institutional'], subUses: ['religious'] }, caption: 'Harlem: its great churches — Abyssinian Baptist, Mother AME Zion, Riverside — anchor their neighborhoods. Many predate the Great Migration.', duration: 6000 },
     ],
   },
@@ -3948,7 +3952,7 @@ function updateLegend() {
       <div class="legend-item"><div class="legend-swatch" style="background:rgb(255,200,100)"></div> 1980-2010</div>
       <div class="legend-item"><div class="legend-swatch" style="background:rgb(255,235,180)"></div> Since 2010</div>
       <div class="legend-item"><div class="legend-swatch" style="background:rgb(255,200,50)"></div> Landmark</div>
-      <div style="font-size:8px;color:#666;margin:4px 0 0 18px;line-height:1.3;">*Dates before ~1950 are highly unreliable (<a href="https://www.reddit.com/r/centuryhomes/comments/1ggn7u3/how_accurate_are_date_built_records/" target="_blank" style="color:#888;text-decoration:underline;">why?</a>)</div>`;
+      <div style="font-size:8px;color:#666;margin:4px 0 0 18px;line-height:1.3;">*Construction years are tax-record estimates, generally right to the decade but not always the year (<a href="https://s-media.nyc.gov/agencies/dcp/assets/files/pdf/data-tools/bytes/pluto_datadictionary.pdf" target="_blank" style="color:#888;text-decoration:underline;">PLUTO data dictionary</a>)</div>`;
   } else if (mode === 'height') {
     html = `<div class="legend-title">Color: Building height</div>
       <div style="font-size:9px;color:#777;margin-bottom:6px;">Measured roof height, lighter = shorter</div>
@@ -3959,7 +3963,7 @@ function updateLegend() {
       <div class="legend-item"><div class="legend-swatch" style="background:rgb(46,68,173)"></div> ~400 ft</div>
       <div class="legend-item"><div class="legend-swatch" style="background:rgb(20,40,160)"></div> 800+ ft</div>
       <div class="legend-item"><div class="legend-swatch" style="background:rgb(80,80,80)"></div> Not measured</div>
-      <div style="font-size:8px;color:#666;margin:4px 0 0 18px;line-height:1.3;">Photogrammetric, from the city's building footprints &mdash; not self-reported floor counts.</div>`;
+      <div style="font-size:8px;color:#666;margin:4px 0 0 18px;line-height:1.3;">Measured, from the city's building footprints &mdash; not tax-record floor counts. A dot shows the tallest building on its lot.</div>`;
   } else if (mode === 'class') {
     html = `<div class="legend-title">Color: Building Type</div>
       <div style="font-size:9px;color:#777;margin-bottom:6px;">Each use category has its own color</div>
