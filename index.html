@@ -728,29 +728,30 @@
   <p style="color:#FF9020;font-size:10px;"><strong>Important:</strong> Dates before roughly 1950 are highly unreliable. The city's building records (MapPLUTO YearBuilt) come from DOB permit filings, which were not designed as a historical archive. Much of New York was built in the 1800s, but the data undercounts pre-1900 construction. (<a href="https://www.reddit.com/r/centuryhomes/comments/1ggn7u3/how_accurate_are_date_built_records/" target="_blank">More</a>, <a href="https://www.reddit.com/r/AskNYC/comments/12uaoao/can_you_reliably_find_the_yeardecade_of/" target="_blank">more</a>)</p>
 
   <h3>Building height</h3>
-  <div class="def"><strong>Single-story (1 fl)</strong> — MapPLUTO <code>NumFloors</code> = 1 or 0 (defaulted to 1).</div>
+  <div class="def"><strong>Single-story (1 fl)</strong> — MapPLUTO <code>NumFloors</code> = 1. Fractional counts are rounded down, so a lot recorded at 1.5 floors counts here and one at 6.5 counts as low-rise.</div>
   <div class="def"><strong>Low-rise (2–6 fl)</strong> — <code>NumFloors</code> between 2 and 6. Includes most row houses and walk-up apartment buildings.</div>
   <div class="def"><strong>Mid-rise (7–20 fl)</strong> — <code>NumFloors</code> between 7 and 20.</div>
   <div class="def"><strong>High-rise (21–49 fl)</strong> — <code>NumFloors</code> between 21 and 49.</div>
   <div class="def"><strong>Skyscraper (50+ fl)</strong> — <code>NumFloors</code> of 50 or more.</div>
+  <div class="def"><strong>Floors unknown/not applicable</strong> — <code>NumFloors</code> is 0 or missing, which PLUTO uses when it has no floor count. That covers about 41,500 lots, most of them vacant land, garages and parking lots, and parks. They have their own filter rather than being counted as one story.</div>
   <p>Floor counts are self-reported by building owners to the Department of Finance and may not always reflect current conditions.</p>
 
   <h3>Building use</h3>
-  <p>Derived from the first character of MapPLUTO's <code>BldgClass</code> field, which uses the <a href="https://www.nyc.gov/assets/finance/jump/hlpbldgcode.html" target="_blank">NYC Department of Finance building classification system</a>.</p>
-  <div class="def"><strong>Residential</strong> — Class A (one-family), B (two-family), C (walk-up apartment), D (elevator apartment), R (condominium).</div>
+  <p>Derived from MapPLUTO's <code>BldgClass</code> field, which uses the <a href="https://www.nyc.gov/assets/finance/jump/hlpbldgcode.html" target="_blank">NYC Department of Finance building classification system</a>. For most classes the first letter sets the category. Condominium classes, which all begin with R, are mapped by their full two-character code, because a condominium is a form of ownership and can hold offices, stores or a hotel as easily as apartments. RC, RD, RI, RM, RX and RZ are mixed classes the Department of City Planning assigns when it combines a building's condo units into one billing lot (<a href="https://s-media.nyc.gov/agencies/dcp/assets/files/pdf/data-tools/bytes/pluto_datadictionary.pdf" target="_blank">PLUTO data dictionary</a>, 26v2).</p>
+  <div class="def"><strong>Residential</strong> — Class A (one-family), B (two-family), C (walk-up apartment), D (elevator apartment) and the residential condominium classes R1&ndash;R4, R6, RD and RR.</div>
   <div class="def" style="padding-left:20px;"><strong>1-Family</strong> — Class A. Detached and attached one-family homes.</div>
   <div class="def" style="padding-left:20px;"><strong>2-Family</strong> — Class B. Two-family homes.</div>
   <div class="def" style="padding-left:20px;"><strong>Walk-Up</strong> — Class C. Apartment buildings without elevators, typically under 6 stories.</div>
-  <div class="def" style="padding-left:20px;"><strong>Elevator/Condo</strong> — Classes D (elevator apartments) and R (condominiums).</div>
-  <div class="def"><strong>Mixed Use</strong> — Class S. Buildings combining residential with commercial use, such as ground-floor retail with apartments above.</div>
-  <div class="def"><strong>Commercial</strong> — Classes H (hotels), J (theaters/auditoriums), K (stores/retail), L (lofts), O (offices).</div>
-  <div class="def"><strong>Industrial</strong> — Classes E (warehouses), F (factories), G (garages), T (transportation facilities), U (utilities).</div>
-  <div class="def"><strong>Institutional</strong> — Classes I (hospitals/health facilities), M (religious buildings), N (asylums/civic institutions), W (schools/educational buildings).</div>
+  <div class="def" style="padding-left:20px;"><strong>Elevator/Condo</strong> — Class D (elevator apartments) and the residential condominium classes.</div>
+  <div class="def"><strong>Mixed Use</strong> — Class S. Buildings combining residential with commercial use, such as ground-floor retail with apartments above. Also mixed condominiums: RM (residential and commercial), RX (residential, commercial and industrial), RZ (residential and warehouse) and R9 (co-op within a condominium, which the Department of City Planning groups as mixed).</div>
+  <div class="def"><strong>Commercial</strong> — Classes H (hotels), J (theaters/auditoriums), K (stores/retail), L (lofts) and O (offices), plus commercial condominiums: RB (office), RK (retail), RH (hotel), R5, R7 and R8 (other commercial units) and RC (mixed commercial).</div>
+  <div class="def"><strong>Industrial</strong> — Classes E (warehouses), F (factories), G (garages), T (transportation facilities) and U (utilities), plus RW (industrial condos), RI (mixed commercial and industrial condos) and RG and RP (parking condos).</div>
+  <div class="def"><strong>Institutional</strong> — Classes I (hospitals/health facilities), M (religious buildings), N (asylums/civic institutions) and W (schools/educational buildings), plus RA (cultural, medical and educational condos).</div>
   <div class="def" style="padding-left:20px;"><strong>Religious</strong> — Class M. Churches, synagogues, mosques and other houses of worship.</div>
   <div class="def" style="padding-left:20px;"><strong>Schools</strong> — Class W. Public and private schools, colleges and other educational facilities.</div>
   <div class="def" style="padding-left:20px;"><strong>Hospitals</strong> — Class I. Hospitals, clinics and health facilities.</div>
   <div class="def" style="padding-left:20px;"><strong>Other Civic</strong> — Class N. Asylums, nursing homes and other institutional facilities.</div>
-  <div class="def"><strong>Other</strong> — Classes P (outdoor recreation), Q (parks/open space), V (vacant land), Z (miscellaneous) and any unrecognized class codes.</div>
+  <div class="def"><strong>Other</strong> — Classes P (outdoor recreation), Q (parks/open space), V (vacant land), Z (miscellaneous) and any unrecognized class codes. Also R0, a special condominium billing lot whose class does not record a use, shown as &ldquo;Condominium, use unspecified,&rdquo; and storage and terrace condos (RS, RT).</div>
 
   <h3>Borough</h3>
   <p>Derived from MapPLUTO <code>BoroCode</code>: 1 = Manhattan, 2 = Bronx, 3 = Brooklyn, 4 = Queens, 5 = Staten Island.</p>
@@ -884,6 +885,7 @@
     <div class="filter-check"><input type="checkbox" id="ht-mid" checked data-ht="mid"><label for="ht-mid">Mid-rise (7-20 fl)</label></div>
     <div class="filter-check"><input type="checkbox" id="ht-high" checked data-ht="high"><label for="ht-high">High-rise (21-49 fl)</label></div>
     <div class="filter-check"><input type="checkbox" id="ht-super" checked data-ht="super"><label for="ht-super">Skyscraper (50+ fl)</label></div>
+    <div class="filter-check"><input type="checkbox" id="ht-unknown" checked data-ht="unknown"><label for="ht-unknown" style="color:#666">Floors unknown/not applicable</label></div>
   </div>
 
   <div class="filter-section fs-structures" style="border-left-color:rgba(158,203,255,0.4);">
@@ -1078,7 +1080,7 @@ const state = {
   filters: {
     boroughs: new Set([1,2,3,4,5]),
     eras: new Set(['pre1920','interwar','postwar','late20c','recent','unknown']),
-    heights: new Set(['single','low','mid','high','super']),
+    heights: new Set(['single','low','mid','high','super','unknown']),
     uses: new Set(['residential','mixed','commercial','industrial','institutional','other']),
     subUses: new Set(['1fam','2fam','walkup','elevator','religious','school','health','civic']),
     highlightLandmarks: false,
@@ -1157,19 +1159,83 @@ function getEra(yb) {
   if (yb < 2010) return 'late20c';
   return 'recent';
 }
-function getHt(nf) { return nf <= 1 ? 'single' : nf <= 6 ? 'low' : nf <= 20 ? 'mid' : nf <= 49 ? 'high' : 'super'; }
+// NumFloors 0 or missing means PLUTO has no floor count (vacant lots, parking,
+// unrecorded buildings), not one floor. Fractional counts were rounded down
+// by the pipeline, so 1.5 floors reads as single-story.
+function getHt(nf) { return nf <= 0 ? 'unknown' : nf === 1 ? 'single' : nf <= 6 ? 'low' : nf <= 20 ? 'mid' : nf <= 49 ? 'high' : 'super'; }
 
-const USE_MAP = { A:'residential', B:'residential', C:'residential', D:'residential', R:'residential',
+// R (condominium) classes are handled by CONDO_CLASSES below.
+const USE_MAP = { A:'residential', B:'residential', C:'residential', D:'residential',
   S:'mixed',
   H:'commercial', J:'commercial', K:'commercial', L:'commercial', O:'commercial',
   E:'industrial', F:'industrial', G:'industrial', T:'industrial', U:'industrial',
   I:'institutional', M:'institutional', N:'institutional', W:'institutional',
   P:'other', Q:'other', V:'other', Z:'other' };
-function getUse(cls) { return USE_MAP[cls.charAt(0).toUpperCase()] || 'other'; }
 
-const SUB_USE_MAP = { A:'1fam', B:'2fam', C:'walkup', D:'elevator', R:'elevator',
+const SUB_USE_MAP = { A:'1fam', B:'2fam', C:'walkup', D:'elevator',
   M:'religious', W:'school', I:'health', N:'civic' };
-function getSubUse(cls) { return SUB_USE_MAP[cls.charAt(0).toUpperCase()] || null; }
+
+// Condominium is an ownership form, not a use, so R classes are mapped code by
+// code rather than all to residential. Codes and names follow the Department
+// of Finance building class list; RC, RD, RI, RM, RX and RZ are the mixed
+// classes the Department of City Planning assigns when it rolls condo units up
+// to the billing lot (PLUTO 26v2 data dictionary, BUILDING CLASS).
+// One table drives filters, Type colors and tooltips for dots and footprints.
+// [use, sub-use, tooltip name, Type color]
+const CONDO_UNSPECIFIED = ['other', null, 'Condominium, Use Unspecified', CC.Z];
+const CONDO_CLASSES = {
+  R1: ['residential', 'elevator', 'Residential Condo (2-10 Units)', CC.R],
+  R2: ['residential', 'elevator', 'Residential Condo, Walk-Up', CC.R],
+  R3: ['residential', 'elevator', 'Residential Condo (1-3 Stories)', CC.R],
+  R4: ['residential', 'elevator', 'Residential Condo, Elevator', CC.R],
+  R6: ['residential', 'elevator', 'Residential Condo (1-3 Units)', CC.R],
+  RR: ['residential', 'elevator', 'Condo Rentals', CC.R],
+  RD: ['residential', 'elevator', 'Residential Condo (Mixed Types)', CC.R],
+  R9: ['mixed', null, 'Co-op Within a Condo', CC.S],
+  RM: ['mixed', null, 'Mixed Residential/Commercial Condo', CC.S],
+  RX: ['mixed', null, 'Mixed Residential/Commercial/Industrial Condo', CC.S],
+  RZ: ['mixed', null, 'Mixed Residential/Warehouse Condo', CC.S],
+  RB: ['commercial', null, 'Office Condo', CC.O],
+  RK: ['commercial', null, 'Retail Condo', CC.K],
+  RH: ['commercial', null, 'Hotel Condo', CC.H],
+  R5: ['commercial', null, 'Commercial Condo (Misc.)', CC.L],
+  R7: ['commercial', null, 'Commercial Condo Unit', CC.L],
+  R8: ['commercial', null, 'Commercial Condo Unit', CC.L],
+  RC: ['commercial', null, 'Commercial Condo (Mixed Types)', CC.L],
+  RA: ['institutional', null, 'Cultural/Medical/Educational Condo', CC.N],
+  RW: ['industrial', null, 'Industrial Condo', CC.F],
+  RI: ['industrial', null, 'Mixed Commercial/Industrial Condo', CC.F],
+  RG: ['industrial', null, 'Indoor Parking Condo', CC.G],
+  RP: ['industrial', null, 'Outdoor Parking Condo', CC.G],
+  RS: ['other', null, 'Storage Condo', CC.Z],
+  RT: ['other', null, 'Terrace/Garden Condo', CC.Z],
+  R0: CONDO_UNSPECIFIED,
+};
+function condoClass(cls) {
+  const c = cls.toUpperCase();
+  return c.charAt(0) === 'R' ? (CONDO_CLASSES[c] || CONDO_UNSPECIFIED) : null;
+}
+function getUse(cls) {
+  const condo = condoClass(cls);
+  if (condo) return condo[0];
+  return USE_MAP[cls.charAt(0).toUpperCase()] || 'other';
+}
+function getSubUse(cls) {
+  const condo = condoClass(cls);
+  if (condo) return condo[1];
+  return SUB_USE_MAP[cls.charAt(0).toUpperCase()] || null;
+}
+function classLabel(cls) {
+  const condo = condoClass(cls);
+  if (condo) return condo[2];
+  return CLASS_NAMES[cls.charAt(0).toUpperCase()] || cls;
+}
+function classColor(cls) {
+  const condo = condoClass(cls);
+  if (condo) return [...condo[3], 200];
+  const ci = cls.charCodeAt(0) - 65;
+  return (ci >= 0 && ci < 26 && CLASS_COLORS[ci]) ? CLASS_COLORS[ci] : [80,80,80,160];
+}
 
 // ============================================================
 // BINARY DATA LOADER
@@ -1305,7 +1371,7 @@ function isFiltered(i) {
   return _isFilteredFields(
     state.yearBuilt[i],
     state.boroCode[i],
-    state.numFloors[i] || 1,
+    state.numFloors[i],
     state.landmarkYear[i],
     state.demoYear[i],
     state.bldgClass[i]
@@ -1379,9 +1445,7 @@ function _rawColorFromFields(yb, bc, nf, ly, dy, ry, cls, yr, filtered, hf) {
   }
   // Color mode: type
   if (state.colorMode === 'class') {
-    const ci = cls.charCodeAt(0) - 65;
-    const c = (ci >= 0 && ci < 26 && CLASS_COLORS[ci]) ? CLASS_COLORS[ci] : [80,80,80,160];
-    return c;
+    return classColor(cls);
   }
   // Color mode: borough
   if (state.colorMode === 'borough') {
@@ -1426,7 +1490,7 @@ function getColor(i, yr) {
   return _getColorFromFields(
     state.yearBuilt[i],
     state.boroCode[i],
-    state.numFloors[i] || 1,
+    state.numFloors[i],
     state.landmarkYear[i],
     state.demoYear[i],
     state.rebuildYear[i],
@@ -2365,7 +2429,7 @@ function updateLayers() {
     stroked: false,
     getFillColor: f => {
       const p = f.properties;
-      const yb = p.yb || 0, bc = p.bc || 0, nf = p.nf || 1, cls = p.cls || '';
+      const yb = p.yb || 0, bc = p.bc || 0, nf = p.nf || 0, cls = p.cls || '';
       const ly = p.ly || 0, dy = p.dy || 0, ry = p.ry || 0;
       // Garages, canopies and sheds are structures, not buildings; hiding them
       // never touches feature_code 2100, so one-story houses always remain.
@@ -2936,15 +3000,11 @@ function onPolyHover(info) {
 
   if (yb > 0) html += `<div class="tt-row"><span>Built</span><span>${yb}</span></div>`;
   if (hr > 0) html += `<div class="tt-row"><span>Height</span><span>${hr.toLocaleString()} ft</span></div>`;
-  if (nf > 0) html += `<div class="tt-row"><span>Floors</span><span>${nf}</span></div>`;
+  html += `<div class="tt-row"><span>Floors</span><span>${nf > 0 ? nf : 'Not recorded'}</span></div>`;
   if (ft && ft !== 2100 && FEATURE_CODES[ft]) {
     html += `<div class="tt-row"><span>Structure</span><span style="color:#9ecbff">${FEATURE_CODES[ft]}</span></div>`;
   }
-  if (cls) {
-    const classKey = cls.charAt(0).toUpperCase();
-    const className = CLASS_NAMES[classKey] || cls;
-    html += `<div class="tt-row"><span>Type</span><span>${className}</span></div>`;
-  }
+  if (cls) html += `<div class="tt-row"><span>Type</span><span>${classLabel(cls)}</span></div>`;
   if (dy > 0) html += `<div class="tt-row"><span>Demolished</span><span style="color:#FF3C3C">${dy}</span></div>`;
   if (ry > 0) html += `<div class="tt-row"><span>Rebuilt</span><span style="color:#00DDFF">${ry}</span></div>`;
   if (ly > 0) html += `<div class="tt-landmark">&#9733; Landmark (${ly})</div>`;
@@ -2987,12 +3047,8 @@ function onHover(info) {
   if (yb > 0) html += `<div class="tt-row"><span>Built</span><span>${yb}</span></div>`;
   // Tallest measured structure on this lot; the dot stands for the whole lot.
   if (hf > 0) html += `<div class="tt-row"><span>Height</span><span>${hf.toLocaleString()} ft</span></div>`;
-  if (nf > 0) html += `<div class="tt-row"><span>Floors</span><span>${nf}</span></div>`;
-  if (cls) {
-    const classKey = cls.charAt(0).toUpperCase();
-    const className = CLASS_NAMES[classKey] || cls;
-    html += `<div class="tt-row"><span>Type</span><span>${className}</span></div>`;
-  }
+  html += `<div class="tt-row"><span>Floors</span><span>${nf > 0 ? nf : 'Not recorded'}</span></div>`;
+  if (cls) html += `<div class="tt-row"><span>Type</span><span>${classLabel(cls)}</span></div>`;
   if (dy > 0) html += `<div class="tt-row"><span>Demolished</span><span style="color:#FF3C3C">${dy}</span></div>`;
   if (ry > 0) html += `<div class="tt-row"><span>Rebuilt</span><span style="color:#00DDFF">${ry}</span></div>`;
   if (ly > 0) html += `<div class="tt-landmark">&#9733; Landmark (${ly})</div>`;
@@ -3019,7 +3075,7 @@ function onHover(info) {
 const DEFAULTS = {
   center: [-73.98, 40.75], zoom: 11, year: MAX_YEAR, mode: 'age',
   eras: ['pre1920','interwar','postwar','late20c','recent','unknown'],
-  heights: ['single','low','mid','high','super'],
+  heights: ['single','low','mid','high','super','unknown'],
   boroughs: [1,2,3,4,5],
   uses: ['residential','mixed','commercial','industrial','institutional','other'],
   subUses: ['1fam','2fam','walkup','elevator','religious','school','health','civic'],
@@ -3089,6 +3145,8 @@ function restoreFromHash() {
   }
   if (params.h) {
     const htSet = new Set(params.h.split(','));
+    // Links made before the unknown-floors category put those lots in single-story.
+    if (htSet.has('single')) htSet.add('unknown');
     document.querySelectorAll('[data-ht]').forEach(cb => { cb.checked = htSet.has(cb.dataset.ht); });
   }
   if (params.b) {
@@ -3910,7 +3968,9 @@ function updateLegend() {
       <div class="legend-item"><div class="legend-swatch" style="background:rgb(100,100,200)"></div> Elevator Apt</div>
       <div class="legend-item"><div class="legend-swatch" style="background:rgb(80,130,200)"></div> Office</div>
       <div class="legend-item"><div class="legend-swatch" style="background:rgb(80,120,80)"></div> Retail</div>
-      <div class="legend-item"><div class="legend-swatch" style="background:rgb(200,150,60)"></div> Warehouse</div>`;
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(200,150,60)"></div> Warehouse</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(120,80,60)"></div> Residential condo</div>
+      <div style="font-size:8px;color:#666;margin:4px 0 0 18px;line-height:1.3;">Other condos take the color of the use their class records: office, retail, hotel, mixed and so on.</div>`;
   } else if (mode === 'borough') {
     html = `<div class="legend-title">Color: Borough</div>
       <div style="font-size:9px;color:#777;margin-bottom:6px;">Each borough has its own color</div>
