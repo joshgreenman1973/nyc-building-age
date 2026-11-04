@@ -757,7 +757,7 @@
 
   <h3>Spotlight layers</h3>
   <div class="def"><strong>Landmarks</strong> — Buildings individually designated as landmarks by the NYC <a href="https://www.nyc.gov/site/lpc/index.page" target="_blank">Landmarks Preservation Commission</a> (LPC). Data from LPC's public designations list. Note: Historic <em>districts</em> are not included — only individual landmark designations.</div>
-  <div class="def" id="def-demolished"><strong>Demolished</strong> — Buildings with recorded demolition permits in DOB filings (approximately 2000 onward). Earlier demolitions are not tracked. Derived from DOB job filings with job type "DM" (Demolition) in the older Buildings Information System, which DOB used for demolitions until early 2023, and from "Full Demolition" jobs in <a href="https://data.cityofnewyork.us/Housing-Development/DOB-NOW-Build-Job-Application-Filings/w9ak-ipjd" target="_blank">DOB NOW: Build</a> after that. DOB NOW jobs count only once DOB has issued the permit or signed off the work; each lot is dated by the year its demolition was first filed. The <strong>Demolitions filed</strong> count in the stats bar is the number of tax lots, among those in today's PLUTO with a known construction year, that have such a filing on or before the year shown. It counts lots, not buildings, and filings, not finished demolitions: some older filings were withdrawn or never completed, and lots that are vacant today or have since been merged are left out. For a count of demolished buildings, see the Ghost buildings spotlight.</div>
+  <div class="def" id="def-demolished"><strong>Demolished</strong> — Buildings with recorded demolition permits in DOB filings (approximately 2000 onward). Earlier demolitions are not tracked. Derived from DOB job filings with job type "DM" (Demolition) in the older Buildings Information System, which DOB used for demolitions until early 2023, and from "Full Demolition" jobs in <a href="https://data.cityofnewyork.us/Housing-Development/DOB-NOW-Build-Job-Application-Filings/w9ak-ipjd" target="_blank">DOB NOW: Build</a> after that. DOB NOW jobs count only once DOB has issued the permit or signed off the work; each lot is dated by the year its demolition was first filed. The <strong>Demolitions filed</strong> count in the stats bar is the number of tax lots, among those in today's PLUTO with a known construction year, that have such a filing on or before the year shown. It counts lots, not buildings, and filings, not finished demolitions: some older filings were withdrawn or never completed, and lots that are vacant today or have since been merged are left out. For the footprints of demolished buildings, see the Ghost buildings spotlight.</div>
   <div class="def"><strong>Vacant lots</strong> — Tax lots with building class starting with "V" (Vacant Land) in MapPLUTO.</div>
   <div class="def"><strong>Under Construction</strong> — Active new-building permits from the <a href="https://data.cityofnewyork.us/Housing-Development/DOB-NOW-Build-Job-Application-Filings/w9ak-ipjd" target="_blank">DOB NOW: Build</a> filing system. Includes jobs with types "New Building" and "ALT-CO — New Building with Existing Elements to Remain" in "Permit Entire" or "Permit Issued" status, filed since January 2023. Fetched live from the NYC Open Data API. Does not include renovations or alterations to existing buildings.</div>
 
@@ -777,7 +777,7 @@
   <p>The optional <strong>City-owned land</strong> overlay shows the 14,940 tax lots the city owns or leases, drawn from the NYC Department of City Planning's <a href="https://data.cityofnewyork.us/dataset/fn4k-qyk2" target="_blank">City Owned and Leased Properties (COLP)</a> dataset and joined to MapPLUTO for lot boundaries, size and zoning. At close zoom each lot renders as its actual parcel outline over the building footprints, so you can see what stands (or doesn't) on city land; at city scale, lots render as dots. Parcels are sorted into four housing-readiness categories &mdash; no current use, already residential, other active use, and parks &amp; recreation &mdash; following the framing of the <a href="https://www.furmancenter.org/publication/what-new-interactive-maps-reveal-about-the-development-potential-of-new-york-citys-city-owned-land/" target="_blank">NYU Furman Center's interactive maps of city-owned land</a>. For no-current-use lots zoned for housing as-of-right, the tooltip shows a rough capacity (lot area &times; residential floor area ratio &divide; 1,000 sq ft) &mdash; a back-of-envelope figure, not a project estimate. The tooltip also flags lots the city has marked for possible disposition, and lots the city leases rather than owns. Lots with multiple recorded uses are shown by their most active one; multi-part lots render their largest piece. A fuller version, with filters and a 3D capacity view, lives at the standalone <a href="https://joshgreenman1973.github.io/nyc-city-land-map/" target="_blank">city-owned land map</a>.</p>
 
   <h3>Ghost buildings</h3>
-  <p>The optional <strong>Ghost buildings</strong> overlay draws the footprints of roughly 40,000 demolished buildings from the city's <a href="https://data.cityofnewyork.us/Housing-Development/Building-Footprints-Historic-/ipkp-snf6" target="_blank">Building Footprints Historic</a> dataset, the companion file to the Building Footprints data that supplies this map's building shapes. The overlay is tied to the timeline: each demolished building renders solid (colored by its construction year) while it stood, then fades to a pale outline once the timeline passes its demolition year. Records are deduplicated by building identification number, keeping the most recently edited footprint version. Where a record lacks a demolition year (fewer than 1 percent), the year it was last edited is used instead. <span style="color:#FF9020">Caveat:</span> the city only began maintaining digital footprints in the mid-1990s, so this overlay captures demolitions from 1996 onward; earlier demolitions are missing. Construction years are unknown for about a quarter of these buildings; they are shown as standing from the start of the timeline until their demolition.</p>
+  <p>The optional <strong>Ghost buildings</strong> overlay draws 45,881 footprint records of demolished buildings from the city's <a href="https://data.cityofnewyork.us/Housing-Development/Building-Footprints-Historic-/ipkp-snf6" target="_blank">Building Footprints Historic</a> dataset, the companion file to the Building Footprints data that supplies this map's building shapes. The overlay is tied to the timeline: each demolished building renders solid (colored by its construction year) while it stood, then fades to a pale outline once the timeline passes its demolition year. Records with a building identification number (BIN) are deduplicated by it, keeping the most recently edited footprint version. Records without a real BIN, including the borough placeholders (1000000, 2000000 and so on) the city uses when a building's number is unassigned, are deduplicated only where the footprint shape is identical. The count is of footprint records, not of verified unique buildings: a footprint redrawn before demolition without a BIN can appear more than once. Where a record lacks a demolition year (fewer than 1 percent), the year it was last edited is used instead. <span style="color:#FF9020">Caveat:</span> the city only began maintaining digital footprints in the mid-1990s, so this overlay captures demolitions from 1996 onward; earlier demolitions are missing. Construction years are unknown for about a quarter of these records; those footprints are not drawn before their demolition year, because the record says when the building came down but not when it went up.</p>
 
   <h3>Zoning</h3>
   <p>The optional <strong>Zoning</strong> reference layer draws the city's 5,440 primary zoning districts, from the New York City Department of City Planning's zoning districts layer (<code>nyzd</code>) &mdash; the same primary layer behind its <a href="https://zola.planninglabs.nyc/" target="_blank">ZoLa</a> map, pulled from the department's live map service and retrieved Oct. 28, 2026. The layer is continuous: every square foot of the city carries exactly one primary district, and it extends over water to the federal pierhead lines, which is why the tint runs past the shoreline.</p>
@@ -927,7 +927,7 @@
       <div style="color:#666;margin-top:3px;font-style:italic;">The mirror of ghost buildings: what the city expects to gain and lose next.</div>
     </div>
     <div id="ghosts-legend" style="display:none;margin:4px 0 2px 19px;font-size:9px;line-height:1.6;color:#666;font-style:italic;">
-      Footprints of buildings demolished since 1996, from the city's historic footprints file. Scrub the timeline: each one stands (solid) until its demolition year, then lingers as a pale outline. Zoom in to see shapes.
+      Footprints of buildings demolished since 1996, from the city's historic footprints file. Scrub the timeline: each one stands (solid) until its demolition year, then lingers as a pale outline. Footprints with no construction year appear only once demolished. Zoom in to see shapes.
     </div>
   </div>
 
@@ -2092,7 +2092,7 @@ async function loadGhostsData() {
     };
     state.ghostsLoaded = true;
     if (statusEl) statusEl.textContent = `(${featureCount.toLocaleString()})`;
-    console.log(`Loaded ${featureCount} ghost buildings (${(buf.byteLength / 1024 / 1024).toFixed(1)} MB)`);
+    console.log(`Loaded ${featureCount} ghost footprint records (${(buf.byteLength / 1024 / 1024).toFixed(1)} MB)`);
   } catch (e) {
     if (statusEl) statusEl.textContent = 'failed';
     console.error('Ghost buildings load failed:', e);
@@ -2568,7 +2568,9 @@ function updateLayers() {
 
   // Ghost buildings overlay — demolished footprints. Time-aware: a building
   // renders solid while it stood (construction year through demolition year)
-  // and as a pale outline once the timeline passes its demolition.
+  // and as a pale outline once the timeline passes its demolition. A footprint
+  // with no construction year is not drawn before its demolition year: the
+  // record says when it came down, not when it went up.
   if (state.showGhosts && state.ghostsLoaded && state.ghosts) {
     const g = state.ghosts;
     const GHOST_RGB = [143, 180, 217];
@@ -2586,6 +2588,7 @@ function updateLayers() {
       },
       getFillColor: i => {
         if (g.cy[i] > 0 && g.cy[i] > yr) return [0, 0, 0, 0];      // not built yet
+        if (!g.cy[i] && g.dy[i] > yr) return [0, 0, 0, 0];         // unknown build date
         if (g.dy[i] > yr) {                                         // still standing
           const c = ageColor(g.cy[i]);
           return [c[0], c[1], c[2], 210];
@@ -2594,6 +2597,7 @@ function updateLayers() {
       },
       getLineColor: i => {
         if (g.cy[i] > 0 && g.cy[i] > yr) return [0, 0, 0, 0];
+        if (!g.cy[i] && g.dy[i] > yr) return [0, 0, 0, 0];
         if (g.dy[i] > yr) return [255, 255, 255, 60];
         return [GHOST_RGB[0], GHOST_RGB[1], GHOST_RGB[2], 160];
       },
@@ -2607,6 +2611,7 @@ function updateLayers() {
         if (info.index == null || info.index < 0) { tt.style.display = 'none'; return; }
         const i = info.index;
         if (g.cy[i] > 0 && g.cy[i] > yr) { tt.style.display = 'none'; return; }
+        if (!g.cy[i] && g.dy[i] > yr) { tt.style.display = 'none'; return; }
         const boro = ['', 'Manhattan', 'Bronx', 'Brooklyn', 'Queens', 'Staten Island'][g.bc[i]] || '';
         const standing = g.dy[i] > yr;
         const built = g.cy[i] > 0 ? g.cy[i] : 'Unknown';

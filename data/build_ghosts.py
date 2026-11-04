@@ -7,9 +7,23 @@ companion dataset to Building Footprints holding structures that have been
 demolished since digital footprint mapping began (effectively 1996+).
 
 We keep only rows whose last_status_type starts with "Demol" (the dataset
-contains the spellings Demolition, Demolitian and Demollition), then dedupe
-by BIN keeping the most recently edited row, since a building can appear
-multiple times as its footprint was revised before demolition.
+contains the spellings Demolition, Demolitian and Demollition), then dedupe.
+
+Dedupe policy. A building can appear several times as its footprint was
+revised before demolition, so:
+  - Rows with a real BIN are deduped by BIN, keeping the most recently edited
+    row.
+  - Rows without a real BIN are never grouped by BIN. That covers an empty BIN,
+    0, and the borough placeholders 1000000, 2000000, 3000000, 4000000 and
+    5000000, which the city's footprint metadata says mark an unassigned or
+    unknown BIN, not one building. These rows are deduped by the source
+    footprint ID (DOITT_ID) when the row carries a nonzero one, and otherwise
+    by identical geometry (the exact serialized coordinates), keeping the most
+    recently edited row in each group. DOITT_ID is 0 on about 1,000 of these
+    rows, so 0 is treated as missing too.
+The output counts historic footprint records after this dedupe. It is not a
+verified count of unique demolished buildings: a footprint redrawn with a new
+shape and no BIN will still appear twice.
 
 Format (little-endian), same vertex scheme as buildings_poly.bin:
   Header (12 bytes):
@@ -53,7 +67,7 @@ OUT_PATH = PROCESSED_DIR / "ghosts.bin"
 
 DATASET = "ipkp-snf6"
 BASE = f"https://data.cityofnewyork.us/resource/{DATASET}.json"
-FIELDS = "the_geom,bin,base_bbl,construction_year,demolition_year,last_edited_date,last_status_type"
+FIELDS = "the_geom,bin,doitt_id,base_bbl,construction_year,demolition_year,last_edited_date,last_status_type"
 BATCH_SIZE = 10000
 
 
@@ -125,6 +139,15 @@ def download():
     return rows
 
 
+# Borough placeholder BINs: the city's footprint metadata says a BIN whose last
+# six digits are all zeros is unassigned or unknown.
+PLACEHOLDER_BINS = {"1000000", "2000000", "3000000", "4000000", "5000000"}
+
+
+def is_real_bin(b):
+    return bool(b) and b != "0" and b not in PLACEHOLDER_BINS
+
+
 def year_of(datestr):
     try:
         return int(str(datestr)[:4])
@@ -136,20 +159,34 @@ def main():
     rows = download()
     print(f"  {len(rows)} demolition rows")
 
-    # Dedupe by BIN, keeping the most recently edited footprint version.
-    # Rows with no BIN are kept as-is.
+    # Dedupe: real BINs by BIN; missing or placeholder BINs by footprint ID or,
+    # failing that, identical geometry. See the module docstring.
+    def newer(r, prev):
+        return prev is None or str(r.get("last_edited_date") or "") > str(prev.get("last_edited_date") or "")
+
     by_bin = {}
-    no_bin = []
+    by_footprint = {}
+    unknown_rows = 0
+    keyed_by_id = 0
     for r in rows:
-        b = str(r.get("bin") or "").strip()
-        if not b or b == "0":
-            no_bin.append(r)
+        b = str(r.get("bin") or "").strip().split(".")[0]
+        if is_real_bin(b):
+            if newer(r, by_bin.get(b)):
+                by_bin[b] = r
             continue
-        prev = by_bin.get(b)
-        if prev is None or str(r.get("last_edited_date") or "") > str(prev.get("last_edited_date") or ""):
-            by_bin[b] = r
-    deduped = list(by_bin.values()) + no_bin
-    print(f"  After BIN dedupe: {len(deduped)} ({len(no_bin)} without BIN)")
+        unknown_rows += 1
+        fid = str(r.get("doitt_id") or "").strip().split(".")[0]
+        if fid and fid != "0":
+            key = ("id", fid)
+            keyed_by_id += 1
+        else:
+            key = ("geom", json.dumps((r.get("the_geom") or {}).get("coordinates"), separators=(",", ":")))
+        if newer(r, by_footprint.get(key)):
+            by_footprint[key] = r
+    deduped = list(by_bin.values()) + list(by_footprint.values())
+    print(f"  After dedupe: {len(deduped)} "
+          f"({len(by_bin)} by BIN; {unknown_rows} rows without a real BIN -> "
+          f"{len(by_footprint)} by footprint ID ({keyed_by_id} rows keyed by ID) or identical geometry)")
 
     records = []
     skipped_geom = 0
