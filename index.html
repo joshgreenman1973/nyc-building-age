@@ -753,7 +753,7 @@
   <div class="def" style="padding-left:20px;"><strong>Schools</strong> — Class W. Public and private schools, colleges and other educational facilities.</div>
   <div class="def" style="padding-left:20px;"><strong>Hospitals</strong> — Class I. Hospitals, clinics and health facilities.</div>
   <div class="def" style="padding-left:20px;"><strong>Other Civic</strong> — Class N. Asylums, nursing homes and other institutional facilities.</div>
-  <div class="def"><strong>Other</strong> — Classes P (outdoor recreation), Q (parks/open space), V (vacant land), Z (miscellaneous) and any unrecognized class codes. Also R0, a special condominium billing lot whose class does not record a use, shown as &ldquo;Condominium, use unspecified,&rdquo; and storage and terrace condos (RS, RT).</div>
+  <div class="def"><strong>Other</strong> — Classes P (outdoor recreation), Q (parks/open space), V (vacant land), Z (miscellaneous) and any unrecognized class codes. Also R0, a special condominium billing lot whose class does not record a use, shown as &ldquo;Condominium, use unspecified,&rdquo; and storage and terrace condos (RS, RT), and the 463 lots with no building class in PLUTO, shown as &ldquo;Not recorded.&rdquo;</div>
 
   <h3>Borough</h3>
   <p>Derived from MapPLUTO <code>BoroCode</code>: 1 = Manhattan, 2 = Bronx, 3 = Brooklyn, 4 = Queens, 5 = Staten Island.</p>
@@ -1215,26 +1215,35 @@ const CONDO_CLASSES = {
   RT: ['other', null, 'Terrace/Garden Condo', CC.Z],
   R0: CONDO_UNSPECIFIED,
 };
+// A lot with no building class in PLUTO was stored as "na" (from a missing
+// value) by builds through Oct. 28, 2026, and as blanks after that. Neither is a
+// class: without this check "na" read as N, Asylum/Institutional.
+function noClass(cls) { return !cls || !/^[A-Z]/.test(cls.trim()); }
 function condoClass(cls) {
+  if (noClass(cls)) return null;
   const c = cls.toUpperCase();
   return c.charAt(0) === 'R' ? (CONDO_CLASSES[c] || CONDO_UNSPECIFIED) : null;
 }
 function getUse(cls) {
+  if (noClass(cls)) return 'other';
   const condo = condoClass(cls);
   if (condo) return condo[0];
   return USE_MAP[cls.charAt(0).toUpperCase()] || 'other';
 }
 function getSubUse(cls) {
+  if (noClass(cls)) return null;
   const condo = condoClass(cls);
   if (condo) return condo[1];
   return SUB_USE_MAP[cls.charAt(0).toUpperCase()] || null;
 }
 function classLabel(cls) {
+  if (noClass(cls)) return 'Not recorded';
   const condo = condoClass(cls);
   if (condo) return condo[2];
   return CLASS_NAMES[cls.charAt(0).toUpperCase()] || cls;
 }
 function classColor(cls) {
+  if (noClass(cls)) return [80,80,80,160];
   const condo = condoClass(cls);
   if (condo) return [...condo[3], 200];
   const ci = cls.charCodeAt(0) - 65;

@@ -475,7 +475,9 @@ def step7_export(gdf, landmark_lookup, demo_lookup, rebuild_lookup):
             ly = int(row.get("landmark_year", 0))
             dy = int(row.get("demo_year", 0))
             ry = int(row.get("rebuild_year", 0))
-            cls = (str(row.get("bldgclass", "")) + "  ")[:2]
+            raw_cls = row.get("bldgclass", "")
+            # A missing class is NaN here; str() would store it as "na".
+            cls = ((raw_cls if isinstance(raw_cls, str) else "") + "  ")[:2]
             la = min(int(row.get("lotarea", 0)), 4294967295)
             hf = min(int(row.get("height_ft", 0) or 0), 65535)
 
